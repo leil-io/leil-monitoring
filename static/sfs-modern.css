@@ -121,6 +121,16 @@ span[status="ok"] { color: var(--green); }
 span[status="damaged"] { color: var(--red); }
 span[status="marked for removal"] { color: var(--yellow); }
 
+/* Chunk Matrix Styles */
+.DELETEREADY { color: #7e7b7b; }
+.DELETEPENDING { color: #9110e6; }
+.OVERGOAL { color: #c099ff; } /* Lighter purple for better contrast */
+.NORMAL { color: var(--green); }
+.UNDERGOAL { color: var(--orange); }
+.ENDANGERED { color: var(--yellow); }
+.MISSING { color: var(--red); }
+
+
 /* Header Table */
 table.HDR {
     width: 100%;

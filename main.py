@@ -6,13 +6,20 @@ import socket
 import traceback
 import logging
 from typing import List
+from datetime import datetime
+
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 from saunafs_client import SaunaFSClient
-from models import SystemInfo, Server, Disk, Mount
+from models import SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo, ChunkOperationsInfo, OperationStats, ChunkMatrix
+
+
+
+
+
 
 app = FastAPI()
 
@@ -30,6 +37,14 @@ def HumanizeBytes(num, suffix="B"):
     return f"{num:.1f}Y{suffix}"
 
 templates.env.filters["humanize_bytes"] = HumanizeBytes
+
+def format_timestamp(ts):
+    if not isinstance(ts, int) or ts == 0:
+        return "N/A"
+    return datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+
+templates.env.filters["format_timestamp"] = format_timestamp
+
 
 def GetClient(masterHost: str, masterPort: int) -> SaunaFSClient:
     try:
@@ -61,6 +76,30 @@ async def ApiGetMounts(masterHost: str = "127.0.0.1", masterPort: int = 9421):
     client = GetClient(masterHost, masterPort)
     return client.GetMounts()
 
+@app.get("/api/metadataservers", response_model=List[MetadataServer])
+async def ApiGetMetadataServers(masterHost: str = "127.0.0.1", masterPort: int = 9421):
+    client = GetClient(masterHost, masterPort)
+    return client.GetMetadataServers()
+
+@app.get("/api/fscheckinfo", response_model=FsCheckInfo)
+async def ApiGetFsCheckInfo(masterHost: str = "127.0.0.1", masterPort: int = 9421):
+    client = GetClient(masterHost, masterPort)
+    return client.GetFsCheckInfo()
+
+@app.get("/api/chunkoperationsinfo", response_model=ChunkOperationsInfo)
+async def ApiGetChunkOperationsInfo(masterHost: str = "127.0.0.1", masterPort: int = 9421):
+    client = GetClient(masterHost, masterPort)
+    return client.GetChunkOperationsInfo()
+
+@app.get("/api/chunkmatrix", response_model=ChunkMatrix)
+async def ApiGetChunkMatrix(masterHost: str = "127.0.0.1", masterPort: int = 9421):
+    client = GetClient(masterHost, masterPort)
+    return client.GetChunkMatrix()
+
+
+
+
+
 # --- Legacy UI Endpoints ---
 @app.get("/", response_class=HTMLResponse)
 async def ReadRoot():
@@ -70,7 +109,7 @@ async def ReadRoot():
     """
 
 @app.get("/sfs.cgi", response_class=HTMLResponse)
-async def GetSfsInfo(request: Request, masterhost: str = "127.0.0.1", masterport: int = 9421, mastername: str = "SaunaFS", sections: str = "IN|CS|HD|ML|MS|EX"):
+async def GetSfsInfo(request: Request, masterhost: str = "127.0.0.1", masterport: int = 9421, mastername: str = "SaunaFS", sections: str = "IN|CS|HD|ML|MS|EX|MO"):
     try:
         client = GetClient(masterhost, masterport)
 
@@ -83,14 +122,25 @@ async def GetSfsInfo(request: Request, masterhost: str = "127.0.0.1", masterport
         serversData = client.GetServers() if "CS" in activeSections else None
         disksData = client.GetDisks() if "HD" in activeSections else None
         metaloggersData = client.GetMetaloggers() if "ML" in activeSections else None
-        mountsData = client.GetMounts() if "MS" in activeSections else None
+        mountsData = client.GetMounts() if "MS" in activeSections or "MO" in activeSections else None
         exportsData = client.GetExports() if "EX" in activeSections else None
+        metadataServersData = client.GetMetadataServers() if "CS" in activeSections else None
+        fsCheckInfoData = client.GetFsCheckInfo() if "IN" in activeSections else None
+        chunkOperationsInfoData = client.GetChunkOperationsInfo() if "IN" in activeSections else None
+        chunkMatrixData = client.GetChunkMatrix() if "IN" in activeSections else None
+
+        op_names = list(OperationStats.model_fields.keys())
 
         context = {
             "request": request, "mastername": mastername, "masterhost": masterhost,
             "masterport": masterport, "sections": activeSections,
             "info": infoData, "servers": serversData, "disks": disksData,
             "metaloggers": metaloggersData, "mounts": mountsData, "exports": exportsData,
+            "metadata_servers": metadataServersData,
+            "fs_check_info": fsCheckInfoData,
+            "chunk_operations_info": chunkOperationsInfoData,
+            "chunk_matrix": chunkMatrixData,
+            "op_names": op_names,
             "error_message": None
         }
         return templates.TemplateResponse("sfs.html", context)

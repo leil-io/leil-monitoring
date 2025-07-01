@@ -2,8 +2,19 @@ import socket
 import struct
 import select
 import logging
-from typing import List, Tuple, Dict, Any
-from models import SystemInfo, Server, Disk, Metalogger, Mount, Export
+from typing import List, Tuple, Dict
+from models import (SystemInfo,
+                    Server,
+                    Disk,
+                    Metalogger,
+                    Mount,
+                    Export,
+                    MetadataServer,
+                    FsCheckInfo,
+                    ChunkOperationsInfo,
+                    OperationStats,
+                    ChunkMatrix)
+
 
 # Protocol constants
 PROTO_BASE = 0
@@ -19,13 +30,28 @@ CLTOMA_SESSION_LIST = (PROTO_BASE + 508)
 MATOCL_SESSION_LIST = (PROTO_BASE + 509)
 CLTOMA_EXPORTS_INFO = (PROTO_BASE + 520)
 MATOCL_EXPORTS_INFO = (PROTO_BASE + 521)
+CLTOMA_FSTEST_INFO = (PROTO_BASE + 512)
+MATOCL_FSTEST_INFO = (PROTO_BASE + 513)
+CLTOMA_CHUNKSTEST_INFO = (PROTO_BASE + 514)
+MATOCL_CHUNKSTEST_INFO = (PROTO_BASE + 515)
+CLTOMA_CHUNKS_MATRIX = (PROTO_BASE + 516)
+MATOCL_CHUNKS_MATRIX = (PROTO_BASE + 517)
+
+
 CUTOAN_CHART = (PROTO_BASE + 504)
 ANTOCU_CHART = (PROTO_BASE + 505)
 
 SAU_CLTOMA_CSERV_LIST = 1549
 SAU_MATOCL_CSERV_LIST = 1550
+SAU_CLTOMA_METADATASERVERS_LIST = 1522
+SAU_MATOCL_METADATASERVERS_LIST = 1523
+SAU_CLTOMA_METADATASERVER_STATUS = 1545
+SAU_MATOCL_METADATASERVER_STATUS = 1546
+SAU_CLTOMA_HOSTNAME = 1551
+SAU_MATOCL_HOSTNAME = 1552
 SAU_CLTOMA_MOUNT_INFO_LIST = 1609
 SAU_MATOCL_MOUNT_INFO_LIST = 1610
+
 
 # Message type constants
 INFO = (CLTOMA_INFO, MATOCL_INFO)
@@ -278,10 +304,22 @@ class SaunaFSClient:
             mingoal, maxgoal, mintrashtime, maxtrashtime = struct.unpack(">BBLL", buffer[:10])
             del buffer[:10]
 
-            # Skip the stats data
-            statsToSkip = 8 * statsCount
-            if len(buffer) < statsToSkip: break
-            del buffer[:statsToSkip]
+            current_op_stats_list = []
+            for _ in range(statsCount):
+                stat, = struct.unpack(">L", buffer[:4])
+                current_op_stats_list.append(stat)
+                del buffer[:4]
+
+            current_op_stats = self.getOperationStatsFromList(current_op_stats_list)
+
+            last_hour_op_stats_list = []
+            for _ in range(statsCount):
+                stat, = struct.unpack(">L", buffer[:4])
+                last_hour_op_stats_list.append(stat)
+                del buffer[:4]
+
+            last_hour_op_stats = self.getOperationStatsFromList(current_op_stats_list)
+
 
             ipAddress = f"{ip1}.{ip2}.{ip3}.{ip4}"
             try:
@@ -305,7 +343,8 @@ class SaunaFSClient:
                 ip_address=ipAddress, root_path=root_path, mounted_path=mountedPath, version=f"{v1}.{v2}.{v3}",
                 mount_info=mount_info, flags=", ".join(flags), root_uid=rootuid, root_gid=rootgid,
                 map_all_uid=mapalluid, map_all_gid=mapallgid, min_goal=mingoal, max_goal=maxgoal,
-                min_trash_time=mintrashtime, max_trash_time=maxtrashtime
+                min_trash_time=mintrashtime, max_trash_time=maxtrashtime,
+                current_op_stats=current_op_stats, last_hour_op_stats=last_hour_op_stats
             ))
         return allMounts
 
@@ -350,3 +389,146 @@ class SaunaFSClient:
             ))
             i += 1
         return allExports
+
+    def GetFsCheckInfo(self) -> FsCheckInfo:
+        data = self._SendAndReceive(self.masterHost, self.masterPort, (CLTOMA_FSTEST_INFO, MATOCL_FSTEST_INFO))
+        buffer = bytearray(data)
+        loop_start, loop_end, files, ugfiles, mfiles, chunks, ugchunks, mchunks, msgbuffleng = struct.unpack(">LLLLLLLLL", buffer[:36])
+        del buffer[:36]
+        message = buffer.decode('utf-8', errors='replace')
+        
+        return FsCheckInfo(
+            loop_start=loop_start,
+            loop_end=loop_end,
+            files=files,
+            under_goal_files=ugfiles,
+            missing_files=mfiles,
+            chunks=chunks,
+            under_goal_chunks=ugchunks,
+            missing_chunks=mchunks,
+            message=message
+        )
+
+    def GetChunkOperationsInfo(self) -> ChunkOperationsInfo:
+        data = self._SendAndReceive(self.masterHost, self.masterPort, (CLTOMA_CHUNKSTEST_INFO, MATOCL_CHUNKSTEST_INFO))
+        buffer = bytearray(data)
+        loop_start, loop_end, del_invalid, ndel_invalid, del_unused, ndel_unused, del_dclean, ndel_dclean, del_ogoal, ndel_ogoal, rep_ugoal, nrep_ugoal, rebalnce = struct.unpack(">LLLLLLLLLLLLL", buffer[:52])
+        
+        return ChunkOperationsInfo(
+            loop_start=loop_start,
+            loop_end=loop_end,
+            delete_invalid=del_invalid,
+            not_delete_invalid=ndel_invalid,
+            delete_unused=del_unused,
+            not_delete_unused=ndel_unused,
+            delete_disk_clean=del_dclean,
+            not_delete_disk_clean=ndel_dclean,
+            delete_over_goal=del_ogoal,
+            not_delete_over_goal=ndel_ogoal,
+            replicate_under_goal=rep_ugoal,
+            not_replicate_under_goal=nrep_ugoal,
+            rebalance=rebalnce
+        )
+
+    def GetChunkMatrix(self) -> ChunkMatrix:
+        payload = struct.pack(">B", 0)
+        data = self._SendAndReceive(self.masterHost, self.masterPort, (CLTOMA_CHUNKS_MATRIX, MATOCL_CHUNKS_MATRIX), payload)
+        buffer = bytearray(data)
+        
+        matrix = []
+        for _ in range(11):
+            row = list(struct.unpack(">LLLLLLLLLLL", buffer[:44]))
+            matrix.append(row)
+            del buffer[:44]
+            
+        return ChunkMatrix(matrix=matrix)
+
+    def GetMetadataServers(self) -> List[MetadataServer]:
+        servers = []
+        
+        # Add the master server
+        master_ip = socket.gethostbyname(self.masterHost)
+        master_v1, master_v2, master_v3 = self.masterVersion
+        master_personality, master_state, master_metadata_version = self.GetMetadataServerStatus(self.masterHost, self.masterPort)
+        
+        servers.append(MetadataServer(
+            id=1,
+            hostname=self.masterHost,
+            ip_address=master_ip,
+            port=self.masterPort,
+            version=f"{master_v1}.{master_v2}.{master_v3}",
+            personality=master_personality,
+            state=master_state,
+            metadata_version=master_metadata_version
+        ))
+
+        # Get shadow servers
+        request = struct.pack(">LLL", SAU_CLTOMA_METADATASERVERS_LIST, 4, 0)
+        data = self._SendAndReceive(self.masterHost, self.masterPort, (SAU_CLTOMA_METADATASERVERS_LIST, SAU_MATOCL_METADATASERVERS_LIST), b"")
+        buffer = bytearray(data)
+        master_version, = struct.unpack(">L", buffer[:4])
+        del buffer[:4]
+        vector_size, = struct.unpack(">L", buffer[:4])
+        del buffer[:4]
+        logging.debug(f"GetMetadataServers vector_size: {vector_size}")
+
+        for i in range(vector_size):
+            ip, port, v1, v2, v3 = struct.unpack(">LHHBB", buffer[:10])
+            del buffer[:10]
+            ip_str = socket.inet_ntoa(struct.pack(">L", ip))
+            try:
+                hostname = socket.gethostbyaddr(ip_str)[0]
+            except socket.herror:
+                hostname = "(unresolved)"
+            
+            personality, state, metadata_version = self.GetMetadataServerStatus(ip_str, port)
+
+            servers.append(MetadataServer(
+                id=i + 2,
+                hostname=hostname,
+                ip_address=ip_str,
+                port=port,
+                version=f"{v1}.{v2}.{v3}",
+                personality=personality,
+                state=state,
+                metadata_version=metadata_version
+            ))
+        
+        return servers
+
+    def GetMetadataServerStatus(self, host: str, port: int) -> Tuple[str, str, int]:
+        payload = struct.pack(">L", 0)
+        data = self._SendAndReceive(host, port, (SAU_CLTOMA_METADATASERVER_STATUS, SAU_MATOCL_METADATASERVER_STATUS), payload)
+        buffer = bytearray(data)
+        _, status, metadata_version = struct.unpack(">LBQ", buffer)
+
+        if status == 1:
+            return ("master", "running", metadata_version)
+        elif status == 2:
+            return ("shadow", "connected", metadata_version)
+        elif status == 3:
+            return ("shadow", "disconnected", metadata_version)
+        else:
+            return ("(unknown)", "(unknown)", metadata_version)
+
+    def getOperationStatsFromList(self, list: List[int]) -> OperationStats:
+        stats = OperationStats(
+            statfs=list[0],
+            getattr=list[1],
+            setattr=list[2],
+            lookup=list[3],
+            mkdir=list[4],
+            rmdir=list[5],
+            symlink=list[6],
+            readlink=list[7],
+            mknod=list[8],
+            unlink=list[9],
+            rename=list[10],
+            link=list[11],
+            readdir=list[12],
+            open=list[13],
+            read=list[14],
+            write=list[15],
+            total=sum(list)
+        )
+        return stats

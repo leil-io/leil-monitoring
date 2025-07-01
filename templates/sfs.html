@@ -60,8 +60,158 @@
             <br/>
             {% endif %}
 
+            <!-- Chunk Operations Info Table -->
+            {% if chunk_operations_info and chunk_operations_info.loop_start > 0 %}
+            <table class="FR" cellspacing="0" summary="Chunk Operations Info">
+                <tr><th colspan="8">Chunk Operations Info</th></tr>
+                <tr>
+                    <th colspan="2">Loop Time</th>
+                    <th colspan="4">Deletions</th>
+                    <th colspan="2">Replications</th>
+                </tr>
+                <tr>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Invalid</th>
+                    <th>Unused</th>
+                    <th>Disk Clean</th>
+                    <th>Over Goal</th>
+                    <th>Under Goal</th>
+                    <th>Rebalance</th>
+                </tr>
+                <tr>
+                    <td align="center">{{ chunk_operations_info.loop_start | format_timestamp }}</td>
+                    <td align="center">{{ chunk_operations_info.loop_end | format_timestamp }}</td>
+                    <td align="right">{{ chunk_operations_info.delete_invalid }}/{{ chunk_operations_info.delete_invalid + chunk_operations_info.not_delete_invalid }}</td>
+                    <td align="right">{{ chunk_operations_info.delete_unused }}/{{ chunk_operations_info.delete_unused + chunk_operations_info.not_delete_unused }}</td>
+                    <td align="right">{{ chunk_operations_info.delete_disk_clean }}/{{ chunk_operations_info.delete_disk_clean + chunk_operations_info.not_delete_disk_clean }}</td>
+                    <td align="right">{{ chunk_operations_info.delete_over_goal }}/{{ chunk_operations_info.delete_over_goal + chunk_operations_info.not_delete_over_goal }}</td>
+                    <td align="right">{{ chunk_operations_info.replicate_under_goal }}/{{ chunk_operations_info.replicate_under_goal + chunk_operations_info.not_replicate_under_goal }}</td>
+                    <td align="right">{{ chunk_operations_info.rebalance }}</td>
+                </tr>
+            </table>
+            <br/>
+            {% endif %}
+
+            <!-- Chunk Matrix Table -->
+            {% if chunk_matrix %}
+            <table class="FR" cellspacing="0" summary="Chunks state matrix">
+                <tr><th colspan="13">All chunks state matrix </th></tr>
+                <tr>
+                    <th rowspan="2" class="PERC4">needed<br/>copies</th>
+                    <th colspan="12" class="PERC96">valid copies (non-XOR chunks only)</th>
+                </tr>
+                <tr>
+                    <th class="PERC8">0</th>
+                    <th class="PERC8">1</th>
+                    <th class="PERC8">2</th>
+                    <th class="PERC8">3</th>
+                    <th class="PERC8">4</th>
+                    <th class="PERC8">5</th>
+                    <th class="PERC8">6</th>
+                    <th class="PERC8">7</th>
+                    <th class="PERC8">8</th>
+                    <th class="PERC8">9</th>
+                    <th class="PERC8">10+</th>
+                    <th class="PERC8">all</th>
+                </tr>
+                {% for i in range(11) %}
+                <tr>
+                    <td align="center">{{ i if i < 10 else "10+" }}</td>
+                    {% for j in range(11) %}
+                    {% set value = chunk_matrix.matrix[i][j] %}
+                    {% if i == 0 %}
+                        {% if j == 0 %}
+                            {% set class = "DELETEREADY" %}
+                        {% else %}
+                            {% set class = "DELETEPENDING" %}
+                        {% endif %}
+                    {% elif j == 0 %}
+                        {% set class = "MISSING" %}
+                    {% elif j > i %}
+                        {% set class = "OVERGOAL" %}
+                    {% elif j < i %}
+                        {% if j == 1 %}
+                            {% set class = "ENDANGERED" %}
+                        {% else %}
+                            {% set class = "UNDERGOAL" %}
+                        {% endif %}
+                    {% else %}
+                        {% set class = "NORMAL" %}
+                    {% endif %}
+                    <td align="right"><span class="{{ class }}">{{ value if value > 0 else "-" }}</span></td>
+                    {% endfor %}
+                    <td align="right">{{ chunk_matrix.matrix[i] | sum }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <br/>
+            {% endif %}
+
+            <!-- Filesystem Check Info Table -->
+            {% if fs_check_info and fs_check_info.loop_start > 0 %}
+            <table class="FR" cellspacing="0" summary="Filesystem Check Info">
+                <tr><th colspan="8">Filesystem Check Info</th></tr>
+                <tr>
+                    <th>Check Loop Start Time</th>
+                    <th>Check Loop End Time</th>
+                    <th>Files</th>
+                    <th>Under-Goal Files</th>
+                    <th>Missing Files</th>
+                    <th>Chunks</th>
+                    <th>Under-Goal Chunks</th>
+                    <th>Missing Chunks</th>
+                </tr>
+                <tr>
+                    <td align="center">{{ fs_check_info.loop_start | format_timestamp }}</td>
+                    <td align="center">{{ fs_check_info.loop_end | format_timestamp }}</td>
+                    <td align="right">{{ fs_check_info.files }}</td>
+                    <td align="right">{{ fs_check_info.under_goal_files }}</td>
+                    <td align="right">{{ fs_check_info.missing_files }}</td>
+                    <td align="right">{{ fs_check_info.chunks }}</td>
+                    <td align="right">{{ fs_check_info.under_goal_chunks }}</td>
+                    <td align="right">{{ fs_check_info.missing_chunks }}</td>
+                </tr>
+                {% if fs_check_info.message %}
+                <tr>
+                    <th colspan="8">Important Messages</th>
+                </tr>
+                <tr>
+                    <td colspan="8" align="left"><pre>{{ fs_check_info.message }}</pre></td>
+                </tr>
+                {% endif %}
+            </table>
+            <br/>
+            {% endif %}
+
             <!-- Chunk Servers Table -->
             {% if servers %}
+            <table class="FR" cellspacing="0" summary="Metadata Servers">
+                <tr><th colspan="8">Metadata Servers</th></tr>
+                <tr>
+                    <th>#</th>
+                    <th>Host</th>
+                    <th>IP</th>
+                    <th>Client Port</th>
+                    <th>Version</th>
+                    <th>Personality</th>
+                    <th>State</th>
+                    <th>Metadata Version</th>
+                </tr>
+                {% for server in metadata_servers %}
+                <tr class="C{{ loop.index % 2 + 1 }}">
+                    <td align="right">{{ server.id }}</td>
+                    <td align="left">{{ server.hostname }}</td>
+                    <td align="center">{{ server.ip_address }}</td>
+                    <td align="center">{{ server.port }}</td>
+                    <td align="center">{{ server.version }}</td>
+                    <td align="center">{{ server.personality }}</td>
+                    <td align="center">{{ server.state }}</td>
+                    <td align="right">{{ server.metadata_version }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <br/>
             <table class="FR" cellspacing="0" summary="Chunk Servers">
                 <tr><th colspan="14">Chunk Servers</th></tr>
                 <tr>
@@ -198,6 +348,58 @@
                             <pre style="white-space: pre-wrap; word-wrap: break-word;">{{ mount.mount_info }}</pre>
                         </div>
                     </td>
+                </tr>
+                {% endfor %}
+            </table>
+            <br/>
+            {% endif %}
+
+            <!-- Operations Table -->
+            {% if "MO" in sections and mounts %}
+            <table class="FR" cellspacing="0" summary="Operations">
+                <tr><th colspan="{{ 4 + op_names | length }}">Operations (current)</th></tr>
+                <tr>
+                    <th>#</th>
+                    <th>Host</th>
+                    <th>IP</th>
+                    <th>Mounted Path</th>
+                    {% for op_name in op_names %}
+                    <th>{{ op_name }}</th>
+                    {% endfor %}
+                </tr>
+                {% for mount in mounts %}
+                <tr class="C{{ loop.index % 2 + 1 }}">
+                    <td align="right">{{ mount.id }}</td>
+                    <td align="left">{{ mount.hostname }}</td>
+                    <td align="center">{{ mount.ip_address }}</td>
+                    <td align="left">{{ mount.mounted_path }}</td>
+                    {% for op_name in op_names %}
+                    <td align="right">{{ mount.current_op_stats[op_name] }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </table>
+            <br/>
+            <table class="FR" cellspacing="0" summary="Operations">
+                <tr><th colspan="{{ 4 + op_names | length }}">Operations (last hour)</th></tr>
+                <tr>
+                    <th>#</th>
+                    <th>Host</th>
+                    <th>IP</th>
+                    <th>Mounted Path</th>
+                    {% for op_name in op_names %}
+                    <th>{{ op_name }}</th>
+                    {% endfor %}
+                </tr>
+                {% for mount in mounts %}
+                <tr class="C{{ loop.index % 2 + 1 }}">
+                    <td align="right">{{ mount.id }}</td>
+                    <td align="left">{{ mount.hostname }}</td>
+                    <td align="center">{{ mount.ip_address }}</td>
+                    <td align="left">{{ mount.mounted_path }}</td>
+                    {% for op_name in op_names %}
+                    <td align="right">{{ mount.last_hour_op_stats[op_name] }}</td>
+                    {% endfor %}
                 </tr>
                 {% endfor %}
             </table>

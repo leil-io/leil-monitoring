@@ -56,4 +56,20 @@ class Mount(BaseModel):
     mounted_path: str
     version: str
     mount_info: str
+    flags: str
+    root_uid: int
+    root_gid: int
+    map_all_uid: int
+    map_all_gid: int
+    min_goal: Optional[int] = None
+    max_goal: Optional[int] = None
+    min_trash_time: Optional[int] = None
+    max_trash_time: Optional[int] = None
+
+class Export(BaseModel):
+    id: int
+    ip_from: str
+    ip_to: str
+    path: str
+    flags: str
 

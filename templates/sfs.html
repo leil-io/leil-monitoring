@@ -5,7 +5,7 @@
     <title>SaunaFS Info ({{ mastername }})</title>
     <link href="/static/favicon.ico" rel="icon" sizes="any" />
     <link href="/static/favicon.svg" rel="icon" type="image/svg+xml" />
-    <link rel="stylesheet" href="/static/sfs.css" type="text/css" />
+    <link rel="stylesheet" href="/static/sfs-modern.css" type="text/css" />
 </head>
 <body>
     <div id="header">
@@ -155,20 +155,69 @@
             <!-- Mounts Table -->
             {% if mounts %}
             <table class="FR" cellspacing="0" summary="Connected Clients">
-                <tr><th colspan="7">Connected Clients (Mounts)</th></tr>
+                <tr><th colspan="15">Connected Clients (Mounts)</th></tr>
                 <tr>
-                    <th>#</th><th>Session ID</th><th>Host</th><th>IP</th>
-                    <th>Version</th><th>Mounted Path</th><th>Mount Info</th>
+                    <th>#</th>
+                    <th>Session ID</th>
+                    <th>Host</th>
+                    <th>IP</th>
+                    <th>Version</th>
+                    <th>Mounted Path</th>
+                    <th>Root UID</th>
+                    <th>Root GID</th>
+                    <th>MapAll UID</th>
+                    <th>MapAll GID</th>
+                    <th>Min Goal</th>
+                    <th>Max Goal</th>
+                    <th>Min Trash Time</th>
+                    <th>Max Trash Time</th>
+                    <th>Mount Info</th>
                 </tr>
                 {% for mount in mounts %}
-                <tr class="C{{ loop.index % 2 + 1 }}">
+                <tr class="C{{ loop.index % 2 + 1 }}" onclick="ToggleMountInfo('mount-info-{{ loop.index }}')" style="cursor: pointer;">
                     <td align="right">{{ mount.id }}</td>
                     <td align="right">{{ mount.session_id }}</td>
                     <td align="left">{{ mount.hostname }}</td>
                     <td align="center">{{ mount.ip_address }}</td>
                     <td align="center">{{ mount.version }}</td>
                     <td align="left">{{ mount.mounted_path }}</td>
-                    <td align="left">{{ mount.mount_info }}</td>
+                    <td align="left">{{ mount.root_uid}}</td>
+                    <td align="left">{{ mount.root_gid }}</td>
+                    <td align="left">{{ mount.map_all_uid }}</td>
+                    <td align="left">{{ mount.map_all_gid }}</td>
+                    <td align="left">{{ mount.min_goal }}</td>
+                    <td align="left">{{ mount.max_goal }}</td>
+                    <td align="left">{{ mount.min_trash_time }}</td>
+                    <td align="left">{{ mount.max_trash_time }}</td>
+                    <td align="left">Click to view</td>
+                </tr>
+                <tr id="mount-info-{{ loop.index }}" style="display: none;">
+                    <td colspan="15">
+                        <div style="text-align: left; padding: 10px;">
+                            <hr>
+                            <pre style="white-space: pre-wrap; word-wrap: break-word;">{{ mount.mount_info }}</pre>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            <br/>
+            {% endif %}
+
+            <!-- Exports Table -->
+            {% if exports %}
+            <table class="FR" cellspacing="0" summary="Exports">
+                <tr><th colspan="5">Exports</th></tr>
+                <tr>
+                    <th>#</th><th>IP From</th><th>IP To</th><th>Path</th><th>Flags</th>
+                </tr>
+                {% for export in exports %}
+                <tr class="C{{ loop.index % 2 + 1 }}">
+                    <td align="right">{{ export.id }}</td>
+                    <td align="center">{{ export.ip_from }}</td>
+                    <td align="center">{{ export.ip_to }}</td>
+                    <td align="left">{{ export.path }}</td>
+                    <td align="left">{{ export.flags }}</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -177,5 +226,19 @@
 
         {% endif %}
     </div>
+
+<script>
+function ToggleMountInfo(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) {
+        if (row.style.display === 'none') {
+            row.style.display = 'table-row';
+        } else {
+            row.style.display = 'none';
+        }
+    }
+}
+</script>
+
 </body>
 </html>

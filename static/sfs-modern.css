@@ -1,0 +1,138 @@
+/* sfs-modern.css - A modern, dark theme for the SaunaFS monitoring page */
+
+:root {
+    --bg-color: #1a1b26; /* Dark background */
+    --fg-color: #a9b1d6; /* Lighter text for readability */
+    --table-bg: #24283b; /* Slightly lighter background for tables */
+    --header-bg: #1f2335;
+    --border-color: #414868;
+    --accent-color: #7aa2f7; /* A nice blue for links and highlights */
+    --green: #9ece6a;
+    --orange: #ff9e64;
+    --red: #f7768e;
+    --yellow: #e0af68;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--fg-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+#header {
+    background-color: var(--header-bg);
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+}
+
+#container {
+    padding: 20px;
+}
+
+a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* Table Styles */
+table.FR {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto 20px auto;
+    border-collapse: collapse;
+    background-color: var(--table-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+table.FR th, table.FR td {
+    padding: 12px 15px;
+    text-align: left;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+}
+
+table.FR th {
+    background-color: var(--header-bg);
+    color: var(--fg-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85em;
+    letter-spacing: 0.5px;
+}
+
+table.FR tr:last-child td {
+    border-bottom: none;
+}
+
+table.FR tr.C1 {
+    background-color: var(--table-bg);
+}
+table.FR tr.C2 {
+    background-color: #2a2f41; /* Zebra striping */
+}
+
+table.FR tr:hover {
+    background-color: #3b4261;
+}
+
+/* Progress Bar Styles */
+.box {
+    position: relative;
+    background-color: #414868;
+    border-radius: 4px;
+    height: 20px;
+    width: 100%;
+    min-width: 150px;
+    overflow: hidden;
+}
+.box .progress {
+    background-color: var(--accent-color);
+    height: 100%;
+    transition: width 0.3s ease-in-out;
+}
+.box .value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 0.8em;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Status Indicators */
+.DISCONNECTED {
+    color: var(--red);
+    font-weight: bold;
+}
+span[status="ok"] { color: var(--green); }
+span[status="damaged"] { color: var(--red); }
+span[status="marked for removal"] { color: var(--yellow); }
+
+/* Header Table */
+table.HDR {
+    width: 100%;
+    border: none;
+}
+table.HDR td {
+    border: none;
+    padding: 0;
+}
+td.LOGO img {
+    vertical-align: middle;
+}
+td.MENU {
+    padding-left: 20px;
+}

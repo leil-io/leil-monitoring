@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, Response, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import socket
@@ -7,24 +7,26 @@ import traceback
 import logging
 from typing import List
 from datetime import datetime
+import pathlib
+from saunafs_client import SaunaFSClient
+from models import (
+    SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo,
+    ChunkOperationsInfo, OperationStats, ChunkMatrix
+)
 
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-
-from saunafs_client import SaunaFSClient
-from models import SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo, ChunkOperationsInfo, OperationStats, ChunkMatrix
-
-
-
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = pathlib.Path(__file__).parent.resolve()
 
 
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 # --- Helper Functions ---
 def HumanizeBytes(num, suffix="B"):
@@ -101,12 +103,9 @@ async def ApiGetChunkMatrix(masterHost: str = "127.0.0.1", masterPort: int = 942
 
 
 # --- Legacy UI Endpoints ---
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def ReadRoot():
-    return """
-    <html><head><meta http-equiv="refresh" content="0;url=/sfs.cgi" /></head>
-    <body><p>Redirecting to <a href="/sfs.cgi">/sfs.cgi</a>.</p></body></html>
-    """
+    return RedirectResponse(url="/sfs.cgi")
 
 @app.get("/sfs.cgi", response_class=HTMLResponse)
 async def GetSfsInfo(request: Request, masterhost: str = "127.0.0.1", masterport: int = 9421, mastername: str = "SaunaFS", sections: str = "IN|CS|HD|ML|MS|EX|MO"):

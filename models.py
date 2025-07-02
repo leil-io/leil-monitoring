@@ -1,5 +1,8 @@
+from __future__ import annotations
 from pydantic import BaseModel
 from typing import List, Optional
+from deserializer import unpack_primitive, unpack_string, unpack_list, DeserializationError
+import struct
 
 class SystemInfo(BaseModel):
     version: str
@@ -18,6 +21,22 @@ class SystemInfo(BaseModel):
     all_copies: int
     regular_copies: int
 
+    @classmethod
+    def from_buffer(cls, buffer: bytearray, is_legacy: bool = False) -> SystemInfo:
+        try:
+            v1, v2, v3, mem, total, avail, trspace, trfiles, respace, refiles, nodes, dirs, files, symlinks, chunks, allcopies, tdcopies = unpack_primitive(
+                "HBBQQQQLQLLLLLLLL", buffer
+            )
+            return cls(
+                version=f"{v1}.{v2}.{v3}", ram_used=mem, total_space=total, avail_space=avail,
+                trash_space=trspace, trash_files=trfiles, reserved_space=respace, reserved_files=refiles,
+                total_objects=nodes, directories=dirs, files=files, symlinks=symlinks, chunks=chunks,
+                all_copies=allcopies, regular_copies=tdcopies,
+            )
+        except DeserializationError as e:
+            raise DeserializationError(f"Failed to deserialize SystemInfo: {e}")
+
+
 class Server(BaseModel):
     id: int
     hostname: str
@@ -34,6 +53,52 @@ class Server(BaseModel):
     chunks_tobedeleted: int
     error_count: int
 
+    @classmethod
+    def from_buffer(cls, buffer: bytearray, is_legacy: bool = False) -> Server:
+        import socket # Local import to avoid circular dependency issues
+        try:
+            if is_legacy:
+                # Handle older MATOCL_CSERV_LIST format if needed
+                # This is a placeholder for the V2 format (SAU_MATOCL_CSERV_LIST)
+                raise NotImplementedError("Legacy server deserialization not implemented")
+
+            # Unpack the main server data structure
+            disconnected, v1, v2, v3, ip1, ip2, ip3, ip4, port, used, total, chunks, tdused, tdtotal, tdchunks, errcnt, label_length = unpack_primitive(
+                "BBBBBBBBHQQLQQLLL", buffer
+            )
+
+            # Unpack the label string
+            if len(buffer) < label_length:
+                raise DeserializationError(f"Buffer too short for server label. Need {label_length}, have {len(buffer)}.")
+            label = buffer[:label_length-1].decode('utf-8', errors='replace')
+            del buffer[:label_length]
+
+            ip_address = f"{ip1}.{ip2}.{ip3}.{ip4}"
+            try:
+                hostname = socket.gethostbyaddr(ip_address)[0]
+            except (socket.herror, socket.gaierror):
+                hostname = "(unresolved)"
+
+            return cls(
+                id=0, # ID will be assigned by the caller
+                hostname=hostname,
+                ip_address=ip_address,
+                port=port,
+                version=f"{v1}.{v2}.{v3}",
+                is_disconnected=bool(disconnected),
+                label=label,
+                used_space=used,
+                total_space=total,
+                chunks=chunks,
+                used_space_tobedeleted=tdused,
+                total_space_tobedeleted=tdtotal,
+                chunks_tobedeleted=tdchunks,
+                error_count=errcnt
+            )
+        except DeserializationError as e:
+            raise DeserializationError(f"Failed to deserialize Server: {e}")
+
+
 class Disk(BaseModel):
     path: str
     status: str
@@ -41,6 +106,47 @@ class Disk(BaseModel):
     total_space: int
     used_space: int
     chunks: int
+
+    @classmethod
+    def from_buffer(cls, buffer: bytearray, is_legacy: bool = False) -> Disk:
+        entrySize, = unpack_primitive("H", buffer[:2])
+        del buffer[:2]
+        if len(buffer) < entrySize:
+            raise DeserializationError(f"Buffer too short for disk entry. Need {entrySize}, have {len(buffer)}.")
+
+        entryBuffer = bytearray(buffer[:entrySize])
+        del buffer[:entrySize]
+
+        pathLen = entryBuffer[0]
+        del entryBuffer[0]
+        path = entryBuffer[:pathLen].decode('utf-8')
+        del entryBuffer[:pathLen]
+
+        flags, errchunkid, errtime, used, total, chunkscnt, = unpack_primitive(
+            "BQLQQL", entryBuffer
+        )
+
+        status = "ok"
+        if flags == 1:
+            status = 'marked for removal'
+        elif flags == 2:
+            status = 'damaged'
+        elif flags == 3:
+            status = 'damaged, marked for removal'
+
+        last_error = "no errors"
+        if errtime > 0:
+            last_error = f"{errtime} on chunk: {errchunkid}"
+
+        return cls(
+            path=path,
+            status=status,
+            last_error=last_error,
+            total_space=total,
+            used_space=used,
+            chunks=chunkscnt
+        )
+
 
 class Metalogger(BaseModel):
     id: int
@@ -89,12 +195,14 @@ class Mount(BaseModel):
     current_op_stats: Optional[OperationStats] = None
     last_hour_op_stats: Optional[OperationStats] = None
 
+
 class Export(BaseModel):
     id: int
     ip_from: str
     ip_to: str
     path: str
     flags: str
+
 
 class MetadataServer(BaseModel):
     id: int
@@ -105,6 +213,7 @@ class MetadataServer(BaseModel):
     personality: str
     state: str
     metadata_version: int
+
 
 class FsCheckInfo(BaseModel):
     loop_start: int
@@ -133,6 +242,6 @@ class ChunkOperationsInfo(BaseModel):
     not_replicate_under_goal: int
     rebalance: int
 
+
 class ChunkMatrix(BaseModel):
     matrix: List[List[int]]
-

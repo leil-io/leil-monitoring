@@ -14,6 +14,7 @@ from models import (SystemInfo,
                     ChunkOperationsInfo,
                     OperationStats,
                     ChunkMatrix)
+from deserializer import unpack_list
 
 
 # Protocol constants
@@ -63,6 +64,7 @@ SESSION_LIST = (CLTOMA_SESSION_LIST, MATOCL_SESSION_LIST)
 CHART = (CUTOAN_CHART, ANTOCU_CHART)
 EXPORTS_INFO = (CLTOMA_EXPORTS_INFO, MATOCL_EXPORTS_INFO)
 MOUNT_INFO_LIST = (SAU_CLTOMA_MOUNT_INFO_LIST, SAU_MATOCL_MOUNT_INFO_LIST)
+
 
 class SaunaFSClient:
     def __init__(self, masterHost: str, masterPort: int):
@@ -129,20 +131,24 @@ class SaunaFSClient:
 
     def _DeserializeString(self, buffer: bytearray, legacy: bool = False) -> str:
         if legacy:
-            if not buffer: raise ValueError("Legacy string buffer is empty")
+            if not buffer:
+                raise ValueError("Legacy string buffer is empty")
             length, = struct.unpack(">L", buffer[:4])
             logging.debug(f"Deserializing legacy string with length: {length}")
             del buffer[:4]
-            if len(buffer) < length: raise ValueError("Buffer too short for legacy string")
+            if len(buffer) < length:
+                raise ValueError("Buffer too short for legacy string")
             value = buffer[:length].decode('utf-8', errors='replace')
             del buffer[:length]
             return value
         else:
-            if len(buffer) < 4: raise ValueError("Buffer too short for V2 string length")
+            if len(buffer) < 4:
+                raise ValueError("Buffer too short for V2 string length")
             length, = struct.unpack(">L", buffer[:4])
             del buffer[:4]
-            if len(buffer) < length: raise ValueError(f"Buffer too short for V2 string data. Expected {length}, got {len(buffer)}")
-            value = buffer[:length-1].decode('utf-8', errors='replace')
+            if len(buffer) < length:
+                raise ValueError(f"Buffer too short for V2 string data. Expected {length}, got {len(buffer)}")
+            value = buffer[:length - 1].decode('utf-8', errors='replace')
             del buffer[:length]
             return value
 
@@ -158,86 +164,35 @@ class SaunaFSClient:
 
     def GetSystemInfo(self) -> SystemInfo:
         data = self._SendAndReceive(self.masterHost, self.masterPort, INFO)
-        if len(data) == 80:
-            v1, v2, v3, mem, total, avail, trspace, trfiles, respace, refiles, nodes, dirs, files, symlinks, chunks, allcopies, tdcopies = struct.unpack(">HBBQQQQLQLLLLLLLL", data)
-            return SystemInfo(
-                version=f"{v1}.{v2}.{v3}", ram_used=mem, total_space=total, avail_space=avail,
-                trash_space=trspace, trash_files=trfiles, reserved_space=respace, reserved_files=refiles,
-                total_objects=nodes, directories=dirs, files=files, symlinks=symlinks, chunks=chunks,
-                all_copies=allcopies, regular_copies=tdcopies,
-            )
-        raise RuntimeError("Could not decode system info from master.")
+        buffer = bytearray(data)
+        return SystemInfo.from_buffer(buffer)
 
     def GetServers(self) -> List[Server]:
-        servers = []
-        cmd = SAU_CSERV_LIST
-        payload = b'\x00'
-
-        data = self._SendAndReceive(self.masterHost, self.masterPort, cmd, payload)
-
+        payload = b'\x00'  # Dummy, must be included
+        data = self._SendAndReceive(
+            self.masterHost, self.masterPort, SAU_CSERV_LIST, payload, version=0
+        )
         buffer = bytearray(data)
-        if len(buffer) < 4:
-            return []
-        vectorSize, = struct.unpack(">L", buffer[:4])
-        logging.debug(f"GetServers vector_size: {vectorSize}")
-        del buffer[:4]
 
-        for i in range(int(vectorSize)):
-            if len(buffer) < 58:
-                break
-            disconnected, v1, v2, v3, ip1, ip2, ip3, ip4, port, used, total, chunks, tdused, tdtotal, tdchunks, errcnt = struct.unpack(">BBBBBBBBHQQLQQLL", buffer[:54])
-            del buffer[:54]
-            label = self._DeserializeString(buffer)
+        servers = unpack_list(buffer, Server)
 
-            ipAddress = f"{ip1}.{ip2}.{ip3}.{ip4}"
-            try:
-                hostname = socket.gethostbyaddr(ipAddress)[0]
-            except socket.herror:
-                hostname = "(unresolved)"
+        for i, server in enumerate(servers):
+            server.id = i + 1
 
-            servers.append(Server(
-                id=i + 1, hostname=hostname, ip_address=ipAddress, port=port,
-                version=f"{v1}.{v2}.{v3}", is_disconnected=bool(disconnected),
-                label=label, used_space=used, total_space=total, chunks=chunks,
-                used_space_tobedeleted=tdused, total_space_tobedeleted=tdtotal,
-                chunks_tobedeleted=tdchunks, error_count=errcnt
-            ))
         return servers
 
     def GetDisks(self) -> List[Disk]:
         allDisks = []
         for server in self.GetServers():
-            if server.is_disconnected: continue
-            try:
-                data = self._SendAndReceive(server.ip_address, server.port, HDD_LIST)
-                buffer = bytearray(data)
-                while len(buffer) > 2:
-                    entrysize, = struct.unpack(">H", buffer[:2])
-                    del buffer[:2]
-                    if len(buffer) < entrysize: break
-                    entry = buffer[:entrysize]
-                    del buffer[:entrysize]
-
-                    plen = entry[0]
-                    path = entry[1:1+plen].decode('utf-8', errors='replace')
-
-                    flags, errchunkid, errtime, used, total, chunkscnt = struct.unpack(">BQLQQL", entry[plen+1:plen+34])
-
-                    status = "ok"
-                    if flags == 1: status = 'marked for removal'
-                    elif flags == 2: status = 'damaged'
-                    elif flags == 3: status = 'damaged, marked for removal'
-
-                    lastError = "no errors"
-                    if errtime > 0:
-                        lastError = f"{errtime} on chunk: {errchunkid}"
-
-                    allDisks.append(Disk(
-                        path=f"{server.hostname}:{path}", status=status, last_error=lastError,
-                        total_space=total, used_space=used, chunks=chunkscnt
-                    ))
-            except Exception:
+            if server.is_disconnected:
                 continue
+            data = self._SendAndReceive(server.ip_address, server.port, (CLTOCS_HDD_LIST_V2, MATOCL_HDD_LIST_V2))
+            buffer = bytearray(data)
+            print(buffer)
+            while len(buffer) > 2:
+                disk = Disk.from_buffer(buffer)
+                disk.path = f"{server.hostname}:{disk.path}"
+                allDisks.append(disk)
         return allDisks
 
     def GetChart(self, host: str, port: int, chart_id: int) -> bytes:
@@ -320,7 +275,6 @@ class SaunaFSClient:
 
             last_hour_op_stats = self.getOperationStatsFromList(current_op_stats_list)
 
-
             ipAddress = f"{ip1}.{ip2}.{ip3}.{ip4}"
             try:
                 hostname = socket.gethostbyaddr(ipAddress)[0]
@@ -328,11 +282,16 @@ class SaunaFSClient:
                 hostname = "(unresolved)"
 
             flags = []
-            if sesflags & 1: flags.append("ro")
-            if sesflags & 2: flags.append("dynamic_ip")
-            if sesflags & 4: flags.append("ignore_gid")
-            if sesflags & 8: flags.append("quota_admin")
-            if sesflags & 16: flags.append("map_all")
+            if sesflags & 1:
+                flags.append("ro")
+            if sesflags & 2:
+                flags.append("dynamic_ip")
+            if sesflags & 4:
+                flags.append("ignore_gid")
+            if sesflags & 8:
+                flags.append("quota_admin")
+            if sesflags & 16:
+                flags.append("map_all")
 
             mount_info = ""
             if sessionId in extra_mount_info:
@@ -373,12 +332,18 @@ class SaunaFSClient:
             ipTo = f"{tip1}.{tip2}.{tip3}.{tip4}"
 
             flags = []
-            if sesflags & 1: flags.append("ro")
-            else: flags.append("rw")
-            if sesflags & 2: flags.append("dynamic_ip")
-            if sesflags & 4: flags.append("ignore_gid")
-            if sesflags & 8: flags.append("quota_admin")
-            if sesflags & 16: flags.append("map_all")
+            if sesflags & 1:
+                flags.append("ro")
+            else:
+                flags.append("rw")
+            if sesflags & 2:
+                flags.append("dynamic_ip")
+            if sesflags & 4:
+                flags.append("ignore_gid")
+            if sesflags & 8:
+                flags.append("quota_admin")
+            if sesflags & 16:
+                flags.append("map_all")
 
             allExports.append(Export(
                 id=i,
@@ -396,7 +361,7 @@ class SaunaFSClient:
         loop_start, loop_end, files, ugfiles, mfiles, chunks, ugchunks, mchunks, msgbuffleng = struct.unpack(">LLLLLLLLL", buffer[:36])
         del buffer[:36]
         message = buffer.decode('utf-8', errors='replace')
-        
+
         return FsCheckInfo(
             loop_start=loop_start,
             loop_end=loop_end,
@@ -413,7 +378,7 @@ class SaunaFSClient:
         data = self._SendAndReceive(self.masterHost, self.masterPort, (CLTOMA_CHUNKSTEST_INFO, MATOCL_CHUNKSTEST_INFO))
         buffer = bytearray(data)
         loop_start, loop_end, del_invalid, ndel_invalid, del_unused, ndel_unused, del_dclean, ndel_dclean, del_ogoal, ndel_ogoal, rep_ugoal, nrep_ugoal, rebalnce = struct.unpack(">LLLLLLLLLLLLL", buffer[:52])
-        
+
         return ChunkOperationsInfo(
             loop_start=loop_start,
             loop_end=loop_end,
@@ -434,23 +399,23 @@ class SaunaFSClient:
         payload = struct.pack(">B", 0)
         data = self._SendAndReceive(self.masterHost, self.masterPort, (CLTOMA_CHUNKS_MATRIX, MATOCL_CHUNKS_MATRIX), payload)
         buffer = bytearray(data)
-        
+
         matrix = []
         for _ in range(11):
             row = list(struct.unpack(">LLLLLLLLLLL", buffer[:44]))
             matrix.append(row)
             del buffer[:44]
-            
+
         return ChunkMatrix(matrix=matrix)
 
     def GetMetadataServers(self) -> List[MetadataServer]:
         servers = []
-        
+
         # Add the master server
         master_ip = socket.gethostbyname(self.masterHost)
         master_v1, master_v2, master_v3 = self.masterVersion
         master_personality, master_state, master_metadata_version = self.GetMetadataServerStatus(self.masterHost, self.masterPort)
-        
+
         servers.append(MetadataServer(
             id=1,
             hostname=self.masterHost,
@@ -480,7 +445,7 @@ class SaunaFSClient:
                 hostname = socket.gethostbyaddr(ip_str)[0]
             except socket.herror:
                 hostname = "(unresolved)"
-            
+
             personality, state, metadata_version = self.GetMetadataServerStatus(ip_str, port)
 
             servers.append(MetadataServer(
@@ -493,7 +458,7 @@ class SaunaFSClient:
                 state=state,
                 metadata_version=metadata_version
             ))
-        
+
         return servers
 
     def GetMetadataServerStatus(self, host: str, port: int) -> Tuple[str, str, int]:

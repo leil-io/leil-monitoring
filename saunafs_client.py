@@ -189,7 +189,7 @@ class SaunaFSClient:
             data = self._send_and_receive(server.ip_address, server.port, (CLTOCS_HDD_LIST_V2, MATOCL_HDD_LIST_V2))
             buffer = bytearray(data)
             print(buffer)
-            while len(buffer) > 2:
+            while len(buffer) > 0:
                 disk = Disk.from_buffer(buffer)
                 disk.path = f"{server.hostname}:{disk.path}"
                 allDisks.append(disk)
@@ -203,18 +203,9 @@ class SaunaFSClient:
         allLoggers = []
         data = self._send_and_receive(self.master_host, self.master_port, MLOG_LIST)
         buffer = bytearray(data)
-        while len(buffer) >= 8:
-            v1, v2, v3, ip1, ip2, ip3, ip4 = struct.unpack(">HBBBBBB", buffer[:8])
-            del buffer[:8]
-            ipAddress = f"{ip1}.{ip2}.{ip3}.{ip4}"
-            try:
-                hostname = socket.gethostbyaddr(ipAddress)[0]
-            except socket.herror:
-                hostname = "(unresolved)"
-            allLoggers.append(Metalogger(
-                id=len(allLoggers) + 1, hostname=hostname,
-                ip_address=ipAddress, version=f"{v1}.{v2}.{v3}"
-            ))
+        while len(buffer) > 0:
+            allLoggers.append(Metalogger.from_buffer(buffer))
+            allLoggers[-1].id = len(allLoggers)
         return allLoggers
 
     def _get_mounts_info(self) -> Dict[int, str]:
@@ -225,7 +216,7 @@ class SaunaFSClient:
             vector_size, = struct.unpack(">L", buffer[:4])
             del buffer[:4]
             for _ in range(vector_size):
-                session_id, = struct.unpack(">L", buffer[:4])
+                session_id, = struct.unpack_(">L", buffer[:4])
                 del buffer[:4]
                 mount_info = self._deserialize_string(buffer)
                 mounts_info[session_id] = mount_info
@@ -428,7 +419,6 @@ class SaunaFSClient:
         ))
 
         # Get shadow servers
-        request = struct.pack(">LLL", SAU_CLTOMA_METADATASERVERS_LIST, 4, 0)
         data = self._send_and_receive(self.master_host, self.master_port, (SAU_CLTOMA_METADATASERVERS_LIST, SAU_MATOCL_METADATASERVERS_LIST), b"")
         buffer = bytearray(data)
         master_version, = struct.unpack(">L", buffer[:4])

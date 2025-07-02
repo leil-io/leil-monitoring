@@ -152,11 +152,11 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1", masterpo
             "op_names": op_names,
             "error_message": None
         }
-        return templates.TemplateResponse("sfs.html", context)
+        return templates.TemplateResponse(request, "sfs.html", context)
     except Exception as e:
         traceback.print_exc()
         context = {"request": request, "mastername": mastername, "error_message": f"An internal error occurred: {e}", "sections": []}
-        return templates.TemplateResponse("sfs.html", context)
+        return templates.TemplateResponse(request, "sfs.html", context)
 
 
 @app.get("/chart.cgi")

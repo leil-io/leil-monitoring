@@ -43,11 +43,21 @@ def test_get_sfs_info_html():
     """
     response = client.get("/sfs.cgi?masterhost=localhost&masterport=9421")
 
+    print(response.text)
     assert response.status_code == 200
     assert response.headers['content-type'] == 'text/html; charset=utf-8'
     assert "SaunaFS Info" in response.text
     assert "Info" in response.text
     assert "Chunk Servers" in response.text
+    assert "Chunks state matrix" in response.text
+    assert "Filesystem Check Info" in response.text
+    assert "Metadata Servers" in response.text
+    assert "Chunk Servers" in response.text
+    assert "Disks" in response.text
+    assert "Connected Clients" in response.text
+    assert "Operations" in response.text
+    assert "Exports" in response.text
+    assert "Metadata Backup Loggers" in response.text
 
 
 @pytest.mark.integration

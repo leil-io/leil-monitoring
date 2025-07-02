@@ -22,14 +22,15 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 BASE_DIR = pathlib.Path(__file__).parent.resolve()
 
 
-
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 # --- Helper Functions ---
-def HumanizeBytes(num, suffix="B"):
+
+
+def humanize_bytes(num, suffix="B"):
     if not isinstance(num, (int, float)):
         return "N/A"
     for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
@@ -38,95 +39,104 @@ def HumanizeBytes(num, suffix="B"):
         num /= 1024.0
     return f"{num:.1f}Y{suffix}"
 
-templates.env.filters["humanize_bytes"] = HumanizeBytes
+
+templates.env.filters["humanize_bytes"] = humanize_bytes
+
 
 def format_timestamp(ts):
     if not isinstance(ts, int) or ts == 0:
         return "N/A"
     return datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 
+
 templates.env.filters["format_timestamp"] = format_timestamp
 
 
-def GetClient(masterHost: str, masterPort: int) -> SaunaFSClient:
+def get_client(master_host: str, master_port: int) -> SaunaFSClient:
     try:
-        if masterHost == "sfsmaster":
-            masterHost = socket.gethostbyname(masterHost)
+        if master_host == "sfsmaster":
+            master_host = socket.gethostbyname(master_host)
     except socket.gaierror:
-        raise HTTPException(status_code=404, detail=f"Master host not found: {masterHost}")
-    return SaunaFSClient(masterHost=masterHost, masterPort=masterPort)
+        raise HTTPException(status_code=404, detail=f"Master host not found: {master_host}")
+    return SaunaFSClient(master_host=master_host, master_port=master_port)
 
 # --- API Endpoints ---
+
+
 @app.get("/api/info", response_model=SystemInfo)
-async def ApiGetInfo(masterHost: str = "127.0.0.1", masterPort: int = 9421):
-    client = GetClient(masterHost, masterPort)
-    return client.GetSystemInfo()
+async def api_get_info(master_host: str = "127.0.0.1", master_port: int = 9421):
+    client = get_client(master_host, master_port)
+    return client.get_system_info()
+
 
 @app.get("/api/servers", response_model=List[Server])
-async def ApiGetServers(masterHost: str = "127.0.0.1", masterPort: int = 9421):
-    client = GetClient(masterHost, masterPort)
-    return client.GetServers()
+async def api_get_servers(master_host: str = "127.0.0.1", master_port: int = 9421):
+    client = get_client(master_host, master_port)
+    return client.get_servers()
+
 
 @app.get("/api/disks", response_model=List[Disk])
-async def ApiGetDisks(masterHost: str = "127.0.0.1", masterPort: int = 9421):
-    client = GetClient(masterHost, masterPort)
-    return client.GetDisks()
+async def api_get_disks(master_host: str = "127.0.0.1", master_port: int = 9421):
+    client = get_client(master_host, master_port)
+    return client.get_disks()
 
 
 @app.get("/api/mounts", response_model=List[Mount])
-async def ApiGetMounts(masterHost: str = "127.0.0.1", masterPort: int = 9421):
-    client = GetClient(masterHost, masterPort)
-    return client.GetMounts()
+async def api_get_mounts(master_host: str = "127.0.0.1", master_port: int = 9421):
+    client = get_client(master_host, master_port)
+    return client.get_mounts()
+
 
 @app.get("/api/metadataservers", response_model=List[MetadataServer])
-async def ApiGetMetadataServers(masterHost: str = "127.0.0.1", masterPort: int = 9421):
-    client = GetClient(masterHost, masterPort)
-    return client.GetMetadataServers()
+async def api_get_metadata_servers(master_host: str = "127.0.0.1", master_port: int = 9421):
+    client = get_client(master_host, master_port)
+    return client.get_metadata_servers()
+
 
 @app.get("/api/fscheckinfo", response_model=FsCheckInfo)
-async def ApiGetFsCheckInfo(masterHost: str = "127.0.0.1", masterPort: int = 9421):
-    client = GetClient(masterHost, masterPort)
-    return client.GetFsCheckInfo()
+async def api_get_fs_check_info(master_host: str = "127.0.0.1", master_port: int = 9421):
+    client = get_client(master_host, master_port)
+    return client.get_fs_check_info()
+
 
 @app.get("/api/chunkoperationsinfo", response_model=ChunkOperationsInfo)
-async def ApiGetChunkOperationsInfo(masterHost: str = "127.0.0.1", masterPort: int = 9421):
-    client = GetClient(masterHost, masterPort)
-    return client.GetChunkOperationsInfo()
+async def api_get_chunk_operations_info(master_host: str = "127.0.0.1", master_port: int = 9421):
+    client = get_client(master_host, master_port)
+    return client.get_chunk_operations_info()
+
 
 @app.get("/api/chunkmatrix", response_model=ChunkMatrix)
-async def ApiGetChunkMatrix(masterHost: str = "127.0.0.1", masterPort: int = 9421):
-    client = GetClient(masterHost, masterPort)
-    return client.GetChunkMatrix()
-
-
-
+async def api_get_chunk_matrix(master_host: str = "127.0.0.1", master_port: int = 9421):
+    client = get_client(master_host, master_port)
+    return client.get_chunk_matrix()
 
 
 # --- Legacy UI Endpoints ---
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
-async def ReadRoot():
+async def read_root():
     return RedirectResponse(url="/sfs.cgi")
 
-@app.get("/sfs.cgi", response_class=HTMLResponse)
-async def GetSfsInfo(request: Request, masterhost: str = "127.0.0.1", masterport: int = 9421, mastername: str = "SaunaFS", sections: str = "IN|CS|HD|ML|MS|EX|MO"):
-    try:
-        client = GetClient(masterhost, masterport)
 
-        if client.masterVersion == (0, 0, 0):
+@app.get("/sfs.cgi", response_class=HTMLResponse)
+async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1", masterport: int = 9421, mastername: str = "SaunaFS", sections: str = "IN|CS|HD|ML|MS|EX|MO"):
+    try:
+        client = get_client(masterhost, masterport)
+
+        if client.master_version == (0, 0, 0):
             raise HTTPException(status_code=503, detail=f"Can't connect to SaunaFS master at {masterhost}:{masterport}")
 
         activeSections = sections.split("|")
 
-        infoData = client.GetSystemInfo() if "IN" in activeSections else None
-        serversData = client.GetServers() if "CS" in activeSections else None
-        disksData = client.GetDisks() if "HD" in activeSections else None
-        metaloggersData = client.GetMetaloggers() if "ML" in activeSections else None
-        mountsData = client.GetMounts() if "MS" in activeSections or "MO" in activeSections else None
-        exportsData = client.GetExports() if "EX" in activeSections else None
-        metadataServersData = client.GetMetadataServers() if "CS" in activeSections else None
-        fsCheckInfoData = client.GetFsCheckInfo() if "IN" in activeSections else None
-        chunkOperationsInfoData = client.GetChunkOperationsInfo() if "IN" in activeSections else None
-        chunkMatrixData = client.GetChunkMatrix() if "IN" in activeSections else None
+        infoData = client.get_system_info() if "IN" in activeSections else None
+        serversData = client.get_servers() if "CS" in activeSections else None
+        disksData = client.get_disks() if "HD" in activeSections else None
+        metaloggersData = client.get_metaloggers() if "ML" in activeSections else None
+        mountsData = client.get_mounts() if "MS" in activeSections or "MO" in activeSections else None
+        exportsData = client.get_exports() if "EX" in activeSections else None
+        metadataServersData = client.get_metadata_servers() if "CS" in activeSections else None
+        fsCheckInfoData = client.get_fs_check_info() if "IN" in activeSections else None
+        chunkOperationsInfoData = client.get_chunk_operations_info() if "IN" in activeSections else None
+        chunkMatrixData = client.get_chunk_matrix() if "IN" in activeSections else None
 
         op_names = list(OperationStats.model_fields.keys())
 
@@ -150,10 +160,10 @@ async def GetSfsInfo(request: Request, masterhost: str = "127.0.0.1", masterport
 
 
 @app.get("/chart.cgi")
-async def GetChart(host: str, port: int, id: int):
-    client = GetClient("127.0.0.1", 9421) # Dummy client for now
+async def get_chart(host: str, port: int, id: int):
+    client = get_client("127.0.0.1", 9421)  # Dummy client for now
     try:
-        imageData = client.GetChart(host, port, id)
+        imageData = client.get_chart(host, port, id)
         mediaType = "image/gif" if imageData.startswith(b"GIF") else "image/png"
         return Response(content=imageData, media_type=mediaType)
     except Exception:

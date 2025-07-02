@@ -16,7 +16,7 @@ from models import SystemInfo
 def mockSocket():
     """A pytest fixture that mocks the socket object and its methods."""
     with patch('socket.socket') as mock_socket_class, \
-         patch('select.select') as mock_select:
+            patch('select.select') as mock_select:
         mock_sock_instance = MagicMock()
         mock_socket_class.return_value.__enter__.return_value = mock_sock_instance
 
@@ -35,15 +35,15 @@ def test_get_master_version_success(mockSocket):
     """
     versionPayload = struct.pack(">HBB", 2, 5, 1)
 
-    # The _GetMasterVersion call in __init__ will receive this
+    # The _get_master_version call in __init__ will receive this
     mockSocket.recv.side_effect = [
         struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
         versionPayload,
     ]
 
-    client = SaunaFSClient(masterHost="testhost", masterPort=9421)
+    client = SaunaFSClient(master_host="testhost", master_port=9421)
 
-    assert client.masterVersion == (2, 5, 1)
+    assert client.master_version == (2, 5, 1)
     mockSocket.connect.assert_called_once_with(("testhost", 9421))
 
 
@@ -54,8 +54,8 @@ def test_get_master_version_connection_error(mockSocket):
     mockSocket.connect.side_effect = socket.error("Connection refused")
 
     # The exception is caught internally and a default version is returned
-    client = SaunaFSClient(masterHost="testhost", masterPort=9421)
-    assert client.masterVersion == (0, 0, 0)
+    client = SaunaFSClient(master_host="testhost", master_port=9421)
+    assert client.master_version == (0, 0, 0)
 
 
 def test_get_system_info_success(mockSocket):
@@ -70,21 +70,21 @@ def test_get_system_info_success(mockSocket):
     )
 
     # The client makes two separate connections/calls.
-    # The first is in __init__ for the version, the second is in GetSystemInfo.
+    # The first is in __init__ for the version, the second is in get_system_info.
     mockSocket.recv.side_effect = [
-        # Response for _GetMasterVersion in __init__
+        # Response for _get_master_version in __init__
         struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
         versionPayload,
-        # Response for GetSystemInfo
+        # Response for get_system_info
         struct.pack(">LL", MATOCL_INFO, len(system_info_payload)),
         system_info_payload
     ]
 
-    client = SaunaFSClient(masterHost="testhost", masterPort=9421)
-    system_info = client.GetSystemInfo()
+    client = SaunaFSClient(master_host="testhost", master_port=9421)
+    system_info = client.get_system_info()
 
     assert isinstance(system_info, SystemInfo)
-    assert client.masterVersion == (2, 5, 1)  # Ensure version is still correct
+    assert client.master_version == (2, 5, 1)  # Ensure version is still correct
     assert system_info.version == "2.5.1"
     assert system_info.ram_used == 536870912
     assert system_info.total_space == 10995116277760
@@ -102,16 +102,17 @@ def test_get_system_info_wrong_response(mockSocket):
         # Valid response for version check
         struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
         versionPayload,
-        # Invalid response for GetSystemInfo
+        # Invalid response for get_system_info
         struct.pack(">LL", wrong_command, 0),
         b''
     ]
 
-    client = SaunaFSClient(masterHost="testhost", masterPort=9421)
+    client = SaunaFSClient(master_host="testhost", master_port=9421)
 
     with pytest.raises(RuntimeError,
                        match=f"Received wrong response command: {wrong_command}, expected {MATOCL_INFO}"):
-        client.GetSystemInfo()
+        client.get_system_info()
+
 
 def test_get_chart_success(mockSocket):
     """
@@ -121,21 +122,22 @@ def test_get_chart_success(mockSocket):
     chart_payload = b'GIF89a\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;'
 
     mockSocket.recv.side_effect = [
-        # Response for _GetMasterVersion in __init__
+        # Response for _get_master_version in __init__
         struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
         versionPayload,
-        # Response for GetChart
+        # Response for get_chart
         struct.pack(">LL", ANTOCU_CHART, len(chart_payload)),
         chart_payload
     ]
 
-    client = SaunaFSClient(masterHost="testhost", masterPort=9421)
-    chart_data = client.GetChart("chart_host", 9000, 1)
+    client = SaunaFSClient(master_host="testhost", master_port=9421)
+    chart_data = client.get_chart("chart_host", 9000, 1)
 
     assert chart_data == chart_payload
     # The first call is to the master, the second to the chart host
     assert mockSocket.connect.call_count == 2
     mockSocket.connect.assert_called_with(("chart_host", 9000))
+
 
 def test_get_servers_success(mockSocket):
     """
@@ -157,15 +159,15 @@ def test_get_servers_success(mockSocket):
 
     serversPayload = struct.pack(">L", 2) + server1_payload + server2_payload
 
-    # V2 response includes a version field (which _SendAndReceive strips)
+    # V2 response includes a version field (which _send_and_receive strips)
     v2RespHeader = struct.pack(">L", 0)  # version 0
     full_payload = v2RespHeader + serversPayload
 
     mockSocket.recv.side_effect = [
-        # Response for _GetMasterVersion
+        # Response for _get_master_version
         struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
         versionPayload,
-        # Response for GetServers
+        # Response for get_servers
         struct.pack(">LL", SAU_MATOCL_CSERV_LIST, len(full_payload)),
         full_payload
     ]
@@ -177,8 +179,8 @@ def test_get_servers_success(mockSocket):
             ("host-two.local", [], [])
         ]
 
-        client = SaunaFSClient(masterHost="testhost", masterPort=9421)
-        servers = client.GetServers()
+        client = SaunaFSClient(master_host="testhost", master_port=9421)
+        servers = client.get_servers()
 
     assert len(servers) == 2
 
@@ -239,8 +241,8 @@ def test_get_disks_success(mockSocket):
     with patch('socket.gethostbyaddr') as mock_gethostbyaddr:
         mock_gethostbyaddr.return_value = ("host-one.local", [], [])
 
-        client = SaunaFSClient(masterHost="testhost", masterPort=9421)
-        disks = client.GetDisks()
+        client = SaunaFSClient(master_host="testhost", master_port=9421)
+        disks = client.get_disks()
 
     print(disks)
     assert len(disks) == 1

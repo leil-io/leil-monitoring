@@ -4,6 +4,7 @@ from typing import List, Optional
 from deserializer import unpack_primitive, unpack_string, unpack_list, DeserializationError
 import struct
 
+
 class SystemInfo(BaseModel):
     version: str
     ram_used: int
@@ -55,7 +56,7 @@ class Server(BaseModel):
 
     @classmethod
     def from_buffer(cls, buffer: bytearray, is_legacy: bool = False) -> Server:
-        import socket # Local import to avoid circular dependency issues
+        import socket  # Local import to avoid circular dependency issues
         try:
             if is_legacy:
                 # Handle older MATOCL_CSERV_LIST format if needed
@@ -70,7 +71,7 @@ class Server(BaseModel):
             # Unpack the label string
             if len(buffer) < label_length:
                 raise DeserializationError(f"Buffer too short for server label. Need {label_length}, have {len(buffer)}.")
-            label = buffer[:label_length-1].decode('utf-8', errors='replace')
+            label = buffer[:label_length - 1].decode('utf-8', errors='replace')
             del buffer[:label_length]
 
             ip_address = f"{ip1}.{ip2}.{ip3}.{ip4}"
@@ -80,7 +81,7 @@ class Server(BaseModel):
                 hostname = "(unresolved)"
 
             return cls(
-                id=0, # ID will be assigned by the caller
+                id=0,  # ID will be assigned by the caller
                 hostname=hostname,
                 ip_address=ip_address,
                 port=port,
@@ -109,21 +110,21 @@ class Disk(BaseModel):
 
     @classmethod
     def from_buffer(cls, buffer: bytearray, is_legacy: bool = False) -> Disk:
-        entrySize, = unpack_primitive("H", buffer[:2])
+        entry_size, = unpack_primitive("H", buffer[:2])
         del buffer[:2]
-        if len(buffer) < entrySize:
-            raise DeserializationError(f"Buffer too short for disk entry. Need {entrySize}, have {len(buffer)}.")
+        if len(buffer) < entry_size:
+            raise DeserializationError(f"Buffer too short for disk entry. Need {entry_size}, have {len(buffer)}.")
 
-        entryBuffer = bytearray(buffer[:entrySize])
-        del buffer[:entrySize]
+        entry_buffer = bytearray(buffer[:entry_size])
+        del buffer[:entry_size]
 
-        pathLen = entryBuffer[0]
-        del entryBuffer[0]
-        path = entryBuffer[:pathLen].decode('utf-8')
-        del entryBuffer[:pathLen]
+        path_len = entry_buffer[0]
+        del entry_buffer[0]
+        path = entry_buffer[:path_len].decode('utf-8')
+        del entry_buffer[:path_len]
 
-        flags, errchunkid, errtime, used, total, chunkscnt, = unpack_primitive(
-            "BQLQQL", entryBuffer
+        flags, err_chunk_id, err_time, used, total, chunks_cnt, = unpack_primitive(
+            "BQLQQL", entry_buffer
         )
 
         status = "ok"
@@ -135,8 +136,8 @@ class Disk(BaseModel):
             status = 'damaged, marked for removal'
 
         last_error = "no errors"
-        if errtime > 0:
-            last_error = f"{errtime} on chunk: {errchunkid}"
+        if err_time > 0:
+            last_error = f"{err_time} on chunk: {err_chunk_id}"
 
         return cls(
             path=path,
@@ -144,7 +145,7 @@ class Disk(BaseModel):
             last_error=last_error,
             total_space=total,
             used_space=used,
-            chunks=chunkscnt
+            chunks=chunks_cnt
         )
 
 

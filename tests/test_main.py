@@ -14,17 +14,17 @@ def test_read_root_redirects():
     response = client.get("/", follow_redirects=True)
     # TestClient follows redirects by default, so we check the history
     assert len(response.history) == 1
-    assert response.history[0].status_code == 307 # Temporary Redirect
+    assert response.history[0].status_code == 307  # Temporary Redirect
     assert response.url == "http://testserver/sfs.cgi"
     assert response.status_code == 200
 
 
 @pytest.mark.integration
-def test_get_api_info():
+def test_api_get_info():
     """
     Tests the /api/info endpoint against a live master server.
     """
-    response = client.get("/api/info?masterHost=localhost&masterPort=9421")
+    response = client.get("/api/info?master_host=localhost&master_port=9421")
 
     assert response.status_code == 200
 
@@ -37,7 +37,7 @@ def test_get_api_info():
 
 
 @pytest.mark.integration
-def test_get_sfs_cgi_html():
+def test_get_sfs_info_html():
     """
     Tests that the main HTML page for the legacy UI renders successfully.
     """
@@ -51,7 +51,7 @@ def test_get_sfs_cgi_html():
 
 
 @pytest.mark.integration
-def test_get_sfs_cgi_connection_error():
+def test_get_sfs_info_connection_error():
     """
     Tests how the HTML page responds when it can't connect to the master.
     """

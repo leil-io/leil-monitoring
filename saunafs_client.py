@@ -167,9 +167,6 @@ class SaunaFSClient:
         except Exception:
             return (0, 0, 0)
 
-    def get_system_info(self) -> SystemInfo:
-        return SystemInfo.get_info(self)
-
     def get_servers(self) -> List[Server]:
         payload = b'\x00'  # Dummy, must be included
         buffer = self.send_and_receive(

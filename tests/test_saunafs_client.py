@@ -110,7 +110,7 @@ def test_get_system_info_wrong_response(mockSocket):
 
     with pytest.raises(RuntimeError,
                        match=f"Received wrong response command: {wrong_command}, expected {MATOCL_INFO}"):
-        client.get_system_info()
+        SystemInfo.get_info(client)
 
 
 def test_get_chart_success(mockSocket):

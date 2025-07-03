@@ -9,7 +9,7 @@
 	</head>
 	<body>
 		<div id="header">
-			<table class="HDR" cellpadding="0" cellspacing="0" border="0" summary="Page header">
+			<table class="HDR" cellpadding="0" cellspacing="0" border="0" caption="Page header">
 				<tr>
 					<td class="LOGO"><a href="https://saunafs.com"><img src="/static/logomini.svg" alt="logo" style="border:0;width:110px;height:38px" /></a></td>
 					<td class="MENU">
@@ -31,84 +31,92 @@
 			{% else %}
 				<!-- Info Table -->
 				{% if info %}
-				<table class="FR" cellspacing="0" summary="Info table">
-					<tr>
-						<th colspan="15">Info</th>
-					</tr>
-					<tr>
-						<th>Version</th>
-						<th>RAM Used</th>
-						<th>Total Space</th>
-						<th>Avail Space</th>
-						<th>Trash Space</th>
-						<th>Trash Files</th>
-						<th>Reserved Space</th>
-						<th>Reserved Files</th>
-						<th>Total Objects</th>
-						<th>Directories</th>
-						<th>Files</th>
-						<th>Symlinks</th>
-						<th>Chunks</th>
-						<th>All Copies</th>
-						<th>Regular Copies</th>
-					</tr>
-					<tr>
-						<td align="center">{{ info.version }}</td>
-						<td align="right">{{ info.ram_used | humanize_bytes }}</td>
-						<td align="right">{{ info.total_space | humanize_bytes }}</td>
-						<td align="right">{{ info.avail_space | humanize_bytes }}</td>
-						<td align="right">{{ info.trash_space | humanize_bytes }}</td>
-						<td align="right">{{ info.trash_files }}</td>
-						<td align="right">{{ info.reserved_space | humanize_bytes }}</td>
-						<td align="right">{{ info.reserved_files }}</td>
-						<td align="right">{{ info.total_objects }}</td>
-						<td align="right">{{ info.directories }}</td>
-						<td align="right">{{ info.files }}</td>
-						<td align="right">{{ info.symlinks }}</td>
-						<td align="right">{{ info.chunks }}</td>
-						<td align="right">{{ info.all_copies }}</td>
-						<td align="right">{{ info.regular_copies }}</td>
-					</tr>
+				<table class="FR" cellspacing="0" caption="Info table">
+					<thead>
+						<tr>
+							<th colspan="15">Info</th>
+						</tr>
+						<tr>
+							<th>Version</th>
+							<th>RAM Used</th>
+							<th>Total Space</th>
+							<th>Avail Space</th>
+							<th>Trash Space</th>
+							<th>Trash Files</th>
+							<th>Reserved Space</th>
+							<th>Reserved Files</th>
+							<th>Total Objects</th>
+							<th>Directories</th>
+							<th>Files</th>
+							<th>Symlinks</th>
+							<th>Chunks</th>
+							<th>All Copies</th>
+							<th>Regular Copies</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td align="center">{{ info.version }}</td>
+							<td align="right">{{ info.ram_used | humanize_bytes }}</td>
+							<td align="right">{{ info.total_space | humanize_bytes }}</td>
+							<td align="right">{{ info.avail_space | humanize_bytes }}</td>
+							<td align="right">{{ info.trash_space | humanize_bytes }}</td>
+							<td align="right">{{ info.trash_files }}</td>
+							<td align="right">{{ info.reserved_space | humanize_bytes }}</td>
+							<td align="right">{{ info.reserved_files }}</td>
+							<td align="right">{{ info.total_objects }}</td>
+							<td align="right">{{ info.directories }}</td>
+							<td align="right">{{ info.files }}</td>
+							<td align="right">{{ info.symlinks }}</td>
+							<td align="right">{{ info.chunks }}</td>
+							<td align="right">{{ info.all_copies }}</td>
+							<td align="right">{{ info.regular_copies }}</td>
+						</tr>
+					</tbody>
 				</table>
 				<br/>
 				{% endif %}
 
 				<!-- Chunk Operations Info Table -->
 				{% if chunk_operations_info and chunk_operations_info.loop_start > 0 %}
-				<table class="FR" cellspacing="0" summary="Chunk Operations Info">
-					<tr><th colspan="8">Chunk Operations Info</th></tr>
-					<tr>
-						<th colspan="2">Loop Time</th>
-						<th colspan="4">Deletions</th>
-						<th colspan="2">Replications</th>
-					</tr>
-					<tr>
-						<th>Start</th>
-						<th>End</th>
-						<th>Invalid</th>
-						<th>Unused</th>
-						<th>Disk Clean</th>
-						<th>Over Goal</th>
-						<th>Under Goal</th>
-						<th>Rebalance</th>
-					</tr>
-					<tr>
-						<td align="center">{{ chunk_operations_info.loop_start | format_timestamp }}</td>
-						<td align="center">{{ chunk_operations_info.loop_end | format_timestamp }}</td>
-						<td align="right">{{ chunk_operations_info.delete_invalid }}/{{ chunk_operations_info.delete_invalid + chunk_operations_info.not_delete_invalid }}</td>
-						<td align="right">{{ chunk_operations_info.delete_unused }}/{{ chunk_operations_info.delete_unused + chunk_operations_info.not_delete_unused }}</td>
-						<td align="right">{{ chunk_operations_info.delete_disk_clean }}/{{ chunk_operations_info.delete_disk_clean + chunk_operations_info.not_delete_disk_clean }}</td>
-						<td align="right">{{ chunk_operations_info.delete_over_goal }}/{{ chunk_operations_info.delete_over_goal + chunk_operations_info.not_delete_over_goal }}</td>
-						<td align="right">{{ chunk_operations_info.replicate_under_goal }}/{{ chunk_operations_info.replicate_under_goal + chunk_operations_info.not_replicate_under_goal }}</td>
-						<td align="right">{{ chunk_operations_info.rebalance }}</td>
-					</tr>
+				<table class="FR" cellspacing="0" caption="Chunk Operations Info">
+					<thead>
+						<tr><th colspan="8">Chunk Operations Info</th></tr>
+						<tr>
+							<th colspan="2">Loop Time</th>
+							<th colspan="4">Deletions</th>
+							<th colspan="2">Replications</th>
+						</tr>
+						<tr>
+							<th>Start</th>
+							<th>End</th>
+							<th>Invalid</th>
+							<th>Unused</th>
+							<th>Disk Clean</th>
+							<th>Over Goal</th>
+							<th>Under Goal</th>
+							<th>Rebalance</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td align="center">{{ chunk_operations_info.loop_start | format_timestamp }}</td>
+							<td align="center">{{ chunk_operations_info.loop_end | format_timestamp }}</td>
+							<td align="right">{{ chunk_operations_info.delete_invalid }}/{{ chunk_operations_info.delete_invalid + chunk_operations_info.not_delete_invalid }}</td>
+							<td align="right">{{ chunk_operations_info.delete_unused }}/{{ chunk_operations_info.delete_unused + chunk_operations_info.not_delete_unused }}</td>
+							<td align="right">{{ chunk_operations_info.delete_disk_clean }}/{{ chunk_operations_info.delete_disk_clean + chunk_operations_info.not_delete_disk_clean }}</td>
+							<td align="right">{{ chunk_operations_info.delete_over_goal }}/{{ chunk_operations_info.delete_over_goal + chunk_operations_info.not_delete_over_goal }}</td>
+							<td align="right">{{ chunk_operations_info.replicate_under_goal }}/{{ chunk_operations_info.replicate_under_goal + chunk_operations_info.not_replicate_under_goal }}</td>
+							<td align="right">{{ chunk_operations_info.rebalance }}</td>
+						</tr>
+					</tbody>
 				</table>
 				<br/>
 				{% endif %}
 
 				<!-- Chunk Matrix Table -->
 				{% if chunk_matrix %}
-				<table class="FR" cellspacing="0" summary="Chunks state matrix">
+				<table class="FR" cellspacing="0" caption="Chunks state matrix">
 					<tr><th colspan="13">All chunks state matrix </th></tr>
 					<tr>
 						<th rowspan="2" class="PERC4">needed<br/>copies</th>
@@ -163,7 +171,7 @@
 
 				<!-- Filesystem Check Info Table -->
 				{% if fs_check_info and fs_check_info.loop_start > 0 %}
-				<table class="FR" cellspacing="0" summary="Filesystem Check Info">
+				<table class="FR" cellspacing="0" caption="Filesystem Check Info">
 					<tr><th colspan="8">Filesystem Check Info</th></tr>
 					<tr>
 						<th>Check Loop Start Time</th>
@@ -199,254 +207,286 @@
 
 				<!-- Chunk Servers Table -->
 				{% if servers %}
-				<table class="FR" cellspacing="0" summary="Metadata Servers">
-					<tr><th colspan="8">Metadata Servers</th></tr>
-					<tr>
-						<th>#</th>
-						<th>Host</th>
-						<th>IP</th>
-						<th>Client Port</th>
-						<th>Version</th>
-						<th>Personality</th>
-						<th>State</th>
-						<th>Metadata Version</th>
-					</tr>
-					{% for server in metadata_servers %}
-					<tr class="C{{ loop.index % 2 + 1 }}">
-						<td align="right">{{ server.id }}</td>
-						<td align="left">{{ server.hostname }}</td>
-						<td align="center">{{ server.ip_address }}</td>
-						<td align="center">{{ server.port }}</td>
-						<td align="center">{{ server.version }}</td>
-						<td align="center">{{ server.personality }}</td>
-						<td align="center">{{ server.state }}</td>
-						<td align="right">{{ server.metadata_version }}</td>
-					</tr>
-					{% endfor %}
-				</table>
-				<br/>
-				<table class="FR" cellspacing="0" summary="Chunk Servers">
-					<tr><th colspan="14">Chunk Servers</th></tr>
-					<tr>
-						<th rowspan="2">#</th><th rowspan="2">Host</th><th rowspan="2">IP</th>
-						<th rowspan="2">Port</th><th rowspan="2">Version</th><th rowspan="2">Label</th>
-						<th colspan="4">'Regular' HDD Space</th><th colspan="4">'To Be Empty' HDD Space</th>
-					</tr>
-					<tr>
-						<th>Chunks</th><th>Used</th><th>Total</th><th class="PROGBAR">% Used</th>
-						<th>Chunks</th><th>Used</th><th>Total</th><th class="PROGBAR">% Used</th>
-					</tr>
-					{% for server in servers %}
-					<tr class="C{{ loop.index % 2 + 1 }}">
-						{% if server.is_disconnected %}
-							<td align="right"><span class="DISCONNECTED">{{ server.id }}</span></td>
-							<td align="left" colspan="12"><span class="DISCONNECTED">{{ server.hostname }} is disconnected</span></td>
-						{% else %}
+				<table class="FR sortable" cellspacing="0" caption="Metadata Servers">
+					<thead>
+						<tr><th colspan="8">Metadata Servers</th></tr>
+						<tr>
+							<th>#</th>
+							<th>Host</th>
+							<th>IP</th>
+							<th>Client Port</th>
+							<th>Version</th>
+							<th>Personality</th>
+							<th>State</th>
+							<th>Metadata Version</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for server in metadata_servers %}
+						<tr class="C{{ loop.index % 2 + 1 }}">
 							<td align="right">{{ server.id }}</td>
 							<td align="left">{{ server.hostname }}</td>
 							<td align="center">{{ server.ip_address }}</td>
 							<td align="center">{{ server.port }}</td>
 							<td align="center">{{ server.version }}</td>
-							<td class="LEFT">{{ server.label }}</td>
-							<td align="right">{{ server.chunks }}</td>
-							<td align="right">{{ server.used_space | humanize_bytes }}</td>
-							<td align="right">{{ server.total_space | humanize_bytes }}</td>
-							<td>
-								<div class="box">
-									<div class="progress" style="width:{{ (server.used_space / server.total_space * 200) if server.total_space > 0 else 0 }}px;"></div>
-									<div class="value">{{ "%.2f"|format((server.used_space / server.total_space * 100) if server.total_space > 0 else 0) }}</div>
-								</div>
-							</td>
-							<td align="right">{{ server.chunks_tobedeleted }}</td>
-							<td align="right">{{ server.used_space_tobedeleted | humanize_bytes }}</td>
-							<td align="right">{{ server.total_space_tobedeleted | humanize_bytes }}</td>
-							<td>
-								 <div class="box">
-									<div class="progress" style="width:{{ (server.used_space_tobedeleted / server.total_space_tobedeleted * 200) if server.total_space_tobedeleted > 0 else 0 }}px;"></div>
-									<div class="value">{{ "%.2f"|format((server.used_space_tobedeleted / server.total_space_tobedeleted * 100) if server.total_space_tobedeleted > 0 else 0) }}</div>
-								</div>
-							</td>
-						{% endif %}
-					</tr>
-					{% endfor %}
+							<td align="center">{{ server.personality }}</td>
+							<td align="center">{{ server.state }}</td>
+							<td align="right">{{ server.metadata_version }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+				<br/>
+				<table class="FR sortable" cellspacing="0" caption="Chunk Servers">
+					<thead>
+						<tr><th colspan="14">Chunk Servers</th></tr>
+						<tr>
+							<th rowspan="2">#</th><th rowspan="2">Host</th><th rowspan="2">IP</th>
+							<th rowspan="2">Port</th><th rowspan="2">Version</th><th rowspan="2">Label</th>
+							<th colspan="4">'Regular' HDD Space</th><th colspan="4">'To Be Empty' HDD Space</th>
+						</tr>
+						<tr>
+							<th>Chunks</th><th>Used</th><th>Total</th><th class="PROGBAR">% Used</th>
+							<th>Chunks</th><th>Used</th><th>Total</th><th class="PROGBAR">% Used</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for server in servers %}
+						<tr class="C{{ loop.index % 2 + 1 }}">
+							{% if server.is_disconnected %}
+								<td align="right"><span class="DISCONNECTED">{{ server.id }}</span></td>
+								<td align="left" colspan="12"><span class="DISCONNECTED">{{ server.hostname }} is disconnected</span></td>
+							{% else %}
+								<td align="right">{{ server.id }}</td>
+								<td align="left">{{ server.hostname }}</td>
+								<td align="center">{{ server.ip_address }}</td>
+								<td align="center">{{ server.port }}</td>
+								<td align="center">{{ server.version }}</td>
+								<td class="LEFT">{{ server.label }}</td>
+								<td align="right">{{ server.chunks }}</td>
+								<td align="right">{{ server.used_space | humanize_bytes }}</td>
+								<td align="right">{{ server.total_space | humanize_bytes }}</td>
+								<td>
+									<div class="box">
+										<div class="progress" style="width:{{ (server.used_space / server.total_space * 200) if server.total_space > 0 else 0 }}px;"></div>
+										<div class="value">{{ "%.2f"|format((server.used_space / server.total_space * 100) if server.total_space > 0 else 0) }}</div>
+									</div>
+								</td>
+								<td align="right">{{ server.chunks_tobedeleted }}</td>
+								<td align="right">{{ server.used_space_tobedeleted | humanize_bytes }}</td>
+								<td align="right">{{ server.total_space_tobedeleted | humanize_bytes }}</td>
+								<td>
+									 <div class="box">
+										<div class="progress" style="width:{{ (server.used_space_tobedeleted / server.total_space_tobedeleted * 200) if server.total_space_tobedeleted > 0 else 0 }}px;"></div>
+										<div class="value">{{ "%.2f"|format((server.used_space_tobedeleted / server.total_space_tobedeleted * 100) if server.total_space_tobedeleted > 0 else 0) }}</div>
+									</div>
+								</td>
+							{% endif %}
+						</tr>
+						{% endfor %}
+					</tbody>
 				</table>
 				<br/>
 				{% endif %}
 
 				<!-- Disks Table -->
 				{% if disks %}
-				<table class="FR" cellspacing="0" summary="Disks">
-					<tr><th colspan="7">Disks</th></tr>
-					<tr>
-						<th>#</th>
-						<th>Path</th>
-						<th>Status</th>
-						<th>Last Error</th>
-						<th>Chunks</th>
-						<th>Used Space</th>
-						<th>Total Space</th>
-					</tr>
-					{% for disk in disks %}
-					<tr class="C{{ loop.index % 2 + 1 }}">
-						<td align="right">{{ loop.index }}</td>
-						<td align="left">{{ disk.path }}</td>
-						<td align="right">{{ disk.status }}</td>
-						<td align="right">{{ disk.last_error }}</td>
-						<td align="right">{{ disk.chunks }}</td>
-						<td align="right">{{ disk.used_space | humanize_bytes }}</td>
-						<td align="right">{{ disk.total_space | humanize_bytes }}</td>
-					</tr>
-					{% endfor %}
+				<table class="FR sortable" cellspacing="0" caption="Disks">
+					<thead>
+						<tr><th colspan="7">Disks</th></tr>
+						<tr>
+							<th>#</th>
+							<th>Path</th>
+							<th>Status</th>
+							<th>Last Error</th>
+							<th>Chunks</th>
+							<th>Used Space</th>
+							<th>Total Space</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for disk in disks %}
+						<tr class="C{{ loop.index % 2 + 1 }}">
+							<td align="right">{{ loop.index }}</td>
+							<td align="left">{{ disk.path }}</td>
+							<td align="right">{{ disk.status }}</td>
+							<td align="right">{{ disk.last_error }}</td>
+							<td align="right">{{ disk.chunks }}</td>
+							<td align="right">{{ disk.used_space | humanize_bytes }}</td>
+							<td align="right">{{ disk.total_space | humanize_bytes }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
 				</table>
 				<br/>
 				{% endif %}
 
 				<!-- Metaloggers Table -->
 				{% if metaloggers %}
-				<table class="FR" cellspacing="0" summary="Metadata Backup Loggers">
-					<tr><th colspan="4">Metadata Backup Loggers</th></tr>
-					<tr>
-						<th>#</th>
-						<th>Host</th>
-						<th>IP</th>
-						<th>Version</th>
-					</tr>
-					{% for logger in metaloggers %}
-					<tr class="C{{ loop.index % 2 + 1 }}">
-						<td align="right">{{ logger.id }}</td>
-						<td align="left">{{ logger.hostname }}</td>
-						<td align="center">{{ logger.ip_address }}</td>
-						<td align="center">{{ logger.version }}</td>
-					</tr>
-					{% endfor %}
+				<table class="FR sortable" cellspacing="0" caption="Metadata Backup Loggers">
+					<thead>
+						<tr><th colspan="4">Metadata Backup Loggers</th></tr>
+						<tr>
+							<th>#</th>
+							<th>Host</th>
+							<th>IP</th>
+							<th>Version</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for logger in metaloggers %}
+						<tr class="C{{ loop.index % 2 + 1 }}">
+							<td align="right">{{ logger.id }}</td>
+							<td align="left">{{ logger.hostname }}</td>
+							<td align="center">{{ logger.ip_address }}</td>
+							<td align="center">{{ logger.version }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
 				</table>
 				<br/>
 				{% endif %}
 
 				<!-- Mounts Table -->
 				{% if mounts %}
-				<table class="FR" cellspacing="0" summary="Connected Clients">
-					<tr><th colspan="15">Connected Clients (Mounts)</th></tr>
-					<tr>
-						<th>#</th>
-						<th>Session ID</th>
-						<th>Host</th>
-						<th>IP</th>
-						<th>Version</th>
-						<th>Mounted Path</th>
-						<th>Root UID</th>
-						<th>Root GID</th>
-						<th>MapAll UID</th>
-						<th>MapAll GID</th>
-						<th>Min Goal</th>
-						<th>Max Goal</th>
-						<th>Min Trash Time</th>
-						<th>Max Trash Time</th>
-						<th>Mount Info</th>
-					</tr>
-					{% for mount in mounts %}
-					<tr class="C{{ loop.index % 2 + 1 }}" onclick="ToggleMountInfo('mount-info-{{ loop.index }}')" style="cursor: pointer;">
-						<td align="right">{{ mount.id }}</td>
-						<td align="right">{{ mount.session_id }}</td>
-						<td align="left">{{ mount.hostname }}</td>
-						<td align="center">{{ mount.ip_address }}</td>
-						<td align="center">{{ mount.version }}</td>
-						<td align="left">{{ mount.mounted_path }}</td>
-						<td align="left">{{ mount.root_uid}}</td>
-						<td align="left">{{ mount.root_gid }}</td>
-						<td align="left">{{ mount.map_all_uid }}</td>
-						<td align="left">{{ mount.map_all_gid }}</td>
-						<td align="left">{{ mount.min_goal }}</td>
-						<td align="left">{{ mount.max_goal }}</td>
-						<td align="left">{{ mount.min_trash_time }}</td>
-						<td align="left">{{ mount.max_trash_time }}</td>
-						<td align="left">Click to view</td>
-					</tr>
-					<tr id="mount-info-{{ loop.index }}" style="display: none;">
-						<td colspan="15">
-							<div style="text-align: left; padding: 10px;">
-								<hr>
-								<pre style="white-space: pre-wrap; word-wrap: break-word;">{{ mount.mount_info }}</pre>
-							</div>
-						</td>
-					</tr>
-					{% endfor %}
+				<table class="FR sortable" cellspacing="0" caption="Connected Clients">
+					<thead>
+						<tr><th colspan="15">Connected Clients (Mounts)</th></tr>
+						<tr>
+							<th>#</th>
+							<th>Session ID</th>
+							<th>Host</th>
+							<th>IP</th>
+							<th>Version</th>
+							<th>Mounted Path</th>
+							<th>Root UID</th>
+							<th>Root GID</th>
+							<th>MapAll UID</th>
+							<th>MapAll GID</th>
+							<th>Min Goal</th>
+							<th>Max Goal</th>
+							<th>Min Trash Time</th>
+							<th>Max Trash Time</th>
+							<th>Mount Info</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for mount in mounts %}
+						<tr class="C{{ loop.index % 2 + 1 }}" onclick="ToggleMountInfo('mount-info-{{ loop.index }}')" style="cursor: pointer;">
+							<td align="right">{{ mount.id }}</td>
+							<td align="right">{{ mount.session_id }}</td>
+							<td align="left">{{ mount.hostname }}</td>
+							<td align="center">{{ mount.ip_address }}</td>
+							<td align="center">{{ mount.version }}</td>
+							<td align="left">{{ mount.mounted_path }}</td>
+							<td align="left">{{ mount.root_uid}}</td>
+							<td align="left">{{ mount.root_gid }}</td>
+							<td align="left">{{ mount.map_all_uid }}</td>
+							<td align="left">{{ mount.map_all_gid }}</td>
+							<td align="left">{{ mount.min_goal }}</td>
+							<td align="left">{{ mount.max_goal }}</td>
+							<td align="left">{{ mount.min_trash_time }}</td>
+							<td align="left">{{ mount.max_trash_time }}</td>
+							<td align="left">Click to view</td>
+						</tr>
+						<tr id="mount-info-{{ loop.index }}" style="display: none;">
+							<td colspan="15">
+								<div style="text-align: left; padding: 10px;">
+									<hr>
+									<pre style="white-space: pre-wrap; word-wrap: break-word;">{{ mount.mount_info }}</pre>
+								</div>
+							</td>
+						</tr>
+						{% endfor %}
+					</tbody>
 				</table>
 				<br/>
 				{% endif %}
 
 				<!-- Operations Table -->
 				{% if "MO" in sections and mounts %}
-				<table class="FR" cellspacing="0" summary="Operations">
-					<tr><th colspan="{{ 4 + op_names | length }}">Operations (current)</th></tr>
-					<tr>
-						<th>#</th>
-						<th>Host</th>
-						<th>IP</th>
-						<th>Mounted Path</th>
-						{% for op_name in op_names %}
-						<th>{{ op_name }}</th>
+				<table class="FR sortable" cellspacing="0" caption="Operations">
+					<thead>
+						<tr><th colspan="{{ 4 + op_names | length }}">Operations (current)</th></tr>
+						<tr>
+							<th>#</th>
+							<th>Host</th>
+							<th>IP</th>
+							<th>Mounted Path</th>
+							{% for op_name in op_names %}
+							<th>{{ op_name }}</th>
+							{% endfor %}
+						</tr>
+					</thead>
+					<tbody>
+						{% for mount in mounts %}
+						<tr class="C{{ loop.index % 2 + 1 }}">
+							<td align="right">{{ mount.id }}</td>
+							<td align="left">{{ mount.hostname }}</td>
+							<td align="center">{{ mount.ip_address }}</td>
+							<td align="left">{{ mount.mounted_path }}</td>
+							{% for op_name in op_names %}
+							<td align="right">{{ mount.current_op_stats[op_name] }}</td>
+							{% endfor %}
+						</tr>
 						{% endfor %}
-					</tr>
-					{% for mount in mounts %}
-					<tr class="C{{ loop.index % 2 + 1 }}">
-						<td align="right">{{ mount.id }}</td>
-						<td align="left">{{ mount.hostname }}</td>
-						<td align="center">{{ mount.ip_address }}</td>
-						<td align="left">{{ mount.mounted_path }}</td>
-						{% for op_name in op_names %}
-						<td align="right">{{ mount.current_op_stats[op_name] }}</td>
-						{% endfor %}
-					</tr>
-					{% endfor %}
+					</tbody>
 				</table>
 				<br/>
-				<table class="FR" cellspacing="0" summary="Operations">
-					<tr><th colspan="{{ 4 + op_names | length }}">Operations (last hour)</th></tr>
-					<tr>
-						<th>#</th>
-						<th>Host</th>
-						<th>IP</th>
-						<th>Mounted Path</th>
-						{% for op_name in op_names %}
-						<th>{{ op_name }}</th>
+				<table class="FR sortable" cellspacing="0" caption="Operations">
+					<thead>
+						<tr><th colspan="{{ 4 + op_names | length }}">Operations (last hour)</th></tr>
+						<tr>
+							<th>#</th>
+							<th>Host</th>
+							<th>IP</th>
+							<th>Mounted Path</th>
+							{% for op_name in op_names %}
+							<th>{{ op_name }}</th>
+							{% endfor %}
+						</tr>
+					</thead>
+					<tbody>
+						{% for mount in mounts %}
+						<tr class="C{{ loop.index % 2 + 1 }}">
+							<td align="right">{{ mount.id }}</td>
+							<td align="left">{{ mount.hostname }}</td>
+							<td align="center">{{ mount.ip_address }}</td>
+							<td align="left">{{ mount.mounted_path }}</td>
+							{% for op_name in op_names %}
+							<td align="right">{{ mount.last_hour_op_stats[op_name] }}</td>
+							{% endfor %}
+						</tr>
 						{% endfor %}
-					</tr>
-					{% for mount in mounts %}
-					<tr class="C{{ loop.index % 2 + 1 }}">
-						<td align="right">{{ mount.id }}</td>
-						<td align="left">{{ mount.hostname }}</td>
-						<td align="center">{{ mount.ip_address }}</td>
-						<td align="left">{{ mount.mounted_path }}</td>
-						{% for op_name in op_names %}
-						<td align="right">{{ mount.last_hour_op_stats[op_name] }}</td>
-						{% endfor %}
-					</tr>
-					{% endfor %}
+					</tbody>
 				</table>
 				<br/>
 				{% endif %}
 
 				<!-- Exports Table -->
 				{% if exports %}
-				<table class="FR" cellspacing="0" summary="Exports">
-					<tr><th colspan="5">Exports</th></tr>
-					<tr>
-						<th>#</th>
-						<th>IP From</th>
-						<th>IP To</th>
-						<th>Path</th>
-						<th>Flags</th>
-					</tr>
-					{% for export in exports %}
-					<tr class="C{{ loop.index % 2 + 1 }}">
-						<td align="right">{{ export.id }}</td>
-						<td align="center">{{ export.ip_from }}</td>
-						<td align="center">{{ export.ip_to }}</td>
-						<td align="left">{{ export.path }}</td>
-						<td align="left">{{ export.flags }}</td>
-					</tr>
-					{% endfor %}
+				<table class="FR sortable" cellspacing="0" caption="Exports">
+					<thead>
+						<tr><th colspan="5">Exports</th></tr>
+						<tr>
+							<th>#</th>
+							<th>IP From</th>
+							<th>IP To</th>
+							<th>Path</th>
+							<th>Flags</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for export in exports %}
+						<tr class="C{{ loop.index % 2 + 1 }}">
+							<td align="right">{{ export.id }}</td>
+							<td align="center">{{ export.ip_from }}</td>
+							<td align="center">{{ export.ip_to }}</td>
+							<td align="left">{{ export.path }}</td>
+							<td align="left">{{ export.flags }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
 				</table>
 				<br/>
 				{% endif %}
@@ -454,17 +494,6 @@
 			{% endif %}
 		</div>
 
-		<script>
-			function ToggleMountInfo(rowId) {
-				const row = document.getElementById(rowId);
-				if (row) {
-					if (row.style.display === 'none') {
-						row.style.display = 'table-row';
-					} else {
-						row.style.display = 'none';
-					}
-				}
-			}
-		</script>
+		<script src="/static/sfs-sort.js"></script>
 	</body>
 </html>

@@ -55,7 +55,7 @@ def unpack_string(buffer: bytearray, is_legacy: bool = False) -> str:
         raise DeserializationError(f"Failed to unpack string: {e}")
 
 
-def unpack_list(buffer: bytearray, model_class: Type[T], is_legacy: bool = False) -> List[T]:
+def unpack_list(buffer: bytearray, model_class: Type[T]) -> List[T]:
     """
     Unpacks a list of model objects from the buffer.
     Each model class must have a `from_buffer` class method.
@@ -65,6 +65,6 @@ def unpack_list(buffer: bytearray, model_class: Type[T], is_legacy: bool = False
     for _ in range(count):
         if not hasattr(model_class, 'from_buffer'):
             raise NotImplementedError(f"The class {model_class.__name__} must have a 'from_buffer' class method.")
-        item = model_class.from_buffer(buffer, is_legacy=is_legacy)
+        item = model_class.from_buffer(buffer)
         items.append(item)
     return items

@@ -24,7 +24,7 @@ class SystemInfo(BaseModel):
     regular_copies: int
 
     @classmethod
-    def from_buffer(cls, buffer: bytearray, is_legacy: bool = False) -> SystemInfo:
+    def from_buffer(cls, buffer: bytearray) -> SystemInfo:
         try:
             v1, v2, v3, mem, total, avail, trspace, trfiles, respace, refiles, nodes, dirs, files, symlinks, chunks, allcopies, tdcopies = unpack_primitive(
                 "HBBQQQQLQLLLLLLLL", buffer
@@ -56,13 +56,8 @@ class Server(BaseModel):
     error_count: int
 
     @classmethod
-    def from_buffer(cls, buffer: bytearray, is_legacy: bool = False) -> Server:
+    def from_buffer(cls, buffer: bytearray) -> Server:
         try:
-            if is_legacy:
-                # Handle older MATOCL_CSERV_LIST format if needed
-                # This is a placeholder for the V2 format (SAU_MATOCL_CSERV_LIST)
-                raise NotImplementedError("Legacy server deserialization not implemented")
-
             # Unpack the main server data structure
             disconnected, v1, v2, v3, ip1, ip2, ip3, ip4, port, used, total, chunks, tdused, tdtotal, tdchunks, errcnt, label_length = unpack_primitive(
                 "BBBBBBBBHQQLQQLLL", buffer
@@ -109,7 +104,7 @@ class Disk(BaseModel):
     chunks: int
 
     @classmethod
-    def from_buffer(cls, buffer: bytearray, is_legacy: bool = False) -> Disk:
+    def from_buffer(cls, buffer: bytearray) -> Disk:
         try:
             entry_size, = unpack_primitive("H", buffer[:2])
             del buffer[:2]
@@ -151,6 +146,14 @@ class Disk(BaseModel):
         except Exception as e:
             raise DeserializationError(f"Failed to deserialize Disk: {e}")
 
+    @classmethod
+    def from_buffer_list(cls, buffer: bytearray) -> List[Disk]:
+        allDisks = []
+        while len(buffer) > 0:
+            disk = Disk.from_buffer(buffer)
+            allDisks.append(disk)
+        return allDisks
+
 
 class Metalogger(BaseModel):
     id: int
@@ -159,7 +162,7 @@ class Metalogger(BaseModel):
     version: str
 
     @classmethod
-    def from_buffer(cls, buffer: bytearray, is_legacy: bool = False) -> Metalogger:
+    def from_buffer(cls, buffer: bytearray) -> Metalogger:
 
         try:
             v1, v2, v3, ip1, ip2, ip3, ip4 = struct.unpack(">HBBBBBB", buffer[:8])

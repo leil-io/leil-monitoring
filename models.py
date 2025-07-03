@@ -1,11 +1,16 @@
 from __future__ import annotations
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
-from deserializer import unpack_primitive, unpack_string, unpack_list, DeserializationError
+from deserializer import unpack_primitive, DeserializationError
 import socket
 import struct
+import saunafs_client
 
+PROTO_BASE = 0
 
+CLTOMA_INFO = (PROTO_BASE + 510)
+MATOCL_INFO = (PROTO_BASE + 511)
+INFO = (CLTOMA_INFO, MATOCL_INFO)
 class SystemInfo(BaseModel):
     version: str
     ram_used: int
@@ -22,6 +27,11 @@ class SystemInfo(BaseModel):
     chunks: int
     all_copies: int
     regular_copies: int
+
+    @staticmethod
+    def get_info(client: saunafs_client.SaunaFSClient) -> SystemInfo():
+        buffer = client.send_and_receive(INFO)
+        return SystemInfo.from_buffer(buffer)
 
     @classmethod
     def from_buffer(cls, buffer: bytearray) -> SystemInfo:

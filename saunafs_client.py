@@ -58,7 +58,7 @@ SAU_MATOCL_MOUNT_INFO_LIST = 1610
 INFO = (CLTOMA_INFO, MATOCL_INFO)
 CSERV_LIST = (CLTOMA_CSERV_LIST, MATOCL_CSERV_LIST)
 SAU_CSERV_LIST = (SAU_CLTOMA_CSERV_LIST, SAU_MATOCL_CSERV_LIST)
-HDD_LIST = (CLTOCS_HDD_LIST_V2, MATOCL_HDD_LIST_V2)
+CS_HDD_LIST = (CLTOCS_HDD_LIST_V2, MATOCL_HDD_LIST_V2)
 MLOG_LIST = (CLTOMA_MLOG_LIST, MATOCL_MLOG_LIST)
 SESSION_LIST = (CLTOMA_SESSION_LIST, MATOCL_SESSION_LIST)
 CHART = (CUTOAN_CHART, ANTOCU_CHART)
@@ -94,7 +94,12 @@ class SaunaFSClient:
             msg += chunk
         return msg
 
-    def _send_and_receive(self, host: str, port: int, msg: Tuple[int, int], payload: bytes = b'', version: int = 0) -> bytearray:
+    def send_and_receive(self, msg: Tuple[int, int], payload: bytes = b'', version: int = 0, host: str = "", port: str = "") -> bytearray:
+        if not host:
+            host = self.master_host
+        if not port:
+            port = self.master_port
+
         cmd, expected = msg
         isV2 = cmd > 1000
 
@@ -154,7 +159,7 @@ class SaunaFSClient:
 
     def _get_master_version(self) -> Tuple[int, int, int]:
         try:
-            data = self._send_and_receive(self.master_host, self.master_port, INFO)
+            data = self.send_and_receive(INFO)
             if len(data) >= 4:
                 v1, v2, v3 = struct.unpack(">HBB", data[:4])
                 return (v1, v2, v3)
@@ -163,14 +168,11 @@ class SaunaFSClient:
             return (0, 0, 0)
 
     def get_system_info(self) -> SystemInfo:
-        buffer = self._send_and_receive(self.master_host, self.master_port, INFO)
-        return SystemInfo.from_buffer(buffer)
+        return SystemInfo.get_info(self)
 
     def get_servers(self) -> List[Server]:
         payload = b'\x00'  # Dummy, must be included
-        buffer = self._send_and_receive(
-            self.master_host,
-            self.master_port,
+        buffer = self.send_and_receive(
             SAU_CSERV_LIST,
             payload,
             version=0
@@ -188,10 +190,10 @@ class SaunaFSClient:
         for server in self.get_servers():
             if server.is_disconnected:
                 continue
-            buffer = self._send_and_receive(
-                server.ip_address,
-                server.port,
-                HDD_LIST
+            buffer = self.send_and_receive(
+                CS_HDD_LIST,
+                host=server.ip_address,
+                port=server.port,
             )
             disks = Disk.from_buffer_list(buffer)
             for disk in disks:
@@ -201,11 +203,11 @@ class SaunaFSClient:
 
     def get_chart(self, host: str, port: int, chart_id: int) -> bytes:
         payload = struct.pack(">L", chart_id)
-        return self._send_and_receive(host, port, CHART, payload)
+        return self.send_and_receive(CHART, payload, host=host, port=port)
 
     def get_metaloggers(self) -> List[Metalogger]:
         allLoggers = []
-        buffer = self._send_and_receive(self.master_host, self.master_port, MLOG_LIST)
+        buffer = self.send_and_receive(MLOG_LIST)
         while len(buffer) > 0:
             allLoggers.append(Metalogger.from_buffer(buffer))
             allLoggers[-1].id = len(allLoggers)
@@ -214,7 +216,7 @@ class SaunaFSClient:
     def _get_mounts_info(self) -> Dict[int, str]:
         mounts_info = {}
         try:
-            buffer = self._send_and_receive(self.master_host, self.master_port, MOUNT_INFO_LIST)
+            buffer = self.send_and_receive(MOUNT_INFO_LIST)
             vector_size, = struct.unpack(">L", buffer[:4])
             del buffer[:4]
             for _ in range(vector_size):
@@ -231,7 +233,7 @@ class SaunaFSClient:
         extra_mount_info = self._get_mounts_info()
         # Send vmode=1 to request extended information
         payload = struct.pack(">B", 1)
-        buffer = self._send_and_receive(self.master_host, self.master_port, SESSION_LIST, payload)
+        buffer = self.send_and_receive(SESSION_LIST, payload)
 
         statsCount, = struct.unpack(">H", buffer[:2])
         del buffer[:2]
@@ -302,7 +304,7 @@ class SaunaFSClient:
 
     def get_exports(self) -> List[Export]:
         allExports = []
-        data = self._send_and_receive(self.master_host, self.master_port, EXPORTS_INFO)
+        data = self.send_and_receive(EXPORTS_INFO)
         buffer = bytearray(data)
 
         i = 1
@@ -349,7 +351,7 @@ class SaunaFSClient:
         return allExports
 
     def get_fs_check_info(self) -> FsCheckInfo:
-        data = self._send_and_receive(self.master_host, self.master_port, (CLTOMA_FSTEST_INFO, MATOCL_FSTEST_INFO))
+        data = self.send_and_receive((CLTOMA_FSTEST_INFO, MATOCL_FSTEST_INFO))
         buffer = bytearray(data)
         loop_start, loop_end, files, ug_files, m_files, chunks, ug_chunks, m_chunks, msg_buff_leng = struct.unpack(">LLLLLLLLL", buffer[:36])
         del buffer[:36]
@@ -368,7 +370,7 @@ class SaunaFSClient:
         )
 
     def get_chunk_operations_info(self) -> ChunkOperationsInfo:
-        buffer = self._send_and_receive(self.master_host, self.master_port, (CLTOMA_CHUNKSTEST_INFO, MATOCL_CHUNKSTEST_INFO))
+        buffer = self.send_and_receive((CLTOMA_CHUNKSTEST_INFO, MATOCL_CHUNKSTEST_INFO))
         loop_start, loop_end, del_invalid, n_del_invalid, del_unused, n_del_unused, del_dclean, n_del_dclean, del_ogoal, n_del_ogoal, rep_ugoal, n_rep_ugoal, rebalance = struct.unpack(">LLLLLLLLLLLLL", buffer[:52])
 
         return ChunkOperationsInfo(
@@ -389,7 +391,7 @@ class SaunaFSClient:
 
     def get_chunk_matrix(self) -> ChunkMatrix:
         payload = struct.pack(">B", 0)
-        buffer = self._send_and_receive(self.master_host, self.master_port, (CLTOMA_CHUNKS_MATRIX, MATOCL_CHUNKS_MATRIX), payload)
+        buffer = self.send_and_receive((CLTOMA_CHUNKS_MATRIX, MATOCL_CHUNKS_MATRIX), payload)
 
         matrix = []
         for _ in range(11):
@@ -419,9 +421,7 @@ class SaunaFSClient:
         ))
 
         # Get shadow servers
-        buffer = self._send_and_receive(
-            self.master_host,
-            self.master_port,
+        buffer = self.send_and_receive(
             (SAU_CLTOMA_METADATASERVERS_LIST, SAU_MATOCL_METADATASERVERS_LIST),
             b""
         )
@@ -457,10 +457,10 @@ class SaunaFSClient:
 
     def get_metadata_server_status(self, host: str, port: int) -> Tuple[str, str, int]:
         payload = struct.pack(">L", 0)
-        buffer = self._send_and_receive(host,
-                                        port,
-                                        (SAU_CLTOMA_METADATASERVER_STATUS, SAU_MATOCL_METADATASERVER_STATUS),
-                                        payload)
+        buffer = self.send_and_receive(
+            (SAU_CLTOMA_METADATASERVER_STATUS, SAU_MATOCL_METADATASERVER_STATUS),
+            payload
+        )
         _, status, metadata_version = struct.unpack(">LBQ", buffer)
 
         if status == 1:

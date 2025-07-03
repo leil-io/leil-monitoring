@@ -81,10 +81,10 @@ def test_get_system_info_success(mockSocket):
     ]
 
     client = SaunaFSClient(master_host="testhost", master_port=9421)
-    system_info = client.get_system_info()
+    system_info = SystemInfo.get_info(client)
 
     assert isinstance(system_info, SystemInfo)
-    assert client.master_version == (2, 5, 1)  # Ensure version is still correct
+    assert client.master_version == (2, 5, 1)
     assert system_info.version == "2.5.1"
     assert system_info.ram_used == 536870912
     assert system_info.total_space == 10995116277760

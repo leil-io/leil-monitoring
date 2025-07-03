@@ -66,7 +66,7 @@ def get_client(master_host: str, master_port: int) -> SaunaFSClient:
 @app.get("/api/info", response_model=SystemInfo)
 async def api_get_info(master_host: str = "127.0.0.1", master_port: int = 9421):
     client = get_client(master_host, master_port)
-    return client.get_system_info()
+    return SystemInfo.get_info(client)
 
 
 @app.get("/api/servers", response_model=List[Server])
@@ -127,7 +127,7 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1", masterpo
 
         activeSections = sections.split("|")
 
-        infoData = client.get_system_info() if "IN" in activeSections else None
+        infoData = SystemInfo.get_info(client) if "IN" in activeSections else None
         serversData = client.get_servers() if "CS" in activeSections else None
         disksData = client.get_disks() if "HD" in activeSections else None
         metaloggersData = client.get_metaloggers() if "ML" in activeSections else None

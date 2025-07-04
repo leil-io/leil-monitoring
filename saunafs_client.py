@@ -116,8 +116,11 @@ class SaunaFSClient:
             s.settimeout(5)
             logging.debug(f"Connecting to {host}:{port}")
             s.connect((host, port))
+
             self._my_send(s, request)
             header = self._my_recv(s, 8)
+            print(header)
+
             respCmd, respLength = struct.unpack(">LL", header)
             logging.debug(f"Header received: cmd={respCmd}, length={respLength}")
 
@@ -167,48 +170,9 @@ class SaunaFSClient:
         except Exception:
             return (0, 0, 0)
 
-    def get_servers(self) -> List[Server]:
-        payload = b'\x00'  # Dummy, must be included
-        buffer = self.send_and_receive(
-            SAU_CSERV_LIST,
-            payload,
-            version=0
-        )
-
-        servers = unpack_list(buffer, Server)
-
-        for i, server in enumerate(servers):
-            server.id = i + 1
-
-        return servers
-
-    def get_disks(self) -> List[Disk]:
-        allDisks = []
-        for server in self.get_servers():
-            if server.is_disconnected:
-                continue
-            buffer = self.send_and_receive(
-                CS_HDD_LIST,
-                host=server.ip_address,
-                port=server.port,
-            )
-            disks = Disk.from_buffer_list(buffer)
-            for disk in disks:
-                disk.path = f"{server.hostname}:{disk.path}"
-            allDisks.extend(disks)
-        return allDisks
-
     def get_chart(self, host: str, port: int, chart_id: int) -> bytes:
         payload = struct.pack(">L", chart_id)
         return self.send_and_receive(CHART, payload, host=host, port=port)
-
-    def get_metaloggers(self) -> List[Metalogger]:
-        allLoggers = []
-        buffer = self.send_and_receive(MLOG_LIST)
-        while len(buffer) > 0:
-            allLoggers.append(Metalogger.from_buffer(buffer))
-            allLoggers[-1].id = len(allLoggers)
-        return allLoggers
 
     def _get_mounts_info(self) -> Dict[int, str]:
         mounts_info = {}

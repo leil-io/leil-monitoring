@@ -1,7 +1,7 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from deserializer import unpack_primitive, DeserializationError
+from deserializer import unpack_list, unpack_primitive, DeserializationError
 import socket
 import struct
 import saunafs_client
@@ -11,6 +11,7 @@ PROTO_BASE = 0
 CLTOMA_INFO = (PROTO_BASE + 510)
 MATOCL_INFO = (PROTO_BASE + 511)
 INFO = (CLTOMA_INFO, MATOCL_INFO)
+
 class SystemInfo(BaseModel):
     version: str
     ram_used: int
@@ -29,7 +30,7 @@ class SystemInfo(BaseModel):
     regular_copies: int
 
     @staticmethod
-    def get_info(client: saunafs_client.SaunaFSClient) -> SystemInfo():
+    def get(client: saunafs_client.SaunaFSClient) -> SystemInfo():
         buffer = client.send_and_receive(INFO)
         return SystemInfo.from_buffer(buffer)
 
@@ -49,6 +50,11 @@ class SystemInfo(BaseModel):
             raise DeserializationError(f"Failed to deserialize SystemInfo: {e}")
 
 
+SAU_CLTOMA_CSERV_LIST = 1549
+SAU_MATOCL_CSERV_LIST = 1550
+SAU_CSERV_LIST = (SAU_CLTOMA_CSERV_LIST, SAU_MATOCL_CSERV_LIST)
+
+
 class Server(BaseModel):
     id: int
     hostname: str
@@ -64,6 +70,20 @@ class Server(BaseModel):
     total_space_tobedeleted: int
     chunks_tobedeleted: int
     error_count: int
+
+    @staticmethod
+    def get_list(client: saunafs_client.SaunaFSClient) -> List[Server]:
+        payload = b'\x00'  # Dummy, must be included
+        buffer = client.send_and_receive(
+            SAU_CSERV_LIST,
+            payload,
+            version=0
+        )
+        servers = unpack_list(buffer, Server)
+        for i, server in enumerate(servers):
+            server.id = i + 1
+        print(servers)
+        return servers
 
     @classmethod
     def from_buffer(cls, buffer: bytearray) -> Server:
@@ -105,6 +125,11 @@ class Server(BaseModel):
             raise DeserializationError(f"Failed to deserialize Server: {e}")
 
 
+CLTOCS_HDD_LIST_V2 = (PROTO_BASE + 600)
+MATOCL_HDD_LIST_V2 = (PROTO_BASE + 601)
+CS_HDD_LIST = (CLTOCS_HDD_LIST_V2, MATOCL_HDD_LIST_V2)
+
+
 class Disk(BaseModel):
     path: str
     status: str
@@ -112,6 +137,23 @@ class Disk(BaseModel):
     total_space: int
     used_space: int
     chunks: int
+
+    @staticmethod
+    def get_list(client: saunafs_client.SaunaFSClient) -> List[Disk]:
+        allDisks = []
+        for server in Server.get_list(client):
+            if server.is_disconnected:
+                continue
+            buffer = client.send_and_receive(
+                CS_HDD_LIST,
+                host=server.ip_address,
+                port=server.port,
+            )
+            disks = Disk.from_buffer_list(buffer)
+            for disk in disks:
+                disk.path = f"{server.hostname}:{disk.path}"
+            allDisks.extend(disks)
+        return allDisks
 
     @classmethod
     def from_buffer(cls, buffer: bytearray) -> Disk:
@@ -165,11 +207,25 @@ class Disk(BaseModel):
         return allDisks
 
 
+CLTOMA_MLOG_LIST = (PROTO_BASE + 522)
+MATOCL_MLOG_LIST = (PROTO_BASE + 523)
+MLOG_LIST = (CLTOMA_MLOG_LIST, MATOCL_MLOG_LIST)
+
+
 class Metalogger(BaseModel):
     id: int
     hostname: str
     ip_address: str
     version: str
+
+    @staticmethod
+    def get_list(client: saunafs_client.SaunaFSClient) -> List[Metalogger]:
+        allLoggers = []
+        buffer = client.send_and_receive(MLOG_LIST)
+        while len(buffer) > 0:
+            allLoggers.append(Metalogger.from_buffer(buffer))
+            allLoggers[-1].id = len(allLoggers)
+        return allLoggers
 
     @classmethod
     def from_buffer(cls, buffer: bytearray) -> Metalogger:
@@ -212,6 +268,28 @@ class OperationStats(BaseModel):
     read: int
     write: int
     total: int
+
+    @staticmethod
+    def get_from_list(self, list: List[int]) -> OperationStats:
+        return OperationStats(
+            statfs=list[0],
+            getattr=list[1],
+            setattr=list[2],
+            lookup=list[3],
+            mkdir=list[4],
+            rmdir=list[5],
+            symlink=list[6],
+            readlink=list[7],
+            mknod=list[8],
+            unlink=list[9],
+            rename=list[10],
+            link=list[11],
+            readdir=list[12],
+            open=list[13],
+            read=list[14],
+            write=list[15],
+            total=sum(list)
+        )
 
 
 class Mount(BaseModel):

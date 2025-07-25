@@ -1,5 +1,4 @@
 import struct
-import logging
 from typing import TypeVar, Type, List
 
 T = TypeVar('T')
@@ -7,7 +6,6 @@ T = TypeVar('T')
 
 class DeserializationError(Exception):
     """Custom exception for errors during deserialization."""
-    pass
 
 
 def unpack_from(format: str, buffer: bytearray) -> tuple:

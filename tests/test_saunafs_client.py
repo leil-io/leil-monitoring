@@ -6,7 +6,7 @@ import pytest
 
 from saunafs_client import (
     SaunaFSClient, MATOCL_INFO, ANTOCU_CHART, SAU_MATOCL_CSERV_LIST,
-    MATOCL_HDD_LIST_V2, MATOCL_MLOG_LIST, SAU_MATOCL_MOUNT_INFO_LIST, MATOCL_SESSION_LIST
+    MATOCL_HDD_LIST_V2, MATOCL_MLOG_LIST
 )
 
 from models import (

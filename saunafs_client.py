@@ -3,18 +3,14 @@ import struct
 import select
 import logging
 from typing import List, Tuple, Dict
-from models import (SystemInfo,
-                    Server,
-                    Disk,
-                    Metalogger,
-                    Mount,
+from models import (Mount,
                     Export,
                     MetadataServer,
                     FsCheckInfo,
                     ChunkOperationsInfo,
                     OperationStats,
                     ChunkMatrix)
-from deserializer import unpack_list, unpack_string
+from deserializer import unpack_string
 
 
 # Protocol constants
@@ -169,11 +165,11 @@ class SaunaFSClient:
         return mounts_info
 
     def get_mounts(self) -> List[Mount]:
-        extra_mount_info = Mount.get_mounts_info()
+        extra_mount_info_buffer = self.send_and_receive(MOUNT_INFO_LIST)
         # Send vmode=1 to request extended information
         payload = struct.pack(">B", 1)
         buffer = self.send_and_receive(SESSION_LIST, payload)
-        return Mount.get_list(buffer, extra_mount_info)
+        return Mount.get_list(buffer, extra_mount_info_buffer)
 
     def get_exports(self) -> List[Export]:
         allExports = []

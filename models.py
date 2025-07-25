@@ -1,11 +1,11 @@
 from __future__ import annotations
 from pydantic import BaseModel
 from typing import List, Optional, Dict
-from deserializer import unpack_list, unpack_primitive, unpack_string, DeserializationError
+from deserializer import unpack_list, unpack_primitive, unpack_string, DeserializationError, unpack_from
 import logging
 import socket
 import struct
-import saunafs_client
+
 
 PROTO_BASE = 0
 
@@ -221,7 +221,8 @@ class Metalogger(BaseModel):
     version: str
 
     @staticmethod
-    def get_list(client: saunafs_client.SaunaFSClient) -> List[Metalogger]:
+    def get_list(client) -> List[Metalogger]:
+        import saunafs_client
         allLoggers = []
         buffer = client.send_and_receive(MLOG_LIST)
         while len(buffer) > 0:
@@ -323,11 +324,10 @@ class Mount(BaseModel):
     current_op_stats: Optional[OperationStats] = None
     last_hour_op_stats: Optional[OperationStats] = None
 
-    @classmethod
-    def get_mounts_info(client: saunafs_client.SaunaFSClient) -> Dict[int, str]:
+    @staticmethod
+    def get_mounts_info(buffer: bytearray) -> Dict[int, str]:
         mounts_info = {}
         try:
-            buffer = client.send_and_receive(MOUNT_INFO_LIST)
             vector_size, = struct.unpack(">L", buffer[:4])
             del buffer[:4]
             for _ in range(vector_size):
@@ -341,9 +341,9 @@ class Mount(BaseModel):
         return mounts_info
 
     @staticmethod
-    def get_list(buffer: bytearray, extra_mount_info: Dict[int, str]) -> List[Mount]:
+    def get_list(buffer: bytearray, extra_mount_info_buffer: bytearray) -> List[Mount]:
+        extra_mount_info = Mount.get_mounts_info(extra_mount_info_buffer)
         allMounts = []
-
         statsCount, = struct.unpack(">H", buffer[:2])
         del buffer[:2]
 
@@ -351,7 +351,7 @@ class Mount(BaseModel):
             mount = Mount.from_buffer(buffer, statsCount)
             mount.id = len(allMounts) + 1
             if mount.session_id in extra_mount_info:
-                mount.extra_info = "\n" + extra_mount_info[mount.session_id]
+                mount.mount_info = "\n" + extra_mount_info[mount.session_id]
 
             allMounts.append(mount)
         return allMounts
@@ -359,33 +359,28 @@ class Mount(BaseModel):
     @classmethod
     def from_buffer(cls, buffer: bytearray, stats_count: int) -> Mount:
         try:
-            session_id, ip1, ip2, ip3, ip4, v1, v2, v3 = struct.unpack(">LBBBBHBB", buffer[:12])
-            del buffer[:12]
+            session_id, ip1, ip2, ip3, ip4, v1, v2, v3 = unpack_from("LBBBBHBB", buffer)
 
             root_path = unpack_string(buffer, legacy=True)
             mounted_path = unpack_string(buffer, legacy=True)
 
-            sesflags, rootuid, rootgid, mapalluid, mapallgid = struct.unpack(">BLLLL", buffer[:17])
-            del buffer[:17]
+            sesflags, rootuid, rootgid, mapalluid, mapallgid = unpack_from("BLLLL", buffer)
 
             mingoal, maxgoal, mintrashtime, maxtrashtime = None, None, None, None
             # The vmode we sent means these fields should be present
-            mingoal, maxgoal, mintrashtime, maxtrashtime = struct.unpack(">BBLL", buffer[:10])
-            del buffer[:10]
+            mingoal, maxgoal, mintrashtime, maxtrashtime = unpack_from("BBLL", buffer)
 
             current_op_stats_list = []
             for _ in range(stats_count):
-                stat, = struct.unpack(">L", buffer[:4])
+                stat, = unpack_from("L", buffer)
                 current_op_stats_list.append(stat)
-                del buffer[:4]
 
             current_op_stats = OperationStats.get_from_list(current_op_stats_list)
 
             last_hour_op_stats_list = []
             for _ in range(stats_count):
-                stat, = struct.unpack(">L", buffer[:4])
+                stat, = unpack_from("L", buffer)
                 last_hour_op_stats_list.append(stat)
-                del buffer[:4]
 
             last_hour_op_stats = OperationStats.get_from_list(current_op_stats_list)
 

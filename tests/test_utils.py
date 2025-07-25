@@ -73,3 +73,17 @@ def serialize_mount_info(session_id: int, mount_info: str) -> bytes:
     buffer.extend(struct.pack(">L", session_id))
     buffer.extend(serialize_string(mount_info, legacy=False)) # Mount info is V2 string
     return buffer
+
+def serialize_metalogger(
+    version: str,
+    ip_address: str
+) -> bytearray:
+    """
+    Serializes Metalogger data into a bytearray buffer for testing.
+    """
+    buffer = bytearray()
+    v_parts = [int(p) for p in version.split('.')]
+    ip_parts = [int(p) for p in ip_address.split('.')]
+    # HBBBBBB (v1, v2, v3, ip1, ip2, ip3, ip4)
+    buffer.extend(struct.pack(">HBBBBBB", v_parts[0], v_parts[1], v_parts[2], ip_parts[0], ip_parts[1], ip_parts[2], ip_parts[3]))
+    return buffer

@@ -11,7 +11,7 @@ import pathlib
 from saunafs_client import SaunaFSClient
 from models import (
     SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo,
-    ChunkOperationsInfo, OperationStats, ChunkMatrix, Metalogger
+    ChunkOperationsInfo, OperationStats, ChunkMatrix
 )
 
 
@@ -130,7 +130,7 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1", masterpo
         infoData = SystemInfo.get(client) if "IN" in activeSections else None
         serversData = Server.get_list(client) if "CS" in activeSections else None
         disksData = Disk.get_list(client) if "HD" in activeSections else None
-        metaloggersData = Metalogger.get_list(client) if "ML" in activeSections else None
+        metaloggersData = client.get_metaloggers() if "ML" in activeSections else None
         mountsData = client.get_mounts() if "MS" in activeSections or "MO" in activeSections else None
         exportsData = client.get_exports() if "EX" in activeSections else None
         metadataServersData = client.get_metadata_servers() if "CS" in activeSections else None

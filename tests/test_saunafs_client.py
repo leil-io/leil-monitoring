@@ -6,14 +6,13 @@ import pytest
 
 from saunafs_client import (
     SaunaFSClient, MATOCL_INFO, ANTOCU_CHART, SAU_MATOCL_CSERV_LIST,
-    MATOCL_HDD_LIST_V2, MATOCL_MLOG_LIST
+    MATOCL_HDD_LIST_V2
 )
 
 from models import (
     SystemInfo,
     Server,
-    Disk,
-    Metalogger
+    Disk
 )
 
 
@@ -275,45 +274,3 @@ def test_get_disks_success(mockSocket):
     assert disk.total_space == 4000
     assert disk.used_space == 2000
     assert disk.chunks == 200
-
-
-def test_get_metaloggers_success(mockSocket):
-    """
-    Tests the successful retrieval and parsing of a list of metaloggers.
-    """
-
-    metalogger1_payload = _create_metalogger_payload(
-        v1=5, v2=0, v3=0, ip1=192, ip2=168, ip3=50, ip4=201
-    )
-
-    metalogger2_payload = _create_metalogger_payload(
-        v1=4, v2=9, v3=1, ip1=192, ip2=168, ip3=50, ip4=204
-    )
-
-    payload = metalogger1_payload + metalogger2_payload
-
-    mockSocket.recv.side_effect = _mock_initial_version_response() + [
-        struct.pack(">LL", MATOCL_MLOG_LIST, len(payload)),
-        payload
-    ]
-    with patch('socket.gethostbyaddr') as mock_gethostbyaddr:
-        _mock_gethostbyaddr(mock_gethostbyaddr, {
-            "192.168.50.201": "metalogger_01",
-            "192.168.50.204": "metalogger_02"
-        })
-
-        client = SaunaFSClient(master_host="testhost", master_port=9421)
-        metaloggers = Metalogger.get_list(client)
-
-    assert len(metaloggers) == 2
-    metalogger1 = metaloggers[0]
-    assert metalogger1.ip_address == "192.168.50.201"
-    assert metalogger1.version == "5.0.0"
-    assert metalogger1.hostname == "metalogger_01"
-    assert metalogger1.id == 1
-
-    metalogger2 = metaloggers[1]
-    assert metalogger2.ip_address == "192.168.50.204"
-    assert metalogger2.version == "4.9.1"
-    assert metalogger2.hostname == "metalogger_02"
-    assert metalogger2.id == 2

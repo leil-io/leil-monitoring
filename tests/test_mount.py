@@ -4,15 +4,15 @@ from models import Mount, OperationStats
 from deserializer import DeserializationError
 from tests.test_utils import serialize_mount, serialize_mount_info
 
-class TestMountDeserialization(unittest.TestCase):
 
+class TestMountDeserialization(unittest.TestCase):
     def test_from_buffer(self):
         session_id = 12345
         ip_address = "192.168.1.1"
         version = "1.2.3"
         root_path = "/mnt/saunafs"
         mounted_path = "/home/user/saunafs_mount"
-        sesflags = 1 | 16 # ro, map_all
+        sesflags = 1 | 16  # ro, map_all
         root_uid = 1000
         root_gid = 1000
         map_all_uid = 999
@@ -21,7 +21,7 @@ class TestMountDeserialization(unittest.TestCase):
         max_goal = 3
         min_trash_time = 3600
         max_trash_time = 86400
-        stats_count = 16 # OperationStats has 16 fields + total
+        stats_count = 16  # OperationStats has 16 fields + total
         current_op_stats_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
         last_hour_op_stats_list = [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 
@@ -46,7 +46,7 @@ class TestMountDeserialization(unittest.TestCase):
         self.assertEqual(mount.mounted_path, mounted_path)
         self.assertEqual(mount.version, version)
         self.assertEqual(mount.root_path, root_path)
-        self.assertEqual(mount.mount_info, "") # This is set by caller, not from buffer
+        self.assertEqual(mount.mount_info, "")  # This is set by caller, not from buffer
         self.assertEqual(mount.flags, "ro, map_all")
         self.assertEqual(mount.root_uid, root_uid)
         self.assertEqual(mount.root_gid, root_gid)
@@ -73,7 +73,7 @@ class TestMountDeserialization(unittest.TestCase):
 
     def test_from_buffer_deserialization_error(self):
         # Create a buffer that is intentionally too short
-        short_buffer = bytearray(struct.pack(">LBBBBHBB", 1, 1, 1, 1, 1, 1, 1, 1)) # Only the first part
+        short_buffer = bytearray(struct.pack(">LBBBBHBB", 1, 1, 1, 1, 1, 1, 1, 1))  # Only the first part
 
         with self.assertRaises(DeserializationError):
             Mount.from_buffer(short_buffer, 16)
@@ -83,7 +83,7 @@ class TestMountDeserialization(unittest.TestCase):
         mount_info_string = "Test Mount Info"
 
         # Build the mock buffer for get_mounts_info
-        mock_mount_info_buffer = bytearray(struct.pack(">L", 1)) # vector_size = 1
+        mock_mount_info_buffer = bytearray(struct.pack(">L", 1))  # vector_size = 1
         mock_mount_info_buffer.extend(serialize_mount_info(session_id, mount_info_string))
 
         # Call the static method
@@ -97,7 +97,7 @@ class TestMountDeserialization(unittest.TestCase):
 
         # Test error handling for get_mounts_info (empty buffer)
         mounts_info_error = Mount.get_mounts_info(bytearray())
-        self.assertEqual(mounts_info_error, {}) # Should return empty dict on error
+        self.assertEqual(mounts_info_error, {})  # Should return empty dict on error
 
     def test_get_list(self):
         session_id = 12345
@@ -105,7 +105,7 @@ class TestMountDeserialization(unittest.TestCase):
         version = "1.2.3"
         root_path = "/mnt/saunafs"
         mounted_path = "/home/user/saunafs_mount"
-        sesflags = 1 | 16 # ro, map_all
+        sesflags = 1 | 16  # ro, map_all
         root_uid = 1000
         root_gid = 1000
         map_all_uid = 999
@@ -130,10 +130,10 @@ class TestMountDeserialization(unittest.TestCase):
         list_buffer = bytearray()
         list_buffer.extend(struct.pack(">H", stats_count))
         list_buffer.extend(mock_single_mount_buffer)
-        list_buffer.extend(mock_single_mount_buffer) # Add a second mount for testing list functionality
+        list_buffer.extend(mock_single_mount_buffer)  # Add a second mount for testing list functionality
 
         # Build extra_mount_info_buffer
-        extra_mount_info_buffer = bytearray(struct.pack(">L", 1)) # vector_size = 1
+        extra_mount_info_buffer = bytearray(struct.pack(">L", 1))  # vector_size = 1
         extra_mount_info_buffer.extend(serialize_mount_info(session_id, "Extra info for session 12345"))
 
         # Call the get_list method
@@ -150,7 +150,7 @@ class TestMountDeserialization(unittest.TestCase):
         self.assertEqual(mounts[0].mounted_path, mounted_path)
         self.assertEqual(mounts[0].version, version)
         self.assertEqual(mounts[0].root_path, root_path)
-        self.assertEqual(mounts[0].mount_info, "\nExtra info for session 12345") # Check extra_info
+        self.assertEqual(mounts[0].mount_info, "\nExtra info for session 12345")  # Check extra_info
         self.assertEqual(mounts[0].flags, "ro, map_all")
         self.assertEqual(mounts[0].root_uid, root_uid)
         self.assertEqual(mounts[0].root_gid, root_gid)
@@ -166,7 +166,7 @@ class TestMountDeserialization(unittest.TestCase):
         # Check the second mount (should be identical except for ID)
         self.assertEqual(mounts[1].id, 2)
         self.assertEqual(mounts[1].session_id, session_id)
-        self.assertEqual(mounts[1].mount_info, "\nExtra info for session 12345") # Check extra_info
+        self.assertEqual(mounts[1].mount_info, "\nExtra info for session 12345")  # Check extra_info
 
         # Ensure the buffer is empty after deserialization
         self.assertEqual(len(list_buffer), 0)

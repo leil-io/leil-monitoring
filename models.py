@@ -209,11 +209,6 @@ class Disk(BaseModel):
         return allDisks
 
 
-CLTOMA_MLOG_LIST = (PROTO_BASE + 522)
-MATOCL_MLOG_LIST = (PROTO_BASE + 523)
-MLOG_LIST = (CLTOMA_MLOG_LIST, MATOCL_MLOG_LIST)
-
-
 class Metalogger(BaseModel):
     id: int
     hostname: str
@@ -221,10 +216,8 @@ class Metalogger(BaseModel):
     version: str
 
     @staticmethod
-    def get_list(client) -> List[Metalogger]:
-        import saunafs_client
+    def get_list(buffer: bytearray) -> List[Metalogger]:
         allLoggers = []
-        buffer = client.send_and_receive(MLOG_LIST)
         while len(buffer) > 0:
             allLoggers.append(Metalogger.from_buffer(buffer))
             allLoggers[-1].id = len(allLoggers)
@@ -232,10 +225,8 @@ class Metalogger(BaseModel):
 
     @classmethod
     def from_buffer(cls, buffer: bytearray) -> Metalogger:
-
         try:
-            v1, v2, v3, ip1, ip2, ip3, ip4 = struct.unpack(">HBBBBBB", buffer[:8])
-            del buffer[:8]
+            v1, v2, v3, ip1, ip2, ip3, ip4 = unpack_from("HBBBBBB", buffer)
             ip_address = f"{ip1}.{ip2}.{ip3}.{ip4}"
             version = f"{v1}.{v2}.{v3}"
             try:

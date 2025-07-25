@@ -9,57 +9,70 @@ from models import (Mount,
                     FsCheckInfo,
                     ChunkOperationsInfo,
                     OperationStats,
-                    ChunkMatrix)
+                    ChunkMatrix,
+                    Metalogger
+                    )
 from deserializer import unpack_string
 
 
-# Protocol constants
+# Message type and protocol constants
 PROTO_BASE = 0
+
 CLTOMA_INFO = (PROTO_BASE + 510)
 MATOCL_INFO = (PROTO_BASE + 511)
-CLTOMA_CSERV_LIST = (PROTO_BASE + 500)
-MATOCL_CSERV_LIST = (PROTO_BASE + 501)
-CLTOCS_HDD_LIST_V2 = (PROTO_BASE + 600)
-MATOCL_HDD_LIST_V2 = (PROTO_BASE + 601)
-CLTOMA_MLOG_LIST = (PROTO_BASE + 522)
-MATOCL_MLOG_LIST = (PROTO_BASE + 523)
-CLTOMA_SESSION_LIST = (PROTO_BASE + 508)
-MATOCL_SESSION_LIST = (PROTO_BASE + 509)
-CLTOMA_EXPORTS_INFO = (PROTO_BASE + 520)
-MATOCL_EXPORTS_INFO = (PROTO_BASE + 521)
+INFO = (CLTOMA_INFO, MATOCL_INFO)
+
 CLTOMA_FSTEST_INFO = (PROTO_BASE + 512)
 MATOCL_FSTEST_INFO = (PROTO_BASE + 513)
-CLTOMA_CHUNKSTEST_INFO = (PROTO_BASE + 514)
-MATOCL_CHUNKSTEST_INFO = (PROTO_BASE + 515)
+FSTEST_INFO = (CLTOMA_FSTEST_INFO, MATOCL_FSTEST_INFO)
+
 CLTOMA_CHUNKS_MATRIX = (PROTO_BASE + 516)
 MATOCL_CHUNKS_MATRIX = (PROTO_BASE + 517)
+CHUNKS_MATRIX = (CLTOMA_CHUNKS_MATRIX, MATOCL_CHUNKS_MATRIX)
 
+CLTOMA_CHUNKSTEST_INFO = (PROTO_BASE + 514)
+MATOCL_CHUNKSTEST_INFO = (PROTO_BASE + 515)
+CHUNKSTEST_INFO = (CLTOMA_CHUNKSTEST_INFO, MATOCL_CHUNKSTEST_INFO)
 
-CUTOAN_CHART = (PROTO_BASE + 504)
-ANTOCU_CHART = (PROTO_BASE + 505)
+CLTOMA_CSERV_LIST = (PROTO_BASE + 500)
+MATOCL_CSERV_LIST = (PROTO_BASE + 501)
+CSERV_LIST = (CLTOMA_CSERV_LIST, MATOCL_CSERV_LIST)
 
 SAU_CLTOMA_CSERV_LIST = 1549
 SAU_MATOCL_CSERV_LIST = 1550
+SAU_CSERV_LIST = (SAU_CLTOMA_CSERV_LIST, SAU_MATOCL_CSERV_LIST)
+
 SAU_CLTOMA_METADATASERVERS_LIST = 1522
 SAU_MATOCL_METADATASERVERS_LIST = 1523
+METADATASERVERS_LIST = (SAU_CLTOMA_METADATASERVERS_LIST, SAU_MATOCL_METADATASERVERS_LIST)
+
 SAU_CLTOMA_METADATASERVER_STATUS = 1545
 SAU_MATOCL_METADATASERVER_STATUS = 1546
-SAU_CLTOMA_HOSTNAME = 1551
-SAU_MATOCL_HOSTNAME = 1552
+METADATASERVER_STATUS = (SAU_CLTOMA_METADATASERVER_STATUS, SAU_MATOCL_METADATASERVER_STATUS)
+
+CLTOCS_HDD_LIST_V2 = (PROTO_BASE + 600)
+MATOCL_HDD_LIST_V2 = (PROTO_BASE + 601)
+CS_HDD_LIST = (CLTOCS_HDD_LIST_V2, MATOCL_HDD_LIST_V2)
+
+CLTOMA_MLOG_LIST = (PROTO_BASE + 522)
+MATOCL_MLOG_LIST = (PROTO_BASE + 523)
+MLOG_LIST = (CLTOMA_MLOG_LIST, MATOCL_MLOG_LIST)
+
+CUTOAN_CHART = (PROTO_BASE + 504)
+ANTOCU_CHART = (PROTO_BASE + 505)
+CHART = (CUTOAN_CHART, ANTOCU_CHART)
+
 SAU_CLTOMA_MOUNT_INFO_LIST = 1609
 SAU_MATOCL_MOUNT_INFO_LIST = 1610
-
-
-# Message type constants
-INFO = (CLTOMA_INFO, MATOCL_INFO)
-CSERV_LIST = (CLTOMA_CSERV_LIST, MATOCL_CSERV_LIST)
-SAU_CSERV_LIST = (SAU_CLTOMA_CSERV_LIST, SAU_MATOCL_CSERV_LIST)
-CS_HDD_LIST = (CLTOCS_HDD_LIST_V2, MATOCL_HDD_LIST_V2)
-MLOG_LIST = (CLTOMA_MLOG_LIST, MATOCL_MLOG_LIST)
-CHART = (CUTOAN_CHART, ANTOCU_CHART)
-EXPORTS_INFO = (CLTOMA_EXPORTS_INFO, MATOCL_EXPORTS_INFO)
 MOUNT_INFO_LIST = (SAU_CLTOMA_MOUNT_INFO_LIST, SAU_MATOCL_MOUNT_INFO_LIST)
+
+CLTOMA_SESSION_LIST = (PROTO_BASE + 508)
+MATOCL_SESSION_LIST = (PROTO_BASE + 509)
 SESSION_LIST = (CLTOMA_SESSION_LIST, MATOCL_SESSION_LIST)
+
+CLTOMA_EXPORTS_INFO = (PROTO_BASE + 520)
+MATOCL_EXPORTS_INFO = (PROTO_BASE + 521)
+EXPORTS_INFO = (CLTOMA_EXPORTS_INFO, MATOCL_EXPORTS_INFO)
 
 
 class SaunaFSClient:
@@ -164,6 +177,10 @@ class SaunaFSClient:
             logging.warning(f"Could not get extra mount info: {e}")
         return mounts_info
 
+    def get_metaloggers(self) -> List[Metalogger]:
+        buffer = self.send_and_receive(MLOG_LIST)
+        return Metalogger.get_list(buffer)
+
     def get_mounts(self) -> List[Mount]:
         extra_mount_info_buffer = self.send_and_receive(MOUNT_INFO_LIST)
         # Send vmode=1 to request extended information
@@ -220,7 +237,7 @@ class SaunaFSClient:
         return allExports
 
     def get_fs_check_info(self) -> FsCheckInfo:
-        data = self.send_and_receive((CLTOMA_FSTEST_INFO, MATOCL_FSTEST_INFO))
+        data = self.send_and_receive(FSTEST_INFO)
         buffer = bytearray(data)
         loop_start, loop_end, files, ug_files, m_files, chunks, ug_chunks, m_chunks, msg_buff_leng = struct.unpack(">LLLLLLLLL", buffer[:36])
         del buffer[:36]
@@ -239,7 +256,7 @@ class SaunaFSClient:
         )
 
     def get_chunk_operations_info(self) -> ChunkOperationsInfo:
-        buffer = self.send_and_receive((CLTOMA_CHUNKSTEST_INFO, MATOCL_CHUNKSTEST_INFO))
+        buffer = self.send_and_receive(CHUNKSTEST_INFO)
         loop_start, loop_end, del_invalid, n_del_invalid, del_unused, n_del_unused, del_dclean, n_del_dclean, del_ogoal, n_del_ogoal, rep_ugoal, n_rep_ugoal, rebalance = struct.unpack(">LLLLLLLLLLLLL", buffer[:52])
 
         return ChunkOperationsInfo(
@@ -260,7 +277,7 @@ class SaunaFSClient:
 
     def get_chunk_matrix(self) -> ChunkMatrix:
         payload = struct.pack(">B", 0)
-        buffer = self.send_and_receive((CLTOMA_CHUNKS_MATRIX, MATOCL_CHUNKS_MATRIX), payload)
+        buffer = self.send_and_receive(CHUNKS_MATRIX, payload)
 
         matrix = []
         for _ in range(11):
@@ -291,7 +308,7 @@ class SaunaFSClient:
 
         # Get shadow servers
         buffer = self.send_and_receive(
-            (SAU_CLTOMA_METADATASERVERS_LIST, SAU_MATOCL_METADATASERVERS_LIST),
+            METADATASERVERS_LIST,
             b""
         )
         master_version, = struct.unpack(">L", buffer[:4])
@@ -327,7 +344,7 @@ class SaunaFSClient:
     def get_metadata_server_status(self, host: str, port: int) -> Tuple[str, str, int]:
         payload = struct.pack(">L", 0)
         buffer = self.send_and_receive(
-            (SAU_CLTOMA_METADATASERVER_STATUS, SAU_MATOCL_METADATASERVER_STATUS),
+            METADATASERVER_STATUS,
             payload
         )
         _, status, metadata_version = struct.unpack(">LBQ", buffer)

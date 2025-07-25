@@ -335,111 +335,112 @@ def test_get_metaloggers_success(mockSocket):
 
 
 # def _create_mount_payload(
-#     session_id, ip_parts, version_parts, root_path, mounted_path, sesflags,
-#     rootuid, rootgid, mapalluid, mapallgid, mingoal, maxgoal,
-#     mintrashtime, maxtrashtime, ops
+#    session_id, ip_parts, version_parts, root_path, mounted_path, sesflags,
+#    rootuid, rootgid, mapalluid, mapallgid, mingoal, maxgoal,
+#    mintrashtime, maxtrashtime, ops
 # ):
-#     peerid_ip = struct.pack(">BBBB", *ip_parts)
-#     version = struct.pack(">BBB", *version_parts)
-#     return struct.pack(
-#         ">L", session_id
-#     ) + peerid_ip + version + struct.pack(
-#         ">B", len(root_path)
-#     ) + root_path + struct.pack(
-#         ">B", len(mounted_path)
-#     ) + mounted_path + struct.pack(
-#         ">BLLLLBBLLLLLLLLLL",
-#         sesflags, rootuid, rootgid, mapalluid, mapallgid,
-#         mingoal, maxgoal, mintrashtime, maxtrashtime,
-#         *ops
-#     )
+#    peerid_ip = struct.pack(">BBBB", *ip_parts)
+#    version = struct.pack(">BBB", *version_parts)
+#    return struct.pack(
+#        ">L", session_id
+#    ) + peerid_ip + version + struct.pack(
+#        ">B", len(root_path)
+#    ) + root_path + struct.pack(
+#        ">B", len(mounted_path)
+#    ) + mounted_path + struct.pack(
+#        ">BLLLLBBLLLLLLLLLL",
+#        sesflags, rootuid, rootgid, mapalluid, mapallgid,
+#        mingoal, maxgoal, mintrashtime, maxtrashtime,
+#        *ops
+#    )
 #
 #
 # def test_get_mounts_success(mockSocket):
-#     """
-#     Tests the successful retrieval and parsing of a list of clients.
-#     """
-#     stats_length = 8
+#    """
+#    Tests the successful retrieval and parsing of a list of clients.
+#    """
+#    stats_length = 8
 #
-#     cl1_payload = _create_mount_payload(
-#         session_id=1,
-#         ip_parts=[192, 168, 50, 201],
-#         version_parts=[5, 2, 1],
-#         root_path=b"/",
-#         mounted_path=b"/mnt/saunafs",
-#         sesflags=0b11010,  # ro, dynamic_ip, and quota admin
-#         rootuid=1000,
-#         rootgid=1000,
-#         mapalluid=999,
-#         mapallgid=999,
-#         mingoal=1,
-#         maxgoal=40,
-#         mintrashtime=0,
-#         maxtrashtime=4294967295,
-#         ops=[1, 2, 2, 2, 4, 4, 4, 6]
-#     )
+#    cl1_payload = _create_mount_payload(
+#        session_id=1,
+#        ip_parts=[192, 168, 50, 201],
+#        version_parts=[5, 2, 1],
+#        root_path=b"/",
+#        mounted_path=b"/mnt/saunafs",
+#        sesflags=0b11010,  # ro, dynamic_ip, and quota admin
+#        rootuid=1000,
+#        rootgid=1000,
+#        mapalluid=999,
+#        mapallgid=999,
+#        mingoal=1,
+#        maxgoal=40,
+#        mintrashtime=0,
+#        maxtrashtime=4294967295,
+#        ops=[1, 2, 2, 2, 4, 4, 4, 6]
+#    )
 #
-#     cl2_payload = _create_mount_payload(
-#         session_id=2,
-#         ip_parts=[192, 168, 50, 205],
-#         version_parts=[4, 1, 1],
-#         root_path=b"/",
-#         mounted_path=b"/mnt/saunafs",
-#         sesflags=0b00101,  # ignore_gid, map_all
-#         rootuid=1,
-#         rootgid=1,
-#         mapalluid=0,
-#         mapallgid=0,
-#         mingoal=1,
-#         maxgoal=15,
-#         mintrashtime=10,
-#         maxtrashtime=3600,
-#         ops=[5, 2, 7, 2, 3, 4, 2, 1]
-#     )
+#    cl2_payload = _create_mount_payload(
+#        session_id=2,
+#        ip_parts=[192, 168, 50, 205],
+#        version_parts=[4, 1, 1],
+#        root_path=b"/",
+#        mounted_path=b"/mnt/saunafs",
+#        sesflags=0b00101,  # ignore_gid, map_all
+#        rootuid=1,
+#        rootgid=1,
+#        mapalluid=0,
+#        mapallgid=0,
+#        mingoal=1,
+#        maxgoal=15,
+#        mintrashtime=10,
+#        maxtrashtime=3600,
+#        ops=[5, 2, 7, 2, 3, 4, 2, 1]
+#    )
 #
-#     cl1_extra_info = b"Extra info for mount 1\x00"
-#     cl2_extra_info = b"Extra info for mount 2\x00"
+#    cl1_extra_info = b"Extra info for mount 1\x00"
+#    cl2_extra_info = b"Extra info for mount 2\x00"
 #
-#     extra_info = struct.pack(
-#         ">LLL",
-#         2,  # Vector size
-#         1,  # Session id
-#         len(cl1_extra_info)
-#     ) + cl1_extra_info + struct.pack(
-#         ">LL", 2, len(cl2_extra_info)
-#     ) + cl2_extra_info
+#    extra_info = struct.pack(
+#        ">LLL",
+#        2,  # Vector size
+#        1,  # Session id
+#        len(cl1_extra_info)
+#    ) + cl1_extra_info + struct.pack(
+#        ">LL", 2, len(cl2_extra_info)
+#    ) + cl2_extra_info
+#    print(extra_info)
 #
-#     payload = struct.pack(">H", stats_length) + cl1_payload + cl2_payload
+#    payload = struct.pack(">H", stats_length) + cl1_payload + cl2_payload
 #
-#     mockSocket.recv.side_effect = [
-#         struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
-#         versionPayload,
-#         struct.pack(">LL", SAU_MATOCL_MOUNT_INFO_LIST, len(extra_info)),
-#         extra_info,
-#         struct.pack(">LL", MATOCL_SESSION_LIST, len(payload)),
-#         payload
-#     ]
-#     with patch('socket.gethostbyaddr') as mock_gethostbyaddr:
-#         def side_effect(ip) -> str:
-#             if ip == "192.168.50.201":
-#                 return ("client_01", [], [])
-#             elif ip == "192.168.50.205":
-#                 return ("client_02", [], [])
+#    mockSocket.recv.side_effect = [
+#        struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
+#        versionPayload,
+#        struct.pack(">LL", SAU_MATOCL_MOUNT_INFO_LIST, len(extra_info) + 1),
+#        struct.pack(">L", 0) + extra_info,
+#        struct.pack(">LL", MATOCL_SESSION_LIST, len(payload)),
+#        payload
+#    ]
+#    with patch('socket.gethostbyaddr') as mock_gethostbyaddr:
+#        def side_effect(ip) -> str:
+#            if ip == "192.168.50.201":
+#                return ("client_01", [], [])
+#            elif ip == "192.168.50.205":
+#                return ("client_02", [], [])
 #
-#         mock_gethostbyaddr.side_effect = side_effect
+#        mock_gethostbyaddr.side_effect = side_effect
 #
-#         client = SaunaFSClient(master_host="testhost", master_port=9421)
-#         clients = client.get_mounts()
+#        client = SaunaFSClient(master_host="testhost", master_port=9421)
+#        clients = client.get_mounts()
 #
-#     assert len(clients) == 2
-#     client1 = clients[0]
-#     assert client1.ip_address == "192.168.50.201"
-#     assert client1.version == "5.2.1"
-#     assert client1.hostname == "client_01"
-#     assert client1.id == 1
+#    assert len(clients) == 2
+#    client1 = clients[0]
+#    assert client1.ip_address == "192.168.50.201"
+#    assert client1.version == "5.2.1"
+#    assert client1.hostname == "client_01"
+#    assert client1.id == 1
 #
-#     client2 = clients[1]
-#     assert client2.ip_address == "192.168.50.205"
-#     assert client2.version == "4.1.1"
-#     assert client2.hostname == "client_02"
-#     assert client2.id == 2
+#    client2 = clients[1]
+#    assert client2.ip_address == "192.168.50.205"
+#    assert client2.version == "4.1.1"
+#    assert client2.hostname == "client_02"
+#    assert client2.id == 2

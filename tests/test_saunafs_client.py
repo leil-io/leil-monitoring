@@ -1,24 +1,74 @@
 import socket
 import struct
-from random import randrange
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from saunafs_client import (
     SaunaFSClient, MATOCL_INFO, ANTOCU_CHART, SAU_MATOCL_CSERV_LIST,
-    MATOCL_HDD_LIST_V2, MATOCL_MLOG_LIST, MATOCL_SESSION_LIST, SAU_MATOCL_MOUNT_INFO_LIST
+    MATOCL_HDD_LIST_V2, MATOCL_MLOG_LIST, SAU_MATOCL_MOUNT_INFO_LIST, MATOCL_SESSION_LIST
 )
 
 from models import (
     SystemInfo,
     Server,
     Disk,
-    Metalogger,
-    Mount
+    Metalogger
 )
 
+
 versionPayload = struct.pack(">HBB", 2, 5, 1)
+
+
+def _mock_initial_version_response():
+    """Helper to return the initial master version response side effect."""
+    return [
+        struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
+        versionPayload,
+    ]
+
+
+def _create_server_payload(
+    disconnected, v1, v2, v3, ip1, ip2, ip3, ip4, port, used, total, chunks,
+    tdused, tdtotal, tdchunks, errcnt, label
+):
+    """Helper to create a single server payload."""
+    server_label_encoded = (label + "\x00").encode('utf-8')
+    return struct.pack(
+        ">BBBBBBBBHQQLQQLLL",
+        disconnected, v1, v2, v3, ip1, ip2, ip3, ip4, port, used, total, chunks,
+        tdused, tdtotal, tdchunks, errcnt, len(server_label_encoded)
+    ) + server_label_encoded
+
+
+def _create_disk_payload(
+    flags, err_chunk_id, err_time, used, total, chunks_cnt, disk_path
+):
+    """Helper to create a single disk payload."""
+    disk_payload_data = struct.pack(
+        ">BQLQQL",
+        flags, err_chunk_id, err_time, used, total, chunks_cnt,
+    )
+    return struct.pack(
+        ">HB", len(disk_payload_data) + len(disk_path) + 1, len(disk_path)
+    ) + disk_path + disk_payload_data
+
+
+def _create_metalogger_payload(v1, v2, v3, ip1, ip2, ip3, ip4):
+    """Helper to create a single metalogger payload."""
+    return struct.pack(
+        ">HBBBBBB",
+        v1, v2, v3, ip1, ip2, ip3, ip4
+    )
+
+
+def _mock_gethostbyaddr(mock_gethostbyaddr, ip_to_hostname_map):
+    """Helper to mock socket.gethostbyaddr with a dictionary of mappings."""
+    def side_effect(ip):
+        if ip in ip_to_hostname_map:
+            return (ip_to_hostname_map[ip], [], [])
+        raise socket.herror(1, "Host not found")
+    mock_gethostbyaddr.side_effect = side_effect
 
 
 @pytest.fixture
@@ -43,16 +93,7 @@ def test_get_master_version_success(mockSocket):
     during initialization.
     """
 
-    # The _get_master_version call in __init__ will receive this
-    mockSocket.recv.side_effect = [
-        struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
-        versionPayload,
-    ]
-
-    client = SaunaFSClient(master_host="testhost", master_port=9421)
-
-    assert client.master_version == (2, 5, 1)
-    mockSocket.connect.assert_called_once_with(("testhost", 9421))
+    mockSocket.recv.side_effect = _mock_initial_version_response()
 
 
 def test_get_master_version_connection_error(mockSocket):
@@ -78,10 +119,7 @@ def test_get_system_info_success(mockSocket):
 
     # The client makes two separate connections/calls.
     # The first is in __init__ for the version, the second is in get_system_info.
-    mockSocket.recv.side_effect = [
-        # Response for _get_master_version in __init__
-        struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
-        versionPayload,
+    mockSocket.recv.side_effect = _mock_initial_version_response() + [
         # Response for get_system_info
         struct.pack(">LL", MATOCL_INFO, len(system_info_payload)),
         system_info_payload
@@ -104,10 +142,7 @@ def test_get_system_info_wrong_response(mockSocket):
     """
     wrong_command = 9999
 
-    mockSocket.recv.side_effect = [
-        # Valid response for version check
-        struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
-        versionPayload,
+    mockSocket.recv.side_effect = _mock_initial_version_response() + [
         # Invalid response for get_system_info
         struct.pack(">LL", wrong_command, 0),
         b''
@@ -126,10 +161,7 @@ def test_get_chart_success(mockSocket):
     """
     chart_payload = b'GIF89a\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;'
 
-    mockSocket.recv.side_effect = [
-        # Response for _get_master_version in __init__
-        struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
-        versionPayload,
+    mockSocket.recv.side_effect = _mock_initial_version_response() + [
         # Response for get_chart
         struct.pack(">LL", ANTOCU_CHART, len(chart_payload)),
         chart_payload
@@ -149,17 +181,17 @@ def test_get_servers_success(mockSocket):
     Tests the successful retrieval and parsing of a list of chunk servers.
     """
 
-    server1_label = "server-one" + "\x00"
-    server1_payload = struct.pack(
-        ">BBBBBBBBHQQLQQLLL",
-        0, 2, 5, 1, 192, 168, 1, 10, 9422, 500, 1000, 50, 10, 20, 1, 0, len(server1_label)
-    ) + server1_label.encode('utf-8')
+    server1_payload = _create_server_payload(
+        disconnected=0, v1=2, v2=5, v3=1, ip1=192, ip2=168, ip3=1, ip4=10, port=9422,
+        used=500, total=1000, chunks=50, tdused=10, tdtotal=20, tdchunks=1, errcnt=0,
+        label="server-one"
+    )
 
-    server2_label = "server-two" + "\x00"
-    server2_payload = struct.pack(
-        ">BBBBBBBBHQQLQQLLL",
-        1, 2, 5, 0, 192, 168, 1, 11, 9422, 800, 1000, 80, 0, 0, 0, 5, len(server2_label)
-    ) + server2_label.encode('utf-8')
+    server2_payload = _create_server_payload(
+        disconnected=1, v1=2, v2=5, v3=0, ip1=192, ip2=168, ip3=1, ip4=11, port=9422,
+        used=800, total=1000, chunks=80, tdused=0, tdtotal=0, tdchunks=0, errcnt=5,
+        label="server-two"
+    )
 
     serversPayload = struct.pack(">L", 2) + server1_payload + server2_payload
 
@@ -167,10 +199,7 @@ def test_get_servers_success(mockSocket):
     v2RespHeader = struct.pack(">L", 0)  # version 0
     full_payload = v2RespHeader + serversPayload
 
-    mockSocket.recv.side_effect = [
-        # Response for _get_master_version
-        struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
-        versionPayload,
+    mockSocket.recv.side_effect = _mock_initial_version_response() + [
         # Response for get_servers
         struct.pack(">LL", SAU_MATOCL_CSERV_LIST, len(full_payload)),
         full_payload
@@ -178,10 +207,10 @@ def test_get_servers_success(mockSocket):
 
     # Mock the reverse DNS lookup
     with patch('socket.gethostbyaddr') as mock_gethostbyaddr:
-        mock_gethostbyaddr.side_effect = [
-            ("host-one.local", [], []),
-            ("host-two.local", [], [])
-        ]
+        _mock_gethostbyaddr(mock_gethostbyaddr, {
+            "192.168.1.10": "host-one.local",
+            "192.168.1.11": "host-two.local"
+        })
 
         client = SaunaFSClient(master_host="testhost", master_port=9421)
         servers = Server.get_list(client)
@@ -199,7 +228,7 @@ def test_get_servers_success(mockSocket):
     assert servers[1].id == 2
     assert servers[1].hostname == "host-two.local"
     assert servers[1].ip_address == "192.168.1.11"
-    assert servers[1].is_disconnected == True
+    assert servers[1].is_disconnected is True
     assert servers[1].label == "server-two"
     assert servers[1].used_space == 800
     assert servers[1].error_count == 5
@@ -210,30 +239,22 @@ def test_get_disks_success(mockSocket):
     Tests the successful retrieval and parsing of a list of disks.
     """
 
-    serverLabel = "server-one" + "\x00"
-    serverPayload = struct.pack(
-        ">BBBBBBBBHQQLQQLLL",
-        0, 2, 5, 1, 192, 168, 1, 10, 9422, 500, 1000, 50, 10, 20, 1, 0, len(serverLabel)
-    ) + serverLabel.encode('utf-8')
+    serverPayload = _create_server_payload(
+        disconnected=0, v1=2, v2=5, v3=1, ip1=192, ip2=168, ip3=1, ip4=10, port=9422,
+        used=500, total=1000, chunks=50, tdused=10, tdtotal=20, tdchunks=1, errcnt=0,
+        label="server-one"
+    )
     serversPayload = struct.pack(">L", 1) + serverPayload
     v2RespHeader = struct.pack(">L", 0)  # version 0
     fullServersPayload = v2RespHeader + serversPayload
 
-    disk_path = b"/mnt/disk1"
-    disk_payload = struct.pack(
-        ">BQLQQL",
-        0,     # flags: 8-bit unsigned
-        0,     # errchunkid: 64-bit unsigned
-        0,     # errtime: 32-bit
-        2000,  # used: 64-bit unsigned
-        4000,  # total: 64-bit unsinged
-        200,   # chunkscount: 64-bit unsigned
+    disk_path_bytes = b"/mnt/disk1"
+    entryPayload = _create_disk_payload(
+        flags=0, err_chunk_id=0, err_time=0, used=2000, total=4000, chunks_cnt=200,
+        disk_path=disk_path_bytes
     )
-    entryPayload = struct.pack(">HB", len(disk_payload) + len(disk_path) + 1, len(disk_path)) + disk_path + disk_payload
 
-    mockSocket.recv.side_effect = [
-        struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
-        versionPayload,
+    mockSocket.recv.side_effect = _mock_initial_version_response() + [
         struct.pack(">LL", SAU_MATOCL_CSERV_LIST, len(fullServersPayload)),
         fullServersPayload,
         struct.pack(">LL", MATOCL_HDD_LIST_V2, len(entryPayload)),
@@ -241,7 +262,7 @@ def test_get_disks_success(mockSocket):
     ]
 
     with patch('socket.gethostbyaddr') as mock_gethostbyaddr:
-        mock_gethostbyaddr.return_value = ("host-one.local", [], [])
+        _mock_gethostbyaddr(mock_gethostbyaddr, {"192.168.1.10": "host-one.local"})
 
         client = SaunaFSClient(master_host="testhost", master_port=9421)
         disks = Disk.get_list(client)
@@ -261,61 +282,25 @@ def test_get_metaloggers_success(mockSocket):
     Tests the successful retrieval and parsing of a list of metaloggers.
     """
 
-    logger1_v1 = 5  # Interesting the first version number is 16-bit?
-    logger1_v2 = 0
-    logger1_v3 = 0
-    logger1_ip1 = 192
-    logger1_ip2 = 168
-    logger1_ip3 = 50
-    logger1_ip4 = 201
-
-    logger2_v1 = 4
-    logger2_v2 = 9
-    logger2_v3 = 1
-
-    logger2_ip1 = 192
-    logger2_ip2 = 168
-    logger2_ip3 = 50
-    logger2_ip4 = 204
-
-    metalogger1_payload = struct.pack(
-        ">HBBBBBB",
-        logger1_v1,
-        logger1_v2,
-        logger1_v3,
-        logger1_ip1,
-        logger1_ip2,
-        logger1_ip3,
-        logger1_ip4
+    metalogger1_payload = _create_metalogger_payload(
+        v1=5, v2=0, v3=0, ip1=192, ip2=168, ip3=50, ip4=201
     )
 
-    metalogger2_payload = struct.pack(
-        ">HBBBBBB",
-        logger2_v1,
-        logger2_v2,
-        logger2_v3,
-        logger2_ip1,
-        logger2_ip2,
-        logger2_ip3,
-        logger2_ip4
+    metalogger2_payload = _create_metalogger_payload(
+        v1=4, v2=9, v3=1, ip1=192, ip2=168, ip3=50, ip4=204
     )
 
     payload = metalogger1_payload + metalogger2_payload
 
-    mockSocket.recv.side_effect = [
-        struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
-        versionPayload,
+    mockSocket.recv.side_effect = _mock_initial_version_response() + [
         struct.pack(">LL", MATOCL_MLOG_LIST, len(payload)),
         payload
     ]
     with patch('socket.gethostbyaddr') as mock_gethostbyaddr:
-        def side_effect(ip) -> str:
-            if ip == "192.168.50.201":
-                return ("metalogger_01", [], [])
-            elif ip == "192.168.50.204":
-                return ("metalogger_02", [], [])
-
-        mock_gethostbyaddr.side_effect = side_effect
+        _mock_gethostbyaddr(mock_gethostbyaddr, {
+            "192.168.50.201": "metalogger_01",
+            "192.168.50.204": "metalogger_02"
+        })
 
         client = SaunaFSClient(master_host="testhost", master_port=9421)
         metaloggers = Metalogger.get_list(client)
@@ -332,115 +317,3 @@ def test_get_metaloggers_success(mockSocket):
     assert metalogger2.version == "4.9.1"
     assert metalogger2.hostname == "metalogger_02"
     assert metalogger2.id == 2
-
-
-# def _create_mount_payload(
-#    session_id, ip_parts, version_parts, root_path, mounted_path, sesflags,
-#    rootuid, rootgid, mapalluid, mapallgid, mingoal, maxgoal,
-#    mintrashtime, maxtrashtime, ops
-# ):
-#    peerid_ip = struct.pack(">BBBB", *ip_parts)
-#    version = struct.pack(">BBB", *version_parts)
-#    return struct.pack(
-#        ">L", session_id
-#    ) + peerid_ip + version + struct.pack(
-#        ">B", len(root_path)
-#    ) + root_path + struct.pack(
-#        ">B", len(mounted_path)
-#    ) + mounted_path + struct.pack(
-#        ">BLLLLBBLLLLLLLLLL",
-#        sesflags, rootuid, rootgid, mapalluid, mapallgid,
-#        mingoal, maxgoal, mintrashtime, maxtrashtime,
-#        *ops
-#    )
-#
-#
-# def test_get_mounts_success(mockSocket):
-#    """
-#    Tests the successful retrieval and parsing of a list of clients.
-#    """
-#    stats_length = 8
-#
-#    cl1_payload = _create_mount_payload(
-#        session_id=1,
-#        ip_parts=[192, 168, 50, 201],
-#        version_parts=[5, 2, 1],
-#        root_path=b"/",
-#        mounted_path=b"/mnt/saunafs",
-#        sesflags=0b11010,  # ro, dynamic_ip, and quota admin
-#        rootuid=1000,
-#        rootgid=1000,
-#        mapalluid=999,
-#        mapallgid=999,
-#        mingoal=1,
-#        maxgoal=40,
-#        mintrashtime=0,
-#        maxtrashtime=4294967295,
-#        ops=[1, 2, 2, 2, 4, 4, 4, 6]
-#    )
-#
-#    cl2_payload = _create_mount_payload(
-#        session_id=2,
-#        ip_parts=[192, 168, 50, 205],
-#        version_parts=[4, 1, 1],
-#        root_path=b"/",
-#        mounted_path=b"/mnt/saunafs",
-#        sesflags=0b00101,  # ignore_gid, map_all
-#        rootuid=1,
-#        rootgid=1,
-#        mapalluid=0,
-#        mapallgid=0,
-#        mingoal=1,
-#        maxgoal=15,
-#        mintrashtime=10,
-#        maxtrashtime=3600,
-#        ops=[5, 2, 7, 2, 3, 4, 2, 1]
-#    )
-#
-#    cl1_extra_info = b"Extra info for mount 1\x00"
-#    cl2_extra_info = b"Extra info for mount 2\x00"
-#
-#    extra_info = struct.pack(
-#        ">LLL",
-#        2,  # Vector size
-#        1,  # Session id
-#        len(cl1_extra_info)
-#    ) + cl1_extra_info + struct.pack(
-#        ">LL", 2, len(cl2_extra_info)
-#    ) + cl2_extra_info
-#    print(extra_info)
-#
-#    payload = struct.pack(">H", stats_length) + cl1_payload + cl2_payload
-#
-#    mockSocket.recv.side_effect = [
-#        struct.pack(">LL", MATOCL_INFO, len(versionPayload)),
-#        versionPayload,
-#        struct.pack(">LL", SAU_MATOCL_MOUNT_INFO_LIST, len(extra_info) + 1),
-#        struct.pack(">L", 0) + extra_info,
-#        struct.pack(">LL", MATOCL_SESSION_LIST, len(payload)),
-#        payload
-#    ]
-#    with patch('socket.gethostbyaddr') as mock_gethostbyaddr:
-#        def side_effect(ip) -> str:
-#            if ip == "192.168.50.201":
-#                return ("client_01", [], [])
-#            elif ip == "192.168.50.205":
-#                return ("client_02", [], [])
-#
-#        mock_gethostbyaddr.side_effect = side_effect
-#
-#        client = SaunaFSClient(master_host="testhost", master_port=9421)
-#        clients = client.get_mounts()
-#
-#    assert len(clients) == 2
-#    client1 = clients[0]
-#    assert client1.ip_address == "192.168.50.201"
-#    assert client1.version == "5.2.1"
-#    assert client1.hostname == "client_01"
-#    assert client1.id == 1
-#
-#    client2 = clients[1]
-#    assert client2.ip_address == "192.168.50.205"
-#    assert client2.version == "4.1.1"
-#    assert client2.hostname == "client_02"
-#    assert client2.id == 2

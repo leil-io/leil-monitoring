@@ -14,7 +14,7 @@ from models import (SystemInfo,
                     ChunkOperationsInfo,
                     OperationStats,
                     ChunkMatrix)
-from deserializer import unpack_list
+from deserializer import unpack_list, unpack_string
 
 
 # Protocol constants
@@ -60,10 +60,10 @@ CSERV_LIST = (CLTOMA_CSERV_LIST, MATOCL_CSERV_LIST)
 SAU_CSERV_LIST = (SAU_CLTOMA_CSERV_LIST, SAU_MATOCL_CSERV_LIST)
 CS_HDD_LIST = (CLTOCS_HDD_LIST_V2, MATOCL_HDD_LIST_V2)
 MLOG_LIST = (CLTOMA_MLOG_LIST, MATOCL_MLOG_LIST)
-SESSION_LIST = (CLTOMA_SESSION_LIST, MATOCL_SESSION_LIST)
 CHART = (CUTOAN_CHART, ANTOCU_CHART)
 EXPORTS_INFO = (CLTOMA_EXPORTS_INFO, MATOCL_EXPORTS_INFO)
 MOUNT_INFO_LIST = (SAU_CLTOMA_MOUNT_INFO_LIST, SAU_MATOCL_MOUNT_INFO_LIST)
+SESSION_LIST = (CLTOMA_SESSION_LIST, MATOCL_SESSION_LIST)
 
 
 class SaunaFSClient:
@@ -119,7 +119,6 @@ class SaunaFSClient:
 
             self._my_send(s, request)
             header = self._my_recv(s, 8)
-            print(header)
 
             respCmd, respLength = struct.unpack(">LL", header)
             logging.debug(f"Header received: cmd={respCmd}, length={respLength}")
@@ -138,27 +137,7 @@ class SaunaFSClient:
                 return bytearray(respPayload)
 
     def _deserialize_string(self, buffer: bytearray, legacy: bool = False) -> str:
-        if legacy:
-            if not buffer:
-                raise ValueError("Legacy string buffer is empty")
-            length, = struct.unpack(">L", buffer[:4])
-            logging.debug(f"Deserializing legacy string with length: {length}")
-            del buffer[:4]
-            if len(buffer) < length:
-                raise ValueError("Buffer too short for legacy string")
-            value = buffer[:length].decode('utf-8', errors='replace')
-            del buffer[:length]
-            return value
-        else:
-            if len(buffer) < 4:
-                raise ValueError("Buffer too short for V2 string length")
-            length, = struct.unpack(">L", buffer[:4])
-            del buffer[:4]
-            if len(buffer) < length:
-                raise ValueError(f"Buffer too short for V2 string data. Expected {length}, got {len(buffer)}")
-            value = buffer[:length - 1].decode('utf-8', errors='replace')
-            del buffer[:length]
-            return value
+        return unpack_string(buffer, legacy)
 
     def _get_master_version(self) -> Tuple[int, int, int]:
         try:
@@ -190,78 +169,11 @@ class SaunaFSClient:
         return mounts_info
 
     def get_mounts(self) -> List[Mount]:
-        allMounts = []
-        extra_mount_info = self._get_mounts_info()
+        extra_mount_info = Mount.get_mounts_info()
         # Send vmode=1 to request extended information
         payload = struct.pack(">B", 1)
         buffer = self.send_and_receive(SESSION_LIST, payload)
-
-        statsCount, = struct.unpack(">H", buffer[:2])
-        del buffer[:2]
-
-        while len(buffer) > 0:
-            sessionId, ip1, ip2, ip3, ip4, v1, v2, v3 = struct.unpack(">LBBBBHBB", buffer[:12])
-            del buffer[:12]
-
-            root_path = self._deserialize_string(buffer, legacy=True)
-            mountedPath = self._deserialize_string(buffer, legacy=True)
-
-            sesflags, rootuid, rootgid, mapalluid, mapallgid = struct.unpack(">BLLLL", buffer[:17])
-            del buffer[:17]
-
-            mingoal, maxgoal, mintrashtime, maxtrashtime = None, None, None, None
-            # The vmode we sent means these fields should be present
-            mingoal, maxgoal, mintrashtime, maxtrashtime = struct.unpack(">BBLL", buffer[:10])
-            del buffer[:10]
-
-            current_op_stats_list = []
-            for _ in range(statsCount):
-                stat, = struct.unpack(">L", buffer[:4])
-                current_op_stats_list.append(stat)
-                del buffer[:4]
-
-            current_op_stats = self.get_operation_stats_from_list(current_op_stats_list)
-
-            last_hour_op_stats_list = []
-            for _ in range(statsCount):
-                stat, = struct.unpack(">L", buffer[:4])
-                last_hour_op_stats_list.append(stat)
-                del buffer[:4]
-
-            last_hour_op_stats = self.get_operation_stats_from_list(current_op_stats_list)
-
-            ipAddress = f"{ip1}.{ip2}.{ip3}.{ip4}"
-            try:
-                hostname = socket.gethostbyaddr(ipAddress)[0]
-            except socket.herror:
-                hostname = "(unresolved)"
-
-            flags = []
-            if sesflags & 1:
-                flags.append("ro")
-            if sesflags & 2:
-                flags.append("dynamic_ip")
-            if sesflags & 4:
-                flags.append("ignore_gid")
-            if sesflags & 8:
-                flags.append("quota_admin")
-            if sesflags & 16:
-                flags.append("map_all")
-
-            mount_info = ""
-            print(mount_info)
-            if sessionId in extra_mount_info:
-                mount_info = "\n" + extra_mount_info[sessionId]
-
-            allMounts.append(Mount(
-                id=len(allMounts) + 1, session_id=sessionId, hostname=hostname,
-                ip_address=ipAddress, root_path=root_path, mounted_path=mountedPath, version=f"{v1}.{v2}.{v3}",
-                mount_info=mount_info, flags=", ".join(flags), root_uid=rootuid, root_gid=rootgid,
-                map_all_uid=mapalluid, map_all_gid=mapallgid, min_goal=mingoal, max_goal=maxgoal,
-                min_trash_time=mintrashtime, max_trash_time=maxtrashtime,
-                current_op_stats=current_op_stats, last_hour_op_stats=last_hour_op_stats
-            ))
-        return allMounts
+        return Mount.get_list(buffer, extra_mount_info)
 
     def get_exports(self) -> List[Export]:
         allExports = []

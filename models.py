@@ -1,7 +1,8 @@
 from __future__ import annotations
-from pydantic import BaseModel, Field
-from typing import List, Optional
-from deserializer import unpack_list, unpack_primitive, DeserializationError
+from pydantic import BaseModel
+from typing import List, Optional, Dict
+from deserializer import unpack_list, unpack_primitive, unpack_string, DeserializationError
+import logging
 import socket
 import struct
 import saunafs_client
@@ -11,6 +12,7 @@ PROTO_BASE = 0
 CLTOMA_INFO = (PROTO_BASE + 510)
 MATOCL_INFO = (PROTO_BASE + 511)
 INFO = (CLTOMA_INFO, MATOCL_INFO)
+
 
 class SystemInfo(BaseModel):
     version: str
@@ -270,7 +272,7 @@ class OperationStats(BaseModel):
     total: int
 
     @staticmethod
-    def get_from_list(self, list: List[int]) -> OperationStats:
+    def get_from_list(list: List[int]) -> OperationStats:
         return OperationStats(
             statfs=list[0],
             getattr=list[1],
@@ -292,6 +294,14 @@ class OperationStats(BaseModel):
         )
 
 
+SAU_CLTOMA_MOUNT_INFO_LIST = 1609
+SAU_MATOCL_MOUNT_INFO_LIST = 1610
+CLTOMA_SESSION_LIST = (PROTO_BASE + 508)
+MATOCL_SESSION_LIST = (PROTO_BASE + 509)
+SESSION_LIST = (CLTOMA_SESSION_LIST, MATOCL_SESSION_LIST)
+MOUNT_INFO_LIST = (SAU_CLTOMA_MOUNT_INFO_LIST, SAU_MATOCL_MOUNT_INFO_LIST)
+
+
 class Mount(BaseModel):
     id: int
     session_id: int
@@ -299,6 +309,7 @@ class Mount(BaseModel):
     ip_address: str
     mounted_path: str
     version: str
+    root_path: str
     mount_info: str
     flags: str
     root_uid: int
@@ -311,6 +322,116 @@ class Mount(BaseModel):
     max_trash_time: Optional[int] = None
     current_op_stats: Optional[OperationStats] = None
     last_hour_op_stats: Optional[OperationStats] = None
+
+    @classmethod
+    def get_mounts_info(client: saunafs_client.SaunaFSClient) -> Dict[int, str]:
+        mounts_info = {}
+        try:
+            buffer = client.send_and_receive(MOUNT_INFO_LIST)
+            vector_size, = struct.unpack(">L", buffer[:4])
+            del buffer[:4]
+            for _ in range(vector_size):
+                session_id, = struct.unpack(">L", buffer[:4])
+                del buffer[:4]
+                mount_info = unpack_string(buffer)
+                mounts_info[session_id] = mount_info
+        except Exception as e:
+            logging.warning(f"Could not get extra mount info: {e}")
+            return {}
+        return mounts_info
+
+    @staticmethod
+    def get_list(buffer: bytearray, extra_mount_info: Dict[int, str]) -> List[Mount]:
+        allMounts = []
+
+        statsCount, = struct.unpack(">H", buffer[:2])
+        del buffer[:2]
+
+        while len(buffer) > 0:
+            mount = Mount.from_buffer(buffer, statsCount)
+            mount.id = len(allMounts) + 1
+            if mount.session_id in extra_mount_info:
+                mount.extra_info = "\n" + extra_mount_info[mount.session_id]
+
+            allMounts.append(mount)
+        return allMounts
+
+    @classmethod
+    def from_buffer(cls, buffer: bytearray, stats_count: int) -> Mount:
+        try:
+            session_id, ip1, ip2, ip3, ip4, v1, v2, v3 = struct.unpack(">LBBBBHBB", buffer[:12])
+            del buffer[:12]
+
+            root_path = unpack_string(buffer, legacy=True)
+            mounted_path = unpack_string(buffer, legacy=True)
+
+            sesflags, rootuid, rootgid, mapalluid, mapallgid = struct.unpack(">BLLLL", buffer[:17])
+            del buffer[:17]
+
+            mingoal, maxgoal, mintrashtime, maxtrashtime = None, None, None, None
+            # The vmode we sent means these fields should be present
+            mingoal, maxgoal, mintrashtime, maxtrashtime = struct.unpack(">BBLL", buffer[:10])
+            del buffer[:10]
+
+            current_op_stats_list = []
+            for _ in range(stats_count):
+                stat, = struct.unpack(">L", buffer[:4])
+                current_op_stats_list.append(stat)
+                del buffer[:4]
+
+            current_op_stats = OperationStats.get_from_list(current_op_stats_list)
+
+            last_hour_op_stats_list = []
+            for _ in range(stats_count):
+                stat, = struct.unpack(">L", buffer[:4])
+                last_hour_op_stats_list.append(stat)
+                del buffer[:4]
+
+            last_hour_op_stats = OperationStats.get_from_list(current_op_stats_list)
+
+            ip_address = f"{ip1}.{ip2}.{ip3}.{ip4}"
+            try:
+                hostname = socket.gethostbyaddr(ip_address)[0]
+            except socket.herror:
+                hostname = "(unresolved)"
+
+            flags = []
+            if sesflags & 1:
+                flags.append("ro")
+            if sesflags & 2:
+                flags.append("dynamic_ip")
+            if sesflags & 4:
+                flags.append("ignore_gid")
+            if sesflags & 8:
+                flags.append("quota_admin")
+            if sesflags & 16:
+                flags.append("map_all")
+
+            flags = ", ".join(flags)
+
+            return cls(
+                id=0,  # Caller sets this
+                session_id=session_id,
+                hostname=hostname,
+                ip_address=ip_address,
+                mounted_path=mounted_path,
+                version=f"{v1}.{v2}.{v3}",
+                root_path=root_path,
+                mount_info="",  # Caller sets this
+                flags=flags,
+                root_uid=rootuid,
+                root_gid=rootgid,
+                map_all_uid=mapalluid,
+                map_all_gid=mapallgid,
+                min_goal=mingoal,
+                max_goal=maxgoal,
+                min_trash_time=mintrashtime,
+                max_trash_time=maxtrashtime,
+                current_op_stats=current_op_stats,
+                last_hour_op_stats=last_hour_op_stats,
+            )
+        except DeserializationError as e:
+            raise DeserializationError(f"Failed to deserialize Mount: {e}")
 
 
 class Export(BaseModel):

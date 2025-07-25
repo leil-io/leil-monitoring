@@ -26,28 +26,22 @@ def unpack_primitive(format: str, buffer: bytearray):
     return unpack_from(format, buffer)
 
 
-def unpack_string(buffer: bytearray, is_legacy: bool = False) -> str:
+def unpack_string(buffer: bytearray, legacy: bool = False) -> str:
     """
     Unpacks a string from the buffer.
     - V2 strings are null-terminated and prefixed with their length (including null).
     - Legacy strings are not null-terminated and are prefixed with their length.
     """
     try:
-        length = unpack_primitive("L", buffer)
+        length = unpack_primitive("L", buffer)[0]
         if len(buffer) < length:
             raise DeserializationError(f"Buffer too short for string. Need {length} bytes, have {len(buffer)}.")
-
-        if is_legacy:
+        if legacy:
             # Legacy strings are not null-terminated
-            value = buffer[:length].decode('utf-8', errors='replace')
+            value = buffer[:length].decode('utf-8')
         else:
             # V2 strings have a null terminator
-            if length == 0 or buffer[length - 1] != 0:
-                logging.warning(f"Malformed V2 string detected: length={length}, buffer does not end with null.")
-                # Still try to decode what's there, assuming it might be a non-compliant string
-                value = buffer[:length].decode('utf-8', errors='replace').rstrip('\x00')
-            else:
-                value = buffer[:length - 1].decode('utf-8', errors='replace')
+            value = buffer[:length - 1].decode('utf-8')
 
         del buffer[:length]
         return value

@@ -7,13 +7,6 @@ import socket
 import struct
 
 
-PROTO_BASE = 0
-
-CLTOMA_INFO = (PROTO_BASE + 510)
-MATOCL_INFO = (PROTO_BASE + 511)
-INFO = (CLTOMA_INFO, MATOCL_INFO)
-
-
 class SystemInfo(BaseModel):
     version: str
     ram_used: int
@@ -45,11 +38,6 @@ class SystemInfo(BaseModel):
             )
         except Exception as e:
             raise DeserializationError(f"Failed to deserialize SystemInfo: {e}")
-
-
-SAU_CLTOMA_CSERV_LIST = 1549
-SAU_MATOCL_CSERV_LIST = 1550
-SAU_CSERV_LIST = (SAU_CLTOMA_CSERV_LIST, SAU_MATOCL_CSERV_LIST)
 
 
 class Server(BaseModel):
@@ -252,14 +240,6 @@ class OperationStats(BaseModel):
         )
 
 
-SAU_CLTOMA_MOUNT_INFO_LIST = 1609
-SAU_MATOCL_MOUNT_INFO_LIST = 1610
-CLTOMA_SESSION_LIST = (PROTO_BASE + 508)
-MATOCL_SESSION_LIST = (PROTO_BASE + 509)
-SESSION_LIST = (CLTOMA_SESSION_LIST, MATOCL_SESSION_LIST)
-MOUNT_INFO_LIST = (SAU_CLTOMA_MOUNT_INFO_LIST, SAU_MATOCL_MOUNT_INFO_LIST)
-
-
 class Mount(BaseModel):
     id: int
     session_id: int
@@ -392,6 +372,59 @@ class Export(BaseModel):
     ip_to: str
     path: str
     flags: str
+
+    @staticmethod
+    def get_list(buffer: bytearray) -> List[Export]:
+        allExports = []
+        i = 1
+        while len(buffer) >= 12:
+            export = Export.from_buffer(buffer)
+            export.id = i
+            allExports.append(export)
+            i += 1
+        return allExports
+
+    @classmethod
+    def from_buffer(cls, buffer: bytearray) -> Export:
+        try:
+            fip1, fip2, fip3, fip4, tip1, tip2, tip3, tip4 = unpack_from("BBBBBBBB", buffer)
+
+            path = unpack_string(buffer, True)
+
+            # This part of the protocol seems to have many versions.
+            # This is a simplified parser for a common version.
+            if len(buffer) >= 22:
+                v1, v2, v3, exportflags, sesflags, rootuid, rootgid, mapalluid, mapallgid = struct.unpack(">HBBBBLLLL", buffer[:22])
+                del buffer[:22]
+            else:
+                raise DeserializationError("Unsupported master version")
+
+            ip_from = f"{fip1}.{fip2}.{fip3}.{fip4}"
+            ip_to = f"{tip1}.{tip2}.{tip3}.{tip4}"
+
+            flags = []
+            if sesflags & 1:
+                flags.append("ro")
+            else:
+                flags.append("rw")
+            if sesflags & 2:
+                flags.append("dynamic_ip")
+            if sesflags & 4:
+                flags.append("ignore_gid")
+            if sesflags & 8:
+                flags.append("quota_admin")
+            if sesflags & 16:
+                flags.append("map_all")
+
+            return cls(
+                id=0,  # Set by caller
+                ip_from=ip_from,
+                ip_to=ip_to,
+                path=path,
+                flags=", ".join(flags)
+            )
+        except DeserializationError as e:
+            raise DeserializationError(f"Failed to deserialize Export: {e}")
 
 
 class MetadataServer(BaseModel):

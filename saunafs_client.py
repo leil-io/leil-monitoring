@@ -8,7 +8,6 @@ from models import (Mount,
                     MetadataServer,
                     FsCheckInfo,
                     ChunkOperationsInfo,
-                    OperationStats,
                     ChunkMatrix,
                     Metalogger,
                     Server,
@@ -206,52 +205,8 @@ class SaunaFSClient:
         return Mount.get_list(buffer, extra_mount_info_buffer)
 
     def get_exports(self) -> List[Export]:
-        allExports = []
         data = self.send_and_receive(EXPORTS_INFO)
-        buffer = bytearray(data)
-
-        i = 1
-        while len(buffer) >= 12:
-            fip1, fip2, fip3, fip4, tip1, tip2, tip3, tip4, pleng = struct.unpack(">BBBBBBBBL", buffer[:12])
-            del buffer[:12]
-
-            path = buffer[:pleng].decode('utf-8', errors='replace')
-            del buffer[:pleng]
-
-            # This part of the protocol seems to have many versions.
-            # This is a simplified parser for a common version.
-            if len(buffer) >= 22:
-                v1, v2, v3, exportflags, sesflags, rootuid, rootgid, mapalluid, mapallgid = struct.unpack(">HBBBBLLLL", buffer[:22])
-                del buffer[:22]
-            else:
-                break
-
-            ip_from = f"{fip1}.{fip2}.{fip3}.{fip4}"
-            ip_to = f"{tip1}.{tip2}.{tip3}.{tip4}"
-
-            flags = []
-            if sesflags & 1:
-                flags.append("ro")
-            else:
-                flags.append("rw")
-            if sesflags & 2:
-                flags.append("dynamic_ip")
-            if sesflags & 4:
-                flags.append("ignore_gid")
-            if sesflags & 8:
-                flags.append("quota_admin")
-            if sesflags & 16:
-                flags.append("map_all")
-
-            allExports.append(Export(
-                id=i,
-                ip_from=ip_from,
-                ip_to=ip_to,
-                path=path,
-                flags=", ".join(flags)
-            ))
-            i += 1
-        return allExports
+        return Export.get_list(data)
 
     def get_fs_check_info(self) -> FsCheckInfo:
         data = self.send_and_receive(FSTEST_INFO)
@@ -374,25 +329,3 @@ class SaunaFSClient:
             return ("shadow", "disconnected", metadata_version)
         else:
             return ("(unknown)", "(unknown)", metadata_version)
-
-    def get_operation_stats_from_list(self, list: List[int]) -> OperationStats:
-        stats = OperationStats(
-            statfs=list[0],
-            getattr=list[1],
-            setattr=list[2],
-            lookup=list[3],
-            mkdir=list[4],
-            rmdir=list[5],
-            symlink=list[6],
-            readlink=list[7],
-            mknod=list[8],
-            unlink=list[9],
-            rename=list[10],
-            link=list[11],
-            readdir=list[12],
-            open=list[13],
-            read=list[14],
-            write=list[15],
-            total=sum(list)
-        )
-        return stats

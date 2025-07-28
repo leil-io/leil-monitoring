@@ -170,6 +170,41 @@ def serialize_server(
     return buffer
 
 
+def serialize_export(
+    ip_from: str,
+    ip_to: str,
+    path: str,
+    version: str,
+    exportflags: int,
+    sesflags: int,
+    root_uid: int,
+    root_gid: int,
+    map_all_uid: int,
+    map_all_gid: int
+) -> bytearray:
+    """
+    Serializes Export data into a bytearray buffer for testing.
+    Mirrors the Export.from_buffer logic.
+    """
+    buffer = bytearray()
+
+    ip_from_parts = [int(p) for p in ip_from.split('.')]
+    ip_to_parts = [int(p) for p in ip_to.split('.')]
+    version_parts = [int(p) for p in version.split('.')]
+
+    # fip1, fip2, fip3, fip4, tip1, tip2, tip3, tip4, pleng
+    buffer.extend(struct.pack(">BBBBBBBB",
+                              ip_from_parts[0], ip_from_parts[1], ip_from_parts[2], ip_from_parts[3],
+                              ip_to_parts[0], ip_to_parts[1], ip_to_parts[2], ip_to_parts[3],
+                              ))
+    buffer.extend(serialize_string(path, True))
+    # v1, v2, v3, exportflags, sesflags, rootuid, rootgid, mapalluid, mapallgid
+    buffer.extend(struct.pack(">HBBBBLLLL",
+                              version_parts[0], version_parts[1], version_parts[2],
+                              exportflags, sesflags, root_uid, root_gid, map_all_uid, map_all_gid))
+    return buffer
+
+
 def serialize_disk(
     path: str,
     flags: int,

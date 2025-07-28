@@ -49,7 +49,7 @@ def unpack_string(buffer: bytearray, legacy: bool = False) -> str:
 
 def unpack_list(buffer: bytearray, model_class: Type[T]) -> List[T]:
     """
-    Unpacks a list of model objects from the buffer.
+    Unpacks a list of model objects from the buffer (V2 protocol).
     Each model class must have a `from_buffer` class method.
     """
     items = []

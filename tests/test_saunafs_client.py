@@ -11,7 +11,6 @@ from saunafs_client import (
 
 from models import (
     SystemInfo,
-    Server,
     Disk
 )
 
@@ -212,7 +211,7 @@ def test_get_servers_success(mockSocket):
         })
 
         client = SaunaFSClient(master_host="testhost", master_port=9421)
-        servers = Server.get_list(client)
+        servers = client.get_servers()
 
     assert len(servers) == 2
 
@@ -264,7 +263,7 @@ def test_get_disks_success(mockSocket):
         _mock_gethostbyaddr(mock_gethostbyaddr, {"192.168.1.10": "host-one.local"})
 
         client = SaunaFSClient(master_host="testhost", master_port=9421)
-        disks = Disk.get_list(client)
+        disks = Disk.get_list(client, client.get_servers())
 
     print(disks)
     assert len(disks) == 1

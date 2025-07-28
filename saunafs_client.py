@@ -2,7 +2,7 @@ import socket
 import struct
 import select
 import logging
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 from models import (Mount,
                     Export,
                     MetadataServer,
@@ -10,7 +10,8 @@ from models import (Mount,
                     ChunkOperationsInfo,
                     OperationStats,
                     ChunkMatrix,
-                    Metalogger
+                    Metalogger,
+                    Server
                     )
 from deserializer import unpack_string
 
@@ -162,20 +163,32 @@ class SaunaFSClient:
         payload = struct.pack(">L", chart_id)
         return self.send_and_receive(CHART, payload, host=host, port=port)
 
-    def _get_mounts_info(self) -> Dict[int, str]:
-        mounts_info = {}
-        try:
-            buffer = self.send_and_receive(MOUNT_INFO_LIST)
-            vector_size, = struct.unpack(">L", buffer[:4])
-            del buffer[:4]
-            for _ in range(vector_size):
-                session_id, = struct.unpack(">L", buffer[:4])
-                del buffer[:4]
-                mount_info = self._deserialize_string(buffer)
-                mounts_info[session_id] = mount_info
-        except Exception as e:
-            logging.warning(f"Could not get extra mount info: {e}")
-        return mounts_info
+    def get_servers(self) -> List[Server]:
+        payload = b'\x00'  # Dummy, must be included
+        buffer = self.send_and_receive(
+            SAU_CSERV_LIST,
+            payload,
+            version=0
+        )
+        return Server.get_list(buffer)
+
+    # def get_disks(self) -> List[Disk]:
+    #     allDisks = []
+    #     for server in Server.get_list(client):
+    #         if server.is_disconnected:
+    #             continue
+    #         buffer = client.send_and_receive(
+    #             CS_HDD_LIST,
+    #             host=server.ip_address,
+    #             port=server.port,
+    #         )
+    #         disks = Disk.from_buffer_list(buffer)
+    #         for disk in disks:
+    #             disk.path = f"{server.hostname}:{disk.path}"
+    #         allDisks.extend(disks)
+    #     return allDisks
+    #     buffer = self.send_and_receive(MLOG_LIST)
+    #     return Metalogger.get_list(buffer)
 
     def get_metaloggers(self) -> List[Metalogger]:
         buffer = self.send_and_receive(MLOG_LIST)

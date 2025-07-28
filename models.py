@@ -74,13 +74,7 @@ class Server(BaseModel):
     error_count: int
 
     @staticmethod
-    def get_list(client: saunafs_client.SaunaFSClient) -> List[Server]:
-        payload = b'\x00'  # Dummy, must be included
-        buffer = client.send_and_receive(
-            SAU_CSERV_LIST,
-            payload,
-            version=0
-        )
+    def get_list(buffer: bytearray) -> List[Server]:
         servers = unpack_list(buffer, Server)
         for i, server in enumerate(servers):
             server.id = i + 1
@@ -141,9 +135,9 @@ class Disk(BaseModel):
     chunks: int
 
     @staticmethod
-    def get_list(client: saunafs_client.SaunaFSClient) -> List[Disk]:
+    def get_list(client: saunafs_client.SaunaFSClient, servers: List[Server]) -> List[Disk]:
         allDisks = []
-        for server in Server.get_list(client):
+        for server in servers:
             if server.is_disconnected:
                 continue
             buffer = client.send_and_receive(

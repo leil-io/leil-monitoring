@@ -72,13 +72,13 @@ async def api_get_info(master_host: str = "127.0.0.1", master_port: int = 9421):
 @app.get("/api/servers", response_model=List[Server])
 async def api_get_servers(master_host: str = "127.0.0.1", master_port: int = 9421):
     client = get_client(master_host, master_port)
-    return Server.get_list(client)
+    return client.get_list(client)
 
 
 @app.get("/api/disks", response_model=List[Disk])
 async def api_get_disks(master_host: str = "127.0.0.1", master_port: int = 9421):
     client = get_client(master_host, master_port)
-    return Disk.get_list(client)
+    return Disk.get_list(client, client.get_servers())
 
 
 @app.get("/api/mounts", response_model=List[Mount])
@@ -128,8 +128,8 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1", masterpo
         activeSections = sections.split("|")
 
         infoData = SystemInfo.get(client) if "IN" in activeSections else None
-        serversData = Server.get_list(client) if "CS" in activeSections else None
-        disksData = Disk.get_list(client) if "HD" in activeSections else None
+        serversData = client.get_servers() if "CS" in activeSections else None
+        disksData = Disk.get_list(client, serversData) if "HD" in activeSections else None
         metaloggersData = client.get_metaloggers() if "ML" in activeSections else None
         mountsData = client.get_mounts() if "MS" in activeSections or "MO" in activeSections else None
         exportsData = client.get_exports() if "EX" in activeSections else None

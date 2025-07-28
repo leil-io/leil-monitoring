@@ -123,7 +123,7 @@ def test_get_system_info_success(mockSocket):
     ]
 
     client = SaunaFSClient(master_host="testhost", master_port=9421)
-    system_info = SystemInfo.get(client)
+    system_info = client.get_info()
 
     assert isinstance(system_info, SystemInfo)
     assert client.master_version == (2, 5, 1)
@@ -149,7 +149,7 @@ def test_get_system_info_wrong_response(mockSocket):
 
     with pytest.raises(RuntimeError,
                        match=f"Received wrong response command: {wrong_command}, expected {MATOCL_INFO}"):
-        SystemInfo.get(client)
+        client.get_info()
 
 
 def test_get_chart_success(mockSocket):

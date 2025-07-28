@@ -31,11 +31,6 @@ class SystemInfo(BaseModel):
     all_copies: int
     regular_copies: int
 
-    @staticmethod
-    def get(client: saunafs_client.SaunaFSClient) -> SystemInfo():
-        buffer = client.send_and_receive(INFO)
-        return SystemInfo.from_buffer(buffer)
-
     @classmethod
     def from_buffer(cls, buffer: bytearray) -> SystemInfo:
         try:

@@ -61,6 +61,52 @@ def serialize_mount(
     return buffer
 
 
+def serialize_info(
+    version: str,
+    ram_used: int,
+    total_space: int,
+    avail_space: int,
+    trash_space: int,
+    trash_files: int,
+    reserved_space: int,
+    reserved_files: int,
+    total_objects: int,
+    directories: int,
+    files: int,
+    symlinks: int,
+    chunks: int,
+    all_copies: int,
+    regular_copies: int,
+) -> bytes:
+    """
+    Serializes mount info for get_mounts_info.
+    """
+    buffer = bytearray()
+    version_parts = [int(p) for p in version.split('.')]
+
+    buffer.extend(struct.pack(
+        ">HBBQQQQLQLLLLLLLL",
+        version_parts[0],
+        version_parts[1],
+        version_parts[2],
+        ram_used,
+        total_space,
+        avail_space,
+        trash_space,
+        trash_files,
+        reserved_space,
+        reserved_files,
+        total_objects,
+        directories,
+        files,
+        symlinks,
+        chunks,
+        all_copies,
+        regular_copies,
+    ))
+    return buffer
+
+
 def serialize_mount_info(session_id: int, mount_info: str) -> bytes:
     """
     Serializes mount info for get_mounts_info.
@@ -106,13 +152,13 @@ def serialize_server(
     """
     buffer = bytearray()
 
-    v_parts = [int(p) for p in version.split('.')]
+    version_parts = [int(p) for p in version.split('.')]
     ip_parts = [int(p) for p in ip_address.split('.')]
     disconnected_byte = 1 if is_disconnected else 0
 
     buffer.extend(struct.pack(">BBBBBBBBHQQLQQLL",
                               disconnected_byte,
-                              v_parts[0], v_parts[1], v_parts[2],
+                              version_parts[0], version_parts[1], version_parts[2],
                               ip_parts[0], ip_parts[1], ip_parts[2], ip_parts[3],
                               port,
                               used_space, total_space, chunks,

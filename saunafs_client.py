@@ -12,7 +12,8 @@ from models import (Mount,
                     ChunkMatrix,
                     Metalogger,
                     Server,
-                    Disk
+                    Disk,
+                    SystemInfo
                     )
 from deserializer import unpack_string
 
@@ -159,6 +160,10 @@ class SaunaFSClient:
             return (0, 0, 0)
         except Exception:
             return (0, 0, 0)
+
+    def get_info(self) -> SystemInfo:
+        buffer = self.send_and_receive(INFO)
+        return SystemInfo.from_buffer(buffer)
 
     def get_chart(self, host: str, port: int, chart_id: int) -> bytes:
         payload = struct.pack(">L", chart_id)

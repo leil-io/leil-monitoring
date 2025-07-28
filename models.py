@@ -121,11 +121,6 @@ class Server(BaseModel):
             raise DeserializationError(f"Failed to deserialize Server: {e}")
 
 
-CLTOCS_HDD_LIST_V2 = (PROTO_BASE + 600)
-MATOCL_HDD_LIST_V2 = (PROTO_BASE + 601)
-CS_HDD_LIST = (CLTOCS_HDD_LIST_V2, MATOCL_HDD_LIST_V2)
-
-
 class Disk(BaseModel):
     path: str
     status: str
@@ -135,21 +130,11 @@ class Disk(BaseModel):
     chunks: int
 
     @staticmethod
-    def get_list(client: saunafs_client.SaunaFSClient, servers: List[Server]) -> List[Disk]:
-        allDisks = []
-        for server in servers:
-            if server.is_disconnected:
-                continue
-            buffer = client.send_and_receive(
-                CS_HDD_LIST,
-                host=server.ip_address,
-                port=server.port,
-            )
-            disks = Disk.from_buffer_list(buffer)
-            for disk in disks:
-                disk.path = f"{server.hostname}:{disk.path}"
-            allDisks.extend(disks)
-        return allDisks
+    def get_list(buffer) -> List[Disk]:
+        disks = []
+        while len(buffer) > 0:
+            disks.append(Disk.from_buffer(buffer))
+        return disks
 
     @classmethod
     def from_buffer(cls, buffer: bytearray) -> Disk:
@@ -193,14 +178,6 @@ class Disk(BaseModel):
             )
         except Exception as e:
             raise DeserializationError(f"Failed to deserialize Disk: {e}")
-
-    @classmethod
-    def from_buffer_list(cls, buffer: bytearray) -> List[Disk]:
-        allDisks = []
-        while len(buffer) > 0:
-            disk = Disk.from_buffer(buffer)
-            allDisks.append(disk)
-        return allDisks
 
 
 class Metalogger(BaseModel):

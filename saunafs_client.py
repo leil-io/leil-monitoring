@@ -11,7 +11,8 @@ from models import (Mount,
                     OperationStats,
                     ChunkMatrix,
                     Metalogger,
-                    Server
+                    Server,
+                    Disk
                     )
 from deserializer import unpack_string
 
@@ -172,23 +173,21 @@ class SaunaFSClient:
         )
         return Server.get_list(buffer)
 
-    # def get_disks(self) -> List[Disk]:
-    #     allDisks = []
-    #     for server in Server.get_list(client):
-    #         if server.is_disconnected:
-    #             continue
-    #         buffer = client.send_and_receive(
-    #             CS_HDD_LIST,
-    #             host=server.ip_address,
-    #             port=server.port,
-    #         )
-    #         disks = Disk.from_buffer_list(buffer)
-    #         for disk in disks:
-    #             disk.path = f"{server.hostname}:{disk.path}"
-    #         allDisks.extend(disks)
-    #     return allDisks
-    #     buffer = self.send_and_receive(MLOG_LIST)
-    #     return Metalogger.get_list(buffer)
+    def get_disks(self) -> List[Disk]:
+        allDisks = []
+        for server in self.get_servers():
+            if server.is_disconnected:
+                continue
+            buffer = self.send_and_receive(
+                CS_HDD_LIST,
+                host=server.ip_address,
+                port=server.port,
+            )
+            serverDisks = Disk.get_list(buffer)
+            for disk in serverDisks:
+                disk.path = f"{server.hostname}:{disk.path}"
+            allDisks.extend(serverDisks)
+        return allDisks
 
     def get_metaloggers(self) -> List[Metalogger]:
         buffer = self.send_and_receive(MLOG_LIST)

@@ -303,7 +303,6 @@ class Mount(BaseModel):
 
             sesflags, rootuid, rootgid, mapalluid, mapallgid = unpack_from("BLLLL", buffer)
 
-            mingoal, maxgoal, mintrashtime, maxtrashtime = None, None, None, None
             # The vmode we sent means these fields should be present
             mingoal, maxgoal, mintrashtime, maxtrashtime = unpack_from("BBLL", buffer)
 
@@ -394,8 +393,7 @@ class Export(BaseModel):
             # This part of the protocol seems to have many versions.
             # This is a simplified parser for a common version.
             if len(buffer) >= 22:
-                v1, v2, v3, exportflags, sesflags, rootuid, rootgid, mapalluid, mapallgid = struct.unpack(">HBBBBLLLL", buffer[:22])
-                del buffer[:22]
+                v1, v2, v3, exportflags, sesflags, rootuid, rootgid, mapalluid, mapallgid = unpack_from("HBBBBLLLL", buffer)
             else:
                 raise DeserializationError("Unsupported master version")
 

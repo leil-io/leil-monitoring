@@ -447,6 +447,25 @@ class FsCheckInfo(BaseModel):
     missing_chunks: int
     message: str
 
+    @classmethod
+    def from_buffer(cls, buffer: bytearray) -> FsCheckInfo:
+        try:
+            loop_start, loop_end, files, ug_files, m_files, chunks, ug_chunks, m_chunks = unpack_from("LLLLLLLL", buffer)
+            message = unpack_string(buffer, True)
+            return cls(
+                loop_start=loop_start,
+                loop_end=loop_end,
+                files=files,
+                under_goal_files=ug_files,
+                missing_files=m_files,
+                chunks=chunks,
+                under_goal_chunks=ug_chunks,
+                missing_chunks=m_chunks,
+                message=message
+            )
+        except DeserializationError as e:
+            raise DeserializationError(f"Failed to deserialize FsCheckInfo: {e}")
+
 
 class ChunkOperationsInfo(BaseModel):
     loop_start: int

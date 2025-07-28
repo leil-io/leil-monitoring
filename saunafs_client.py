@@ -210,22 +210,7 @@ class SaunaFSClient:
 
     def get_fs_check_info(self) -> FsCheckInfo:
         data = self.send_and_receive(FSTEST_INFO)
-        buffer = bytearray(data)
-        loop_start, loop_end, files, ug_files, m_files, chunks, ug_chunks, m_chunks, msg_buff_leng = struct.unpack(">LLLLLLLLL", buffer[:36])
-        del buffer[:36]
-        message = buffer.decode('utf-8', errors='replace')
-
-        return FsCheckInfo(
-            loop_start=loop_start,
-            loop_end=loop_end,
-            files=files,
-            under_goal_files=ug_files,
-            missing_files=m_files,
-            chunks=chunks,
-            under_goal_chunks=ug_chunks,
-            missing_chunks=m_chunks,
-            message=message
-        )
+        return FsCheckInfo.from_buffer(data)
 
     def get_chunk_operations_info(self) -> ChunkOperationsInfo:
         buffer = self.send_and_receive(CHUNKSTEST_INFO)

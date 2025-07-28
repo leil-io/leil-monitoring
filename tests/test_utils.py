@@ -239,3 +239,35 @@ def serialize_disk(
     buffer.extend(inner_entry)
 
     return buffer
+
+
+def serialize_fscheck_info(
+    loop_start: int,
+    loop_end: int,
+    files: int,
+    under_goal_files: int,
+    missing_files: int,
+    chunks: int,
+    under_goal_chunks: int,
+    missing_chunks: int,
+    message: str
+) -> bytes:
+    """
+    Serializes FsCheckInfo data into a bytearray buffer for testing.
+    Mirrors the get_fs_check_info logic in saunafs_client.py.
+    """
+    buffer = bytearray()
+
+    buffer.extend(struct.pack(
+        ">LLLLLLLL",
+        loop_start,
+        loop_end,
+        files,
+        under_goal_files,
+        missing_files,
+        chunks,
+        under_goal_chunks,
+        missing_chunks,
+    ))
+    buffer.extend(serialize_string(message, True))
+    return buffer

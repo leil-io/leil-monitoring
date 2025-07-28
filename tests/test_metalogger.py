@@ -4,6 +4,7 @@ from models import Metalogger
 from deserializer import DeserializationError
 from tests.test_utils import serialize_metalogger
 
+
 class TestMetaloggerDeserialization(unittest.TestCase):
 
     def test_from_buffer(self):
@@ -15,8 +16,8 @@ class TestMetaloggerDeserialization(unittest.TestCase):
 
         metalogger = Metalogger.from_buffer(buffer_copy)
 
-        self.assertEqual(metalogger.id, 0) # ID is set by caller
-        self.assertEqual(metalogger.hostname, "(unresolved)") # socket.gethostbyaddr not mocked
+        self.assertEqual(metalogger.id, 0)  # ID is set by caller
+        self.assertEqual(metalogger.hostname, "(unresolved)")  # socket.gethostbyaddr not mocked
         self.assertEqual(metalogger.ip_address, ip_address)
         self.assertEqual(metalogger.version, version)
 
@@ -24,7 +25,7 @@ class TestMetaloggerDeserialization(unittest.TestCase):
 
     def test_from_buffer_deserialization_error(self):
         # Buffer too short
-        short_buffer = bytearray(struct.pack(">HBB", 1, 0, 0)) # Incomplete data
+        short_buffer = bytearray(struct.pack(">HBB", 1, 0, 0))  # Incomplete data
 
         with self.assertRaises(DeserializationError):
             Metalogger.from_buffer(short_buffer)

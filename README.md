@@ -1,4 +1,13 @@
-# SaunaFS CGI Rewrite
+# SaunaFS CGI Rewrite (WIP)
+
+## TODO:
+- [ ] Get chunk information
+- [ ] Get goal definitions
+- [ ] Get charts for master
+- [ ] Get charts for chunkservers
+- [ ] Add legend to matrix table
+- [ ] Add tabs
+- [ ] Add switch between old and new theme
 
 This directory contains a modern rewrite of the SaunaFS CGI monitoring interface using the FastAPI web framework.
 

@@ -435,6 +435,62 @@ class MetadataServer(BaseModel):
     state: str
     metadata_version: int
 
+    @classmethod
+    def get_list(cls, buffer: bytearray) -> List[MetadataServer]:
+        servers = []
+        master_version, = struct.unpack(">L", buffer[:4])
+        del buffer[:4]
+        vector_size, = struct.unpack(">L", buffer[:4])
+        del buffer[:4]
+        logging.debug(f"MetadataServer::get_list: vector_size: {vector_size}")
+        for i in range(vector_size):
+            print(buffer)
+            server = MetadataServer.from_buffer(buffer)
+            server.id = i + 1
+            servers.append(server)
+
+        return servers
+
+    @classmethod
+    def from_buffer(cls, buffer: bytearray) -> MetadataServer:
+        try:
+            ip, port, v1, v2, v3 = unpack_from("LHHBB", buffer)
+            ip_str = socket.inet_ntoa(struct.pack(">L", ip))
+            try:
+                hostname = socket.gethostbyaddr(ip_str)[0]
+            except socket.herror:
+                hostname = "(unresolved)"
+
+            return cls(
+                id=0,  # Set by caller
+                hostname=hostname,
+                ip_address=ip_str,
+                port=port,
+                version=f"{v1}.{v2}.{v3}",
+                personality="",  # Set by status_from_buffer
+                state="",  # Set by status_from_buffer
+                metadata_version=-1  # Set by status_from_buffer
+
+            )
+        except DeserializationError as e:
+            raise DeserializationError(f"Failed to deserialize MetadataServer: {e}")
+
+    def status_from_buffer(self, buffer: bytearray):
+        _, status, self.metadata_version = struct.unpack(">LBQ", buffer)  # First is msgid (useless)
+
+        if status == 1:
+            self.personality = "master"
+            self.state = "running"
+        elif status == 2:
+            self.personality = "shadow"
+            self.state = "connected"
+        elif status == 3:
+            self.personality = "shadow"
+            self.state = "disconnected"
+        else:
+            self.personality = f"(unknown: code {status})"
+            self.state = f"(unknown: code {status})"
+
 
 class FsCheckInfo(BaseModel):
     loop_start: int
@@ -481,6 +537,29 @@ class ChunkOperationsInfo(BaseModel):
     replicate_under_goal: int
     not_replicate_under_goal: int
     rebalance: int
+
+    @classmethod
+    def from_buffer(cls, buffer: bytearray) -> ChunkOperationsInfo:
+        try:
+            loop_start, loop_end, del_invalid, n_del_invalid, del_unused, n_del_unused, del_dclean, n_del_dclean, del_ogoal, n_del_ogoal, rep_ugoal, n_rep_ugoal, rebalance = struct.unpack(">LLLLLLLLLLLLL", buffer[:52])
+
+            return cls(
+                loop_start=loop_start,
+                loop_end=loop_end,
+                delete_invalid=del_invalid,
+                not_delete_invalid=n_del_invalid,
+                delete_unused=del_unused,
+                not_delete_unused=n_del_unused,
+                delete_disk_clean=del_dclean,
+                not_delete_disk_clean=n_del_dclean,
+                delete_over_goal=del_ogoal,
+                not_delete_over_goal=n_del_ogoal,
+                replicate_under_goal=rep_ugoal,
+                not_replicate_under_goal=n_rep_ugoal,
+                rebalance=rebalance
+            )
+        except DeserializationError as e:
+            raise DeserializationError(f"Failed to deserialize ChunkOperationsInfo: {e}")
 
 
 class ChunkMatrix(BaseModel):

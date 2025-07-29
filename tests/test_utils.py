@@ -1,5 +1,6 @@
 import struct
 from typing import List
+import ipaddress
 
 
 def serialize_string(s: str, legacy: bool = False) -> bytes:
@@ -15,6 +16,10 @@ def serialize_string(s: str, legacy: bool = False) -> bytes:
     else:
         length = len(s_bytes) + 1  # +1 for null terminator
         return struct.pack(">L", length) + s_bytes + b'\x00'
+
+
+def serialize_version(version: str) -> List[int]:
+    return [int(p) for p in version.split('.')]
 
 
 def serialize_mount(
@@ -166,6 +171,26 @@ def serialize_server(
                               error_count))
 
     buffer.extend(serialize_string(label))
+
+    return buffer
+
+
+def serialize_metadata_server(
+    ip_address: str,
+    port: int,
+    version: str,
+) -> bytearray:
+    """
+    Serializes MetadataServer data into a bytearray buffer for testing.
+    Mirrors the MetadataServer.from_buffer logic.
+    """
+    buffer = bytearray()
+
+    version_parts = [int(p) for p in version.split('.')]
+
+    buffer.extend(struct.pack(">LHHBB", int(ipaddress.ip_address(ip_address)), port,
+                              version_parts[0], version_parts[1],
+                              version_parts[2]))
 
     return buffer
 

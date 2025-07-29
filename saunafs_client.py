@@ -214,23 +214,7 @@ class SaunaFSClient:
 
     def get_chunk_operations_info(self) -> ChunkOperationsInfo:
         buffer = self.send_and_receive(CHUNKSTEST_INFO)
-        loop_start, loop_end, del_invalid, n_del_invalid, del_unused, n_del_unused, del_dclean, n_del_dclean, del_ogoal, n_del_ogoal, rep_ugoal, n_rep_ugoal, rebalance = struct.unpack(">LLLLLLLLLLLLL", buffer[:52])
-
-        return ChunkOperationsInfo(
-            loop_start=loop_start,
-            loop_end=loop_end,
-            delete_invalid=del_invalid,
-            not_delete_invalid=n_del_invalid,
-            delete_unused=del_unused,
-            not_delete_unused=n_del_unused,
-            delete_disk_clean=del_dclean,
-            not_delete_disk_clean=n_del_dclean,
-            delete_over_goal=del_ogoal,
-            not_delete_over_goal=n_del_ogoal,
-            replicate_under_goal=rep_ugoal,
-            not_replicate_under_goal=n_rep_ugoal,
-            rebalance=rebalance
-        )
+        return ChunkOperationsInfo.from_buffer(buffer)
 
     def get_chunk_matrix(self) -> ChunkMatrix:
         payload = struct.pack(">B", 0)
@@ -268,49 +252,14 @@ class SaunaFSClient:
             METADATASERVERS_LIST,
             b""
         )
-        master_version, = struct.unpack(">L", buffer[:4])
-        del buffer[:4]
-        vector_size, = struct.unpack(">L", buffer[:4])
-        del buffer[:4]
-        logging.debug(f"get_metadata_servers vector_size: {vector_size}")
+        servers = MetadataServer.get_list(buffer)
 
-        for i in range(vector_size):
-            ip, port, v1, v2, v3 = struct.unpack(">LHHBB", buffer[:10])
-            del buffer[:10]
-            ip_str = socket.inet_ntoa(struct.pack(">L", ip))
-            try:
-                hostname = socket.gethostbyaddr(ip_str)[0]
-            except socket.herror:
-                hostname = "(unresolved)"
-
-            personality, state, metadata_version = self.get_metadata_server_status(ip_str, port)
-
-            servers.append(MetadataServer(
-                id=i + 2,
-                hostname=hostname,
-                ip_address=ip_str,
-                port=port,
-                version=f"{v1}.{v2}.{v3}",
-                personality=personality,
-                state=state,
-                metadata_version=metadata_version
-            ))
+        for i, server in enumerate(servers):
+            payload = struct.pack(">L", 0)
+            buffer = self.send_and_receive(
+                METADATASERVER_STATUS,
+                payload
+            )
+            server.status_from_buffer(buffer)
 
         return servers
-
-    def get_metadata_server_status(self, host: str, port: int) -> Tuple[str, str, int]:
-        payload = struct.pack(">L", 0)
-        buffer = self.send_and_receive(
-            METADATASERVER_STATUS,
-            payload
-        )
-        _, status, metadata_version = struct.unpack(">LBQ", buffer)
-
-        if status == 1:
-            return ("master", "running", metadata_version)
-        elif status == 2:
-            return ("shadow", "connected", metadata_version)
-        elif status == 3:
-            return ("shadow", "disconnected", metadata_version)
-        else:
-            return ("(unknown)", "(unknown)", metadata_version)

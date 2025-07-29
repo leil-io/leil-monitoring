@@ -234,18 +234,22 @@ class SaunaFSClient:
         # Add the master server
         master_ip = socket.gethostbyname(self.master_host)
         master_v1, master_v2, master_v3 = self.master_version
-        master_personality, master_state, master_metadata_version = self.get_metadata_server_status(self.master_host, self.master_port)
-
         servers.append(MetadataServer(
             id=1,
             hostname=self.master_host,
             ip_address=master_ip,
             port=self.master_port,
             version=f"{master_v1}.{master_v2}.{master_v3}",
-            personality=master_personality,
-            state=master_state,
-            metadata_version=master_metadata_version
+            personality="",
+            state="",
+            metadata_version=-1
         ))
+        payload = struct.pack(">L", 0)
+        buffer = self.send_and_receive(
+            METADATASERVER_STATUS,
+            payload
+        )
+        servers[0].status_from_buffer(buffer)
 
         # Get shadow servers
         buffer = self.send_and_receive(

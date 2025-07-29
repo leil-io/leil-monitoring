@@ -205,6 +205,34 @@
 				<br/>
 				{% endif %}
 
+				<!-- Filesystem Check Info Table -->
+				{% if chunks_health %}
+				<table class="FR" cellspacing="0" caption="Chunks Statistics">
+					<tr>
+						<th colspan="5">Chunk Statistics</th>
+					</tr>
+					<tr>
+						<th>Goal</th>
+						<th>Safe Chunks</th>
+						<th>Endangered Chunks</th>
+						<th>Missing Chunks</th>
+						<th>All Chunks</th>
+					</tr>
+					{% for goal in goalmap %}
+					{% if goal.total != 0 %}
+					<tr class="CI">
+						<th class="LEFT" align="center">{{goal.name}}</th>
+						<td align="center">{{goal.safe}}</td>
+						<td align="center">{{goal.endangered}}</td>
+						<td align="center">{{goal.lost}}</td>
+						<td align="center">{{goal.total}}</td>
+					</tr>
+					{% endif %}
+					{% endfor %}
+				</table>
+				<br/>
+				{% endif %}
+
 				<!-- Chunk Servers Table -->
 				{% if servers %}
 				<table class="FR sortable" cellspacing="0" caption="Metadata Servers">

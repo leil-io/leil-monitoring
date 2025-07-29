@@ -577,7 +577,7 @@ class Goal(BaseModel):
             return goals
 
         except DeserializationError as e:
-            raise DeserializationError(f"Failed to deserialize ChunkOperationsInfo: {e}")
+            raise DeserializationError(f"Failed to deserialize Goal: {e}")
 
     @classmethod
     def from_buffer(cls, buffer: bytearray) -> Goal:
@@ -591,8 +591,94 @@ class Goal(BaseModel):
                 definition=definition,
             )
         except DeserializationError as e:
+            raise DeserializationError(f"Failed to deserialize Goal: {e}")
+
+
+class ChunkHealth(BaseModel):
+    regular_only: bool
+    safe: Dict[int, int]
+    endangered: Dict[int, int]
+    lost: Dict[int, int]
+    # Up to eleven values usually
+    replication: Dict[int, List[int]]
+    deletion: Dict[int, List[int]]
+
+    @classmethod
+    def from_buffer(cls, buffer: bytearray) -> ChunkHealth:
+        try:
+            regular_only, = unpack_from("B", buffer)
+
+            # --- helper to read dicts (key: uint8, value: uint64) ---
+            def read_simple_dict():
+                result = {}
+                count, = unpack_from("L", buffer)
+                for _ in range(count):
+                    goal_id, = unpack_from("B", buffer)
+                    value, = unpack_from("Q", buffer)
+                    result[goal_id] = value
+                return result
+
+            # --- helper to read dicts (key: uint8, value: 11 × uint64) ---
+            def read_complex_dict():
+                result = {}
+                count, = unpack_from("L", buffer)
+                for _ in range(count):
+                    goal_id, = unpack_from("B", buffer)
+                    values = list(unpack_from("11Q", buffer))
+                    result[goal_id] = values
+                return result
+
+            safe = read_simple_dict()
+            endangered = read_simple_dict()
+            lost = read_simple_dict()
+            replication = read_complex_dict()
+            deletion = read_complex_dict()
+
+            return cls(
+                regular_only=regular_only,
+                safe=safe,
+                endangered=endangered,
+                lost=lost,
+                replication=replication,
+                deletion=deletion
+            )
+
+        except DeserializationError as e:
             raise DeserializationError(f"Failed to deserialize ChunkOperationsInfo: {e}")
 
 
 class ChunkMatrix(BaseModel):
     matrix: List[List[int]]
+
+
+class ChunkMappedHealth(BaseModel):
+    name: str
+    total: int
+    safe: int
+    endangered: int
+    lost: int
+    # Up to eleven values usually
+    replication: List[int]
+    deletion: List[int]
+
+    @classmethod
+    def from_chunk_health(cls, health: ChunkHealth, goals: List[Goal]) -> List[ChunkMappedHealth]:
+        mapped_goals = []
+        for idx, goal in enumerate(goals):
+            safe = health.safe.get(goal.id, 0)
+            endangered = health.endangered.get(goal.id, 0)
+            lost = health.lost.get(goal.id, 0)
+            replication = health.replication.get(goal.id, [])
+            deletion = health.deletion.get(goal.id, [])
+            mapped_goals.append(
+                cls(
+                    name=goal.name,
+                    safe=safe,
+                    endangered=endangered,
+                    lost=lost,
+                    replication=replication,
+                    deletion=deletion,
+                    total=safe + endangered + lost
+                )
+            )
+        return mapped_goals

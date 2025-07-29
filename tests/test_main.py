@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 import pytest
 from main import app
-from models import SystemInfo, Goal
+from models import SystemInfo, ChunkHealth, Goal
 
 client = TestClient(app)
 
@@ -59,6 +59,20 @@ def test_api_get_goals():
 
 
 @pytest.mark.integration
+def test_api_get_chunk_health():
+    """
+    Tests the /api/chunkhealth endpoint against a live master server.
+    """
+    response = client.get(f"/api/chunkhealth?master_host={MASTER_HOST}&master_port={MASTER_PORT}")
+
+    assert response.status_code == 200
+
+    chunk_health = ChunkHealth(**response.json())
+
+    assert isinstance(chunk_health, ChunkHealth)
+
+
+@pytest.mark.integration
 def test_get_sfs_info_html():
     """
     Tests that the main HTML page for the legacy UI renders successfully.
@@ -80,6 +94,7 @@ def test_get_sfs_info_html():
     assert "Exports" in response.text
     assert "Metadata Backup Loggers" in response.text
     assert "Goals" in response.text
+    assert "Chunk Statistics" in response.text
 
 
 @pytest.mark.integration

@@ -11,7 +11,8 @@ import pathlib
 from saunafs_client import SaunaFSClient
 from models import (
     SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo,
-    ChunkOperationsInfo, OperationStats, ChunkMatrix, Goal
+    ChunkOperationsInfo, OperationStats, ChunkMatrix, Goal, ChunkHealth,
+    ChunkMappedHealth
 )
 
 
@@ -67,6 +68,12 @@ def get_client(master_host: str, master_port: int) -> SaunaFSClient:
 async def api_get_info(master_host: str = "127.0.0.1", master_port: int = 9421):
     client = get_client(master_host, master_port)
     return client.get_info()
+
+
+@app.get("/api/chunkhealth", response_model=ChunkHealth)
+async def api_get_chunk_health(master_host: str = "127.0.0.1", master_port: int = 9421):
+    client = get_client(master_host, master_port)
+    return client.get_chunk_health()
 
 
 @app.get("/api/servers", response_model=List[Server])
@@ -126,7 +133,7 @@ async def read_root():
 @app.get("/sfs.cgi", response_class=HTMLResponse)
 async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
                        masterport: int = 9421, mastername: str = "SaunaFS",
-                       sections: str = "IN|CS|HD|ML|MS|EX|MO|EX"):
+                       sections: str = "IN|CS|HD|ML|MS|EX|MO|EX|CH"):
     try:
         client = get_client(masterhost, masterport)
 
@@ -146,8 +153,14 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
         chunkOperationsInfoData = client.get_chunk_operations_info() if "IN" in activeSections else None
         chunkMatrixData = client.get_chunk_matrix() if "IN" in activeSections else None
         goals = client.get_goals() if "EX" in activeSections else None
-
+        chunks_health = client.get_chunk_health() if "CH" in activeSections else None
         op_names = list(OperationStats.model_fields.keys())
+        goalmap = None
+        if chunks_health:
+            if goals:
+                goalmap = ChunkMappedHealth.from_chunk_health(chunks_health, goals)
+            else:
+                goalmap = ChunkMappedHealth.from_chunk_health(chunks_health, client.get_goals())
 
         context = {
             "request": request, "mastername": mastername, "masterhost": masterhost,
@@ -160,6 +173,8 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
             "chunk_matrix": chunkMatrixData,
             "op_names": op_names,
             "error_message": None,
+            "chunks_health": chunks_health,
+            "goalmap": goalmap,
             "goals": goals,
         }
         return templates.TemplateResponse(request, "sfs.html", context)

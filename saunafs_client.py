@@ -13,7 +13,8 @@ from models import (Mount,
                     Server,
                     Disk,
                     SystemInfo,
-                    Goal
+                    Goal,
+                    ChunkHealth
                     )
 from deserializer import unpack_string
 
@@ -80,6 +81,11 @@ EXPORTS_INFO = (CLTOMA_EXPORTS_INFO, MATOCL_EXPORTS_INFO)
 SAU_CLTOMA_LIST_GOALS = 1547
 SAU_MATOCL_LIST_GOALS = 1548
 LIST_GOALS = (SAU_CLTOMA_LIST_GOALS, SAU_MATOCL_LIST_GOALS)
+
+
+SAU_CLTOMA_CHUNKS_HEALTH = 1526
+SAU_MATOCL_CHUNKS_HEALTH = 1527
+CHUNKS_HEALTH = (SAU_CLTOMA_CHUNKS_HEALTH, SAU_MATOCL_CHUNKS_HEALTH)
 
 
 class SaunaFSClient:
@@ -233,9 +239,13 @@ class SaunaFSClient:
 
         return ChunkMatrix(matrix=matrix)
 
-    def get_goals(self) -> List[Metalogger]:
+    def get_goals(self) -> List[Goal]:
         buffer = self.send_and_receive(LIST_GOALS)
         return Goal.get_list(buffer)
+
+    def get_chunk_health(self) -> ChunkHealth:
+        buffer = self.send_and_receive(CHUNKS_HEALTH, b'\x00')
+        return ChunkHealth.from_buffer(buffer)
 
     def get_metadata_servers(self) -> List[Goal]:
         servers = []

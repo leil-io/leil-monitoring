@@ -12,7 +12,8 @@ from models import (Mount,
                     Metalogger,
                     Server,
                     Disk,
-                    SystemInfo
+                    SystemInfo,
+                    Goal
                     )
 from deserializer import unpack_string
 
@@ -75,6 +76,10 @@ SESSION_LIST = (CLTOMA_SESSION_LIST, MATOCL_SESSION_LIST)
 CLTOMA_EXPORTS_INFO = (PROTO_BASE + 520)
 MATOCL_EXPORTS_INFO = (PROTO_BASE + 521)
 EXPORTS_INFO = (CLTOMA_EXPORTS_INFO, MATOCL_EXPORTS_INFO)
+
+SAU_CLTOMA_LIST_GOALS = 1547
+SAU_MATOCL_LIST_GOALS = 1548
+LIST_GOALS = (SAU_CLTOMA_LIST_GOALS, SAU_MATOCL_LIST_GOALS)
 
 
 class SaunaFSClient:
@@ -228,7 +233,11 @@ class SaunaFSClient:
 
         return ChunkMatrix(matrix=matrix)
 
-    def get_metadata_servers(self) -> List[MetadataServer]:
+    def get_goals(self) -> List[Metalogger]:
+        buffer = self.send_and_receive(LIST_GOALS)
+        return Goal.get_list(buffer)
+
+    def get_metadata_servers(self) -> List[Goal]:
         servers = []
 
         # Add the master server

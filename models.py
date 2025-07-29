@@ -61,7 +61,6 @@ class Server(BaseModel):
         servers = unpack_list(buffer, Server)
         for i, server in enumerate(servers):
             server.id = i + 1
-        print(servers)
         return servers
 
     @classmethod
@@ -444,7 +443,6 @@ class MetadataServer(BaseModel):
         del buffer[:4]
         logging.debug(f"MetadataServer::get_list: vector_size: {vector_size}")
         for i in range(vector_size):
-            print(buffer)
             server = MetadataServer.from_buffer(buffer)
             server.id = i + 1
             servers.append(server)
@@ -557,6 +555,40 @@ class ChunkOperationsInfo(BaseModel):
                 replicate_under_goal=rep_ugoal,
                 not_replicate_under_goal=n_rep_ugoal,
                 rebalance=rebalance
+            )
+        except DeserializationError as e:
+            raise DeserializationError(f"Failed to deserialize ChunkOperationsInfo: {e}")
+
+
+class Goal(BaseModel):
+    id: int
+    name: str
+    definition: str
+
+    @staticmethod
+    def get_list(buffer: bytearray) -> List[Goal]:
+        try:
+            goals = []
+            vector_size, = unpack_from("L", buffer)
+            for i in range(vector_size):
+                goal = Goal.from_buffer(buffer)
+                goals.append(goal)
+
+            return goals
+
+        except DeserializationError as e:
+            raise DeserializationError(f"Failed to deserialize ChunkOperationsInfo: {e}")
+
+    @classmethod
+    def from_buffer(cls, buffer: bytearray) -> Goal:
+        try:
+            id, = unpack_from("H", buffer)
+            name = unpack_string(buffer)
+            definition = unpack_string(buffer)
+            return cls(
+                id=id,
+                name=name,
+                definition=definition,
             )
         except DeserializationError as e:
             raise DeserializationError(f"Failed to deserialize ChunkOperationsInfo: {e}")

@@ -1,10 +1,13 @@
 from fastapi.testclient import TestClient
 import pytest
-
 from main import app
-from models import SystemInfo
+from models import SystemInfo, Goal
 
 client = TestClient(app)
+
+# TODO(Urmas): Use environment variables
+MASTER_HOST = "localhost"
+MASTER_PORT = "9421"
 
 
 def test_read_root_redirects():
@@ -24,7 +27,7 @@ def test_api_get_info():
     """
     Tests the /api/info endpoint against a live master server.
     """
-    response = client.get("/api/info?master_host=localhost&master_port=9421")
+    response = client.get(f"/api/info?master_host={MASTER_HOST}&master_port={MASTER_PORT}")
 
     assert response.status_code == 200
 
@@ -37,13 +40,31 @@ def test_api_get_info():
 
 
 @pytest.mark.integration
+def test_api_get_goals():
+    """
+    Tests the /api/goals endpoint against a live master server.
+    """
+    response = client.get(f"/api/goals?master_host={MASTER_HOST}&master_port={MASTER_PORT}")
+
+    assert response.status_code == 200
+
+    # Validate the response against the Pydantic model
+    goals = [Goal.model_validate(goal) for goal in response.json()]
+
+    assert isinstance(goals, list)
+    assert goals is not None
+    assert all(isinstance(goal, Goal) for goal in goals)
+    assert len(goals) > 0
+    assert goals[0].id == 1
+
+
+@pytest.mark.integration
 def test_get_sfs_info_html():
     """
     Tests that the main HTML page for the legacy UI renders successfully.
     """
     response = client.get("/sfs.cgi?masterhost=localhost&masterport=9421")
 
-    print(response.text)
     assert response.status_code == 200
     assert response.headers['content-type'] == 'text/html; charset=utf-8'
     assert "SaunaFS Info" in response.text
@@ -58,6 +79,7 @@ def test_get_sfs_info_html():
     assert "Operations" in response.text
     assert "Exports" in response.text
     assert "Metadata Backup Loggers" in response.text
+    assert "Goals" in response.text
 
 
 @pytest.mark.integration

@@ -11,7 +11,7 @@ import pathlib
 from saunafs_client import SaunaFSClient
 from models import (
     SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo,
-    ChunkOperationsInfo, OperationStats, ChunkMatrix
+    ChunkOperationsInfo, OperationStats, ChunkMatrix, Goal
 )
 
 
@@ -105,6 +105,12 @@ async def api_get_chunk_operations_info(master_host: str = "127.0.0.1", master_p
     return client.get_chunk_operations_info()
 
 
+@app.get("/api/goals", response_model=List[Goal])
+async def api_get_goals(master_host: str = "127.0.0.1", master_port: int = 9421):
+    client = get_client(master_host, master_port)
+    return client.get_goals()
+
+
 @app.get("/api/chunkmatrix", response_model=ChunkMatrix)
 async def api_get_chunk_matrix(master_host: str = "127.0.0.1", master_port: int = 9421):
     client = get_client(master_host, master_port)
@@ -118,7 +124,9 @@ async def read_root():
 
 
 @app.get("/sfs.cgi", response_class=HTMLResponse)
-async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1", masterport: int = 9421, mastername: str = "SaunaFS", sections: str = "IN|CS|HD|ML|MS|EX|MO"):
+async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
+                       masterport: int = 9421, mastername: str = "SaunaFS",
+                       sections: str = "IN|CS|HD|ML|MS|EX|MO|EX"):
     try:
         client = get_client(masterhost, masterport)
 
@@ -137,6 +145,7 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1", masterpo
         fsCheckInfoData = client.get_fs_check_info() if "IN" in activeSections else None
         chunkOperationsInfoData = client.get_chunk_operations_info() if "IN" in activeSections else None
         chunkMatrixData = client.get_chunk_matrix() if "IN" in activeSections else None
+        goals = client.get_goals() if "EX" in activeSections else None
 
         op_names = list(OperationStats.model_fields.keys())
 
@@ -150,7 +159,8 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1", masterpo
             "chunk_operations_info": chunkOperationsInfoData,
             "chunk_matrix": chunkMatrixData,
             "op_names": op_names,
-            "error_message": None
+            "error_message": None,
+            "goals": goals,
         }
         return templates.TemplateResponse(request, "sfs.html", context)
     except Exception as e:

@@ -87,6 +87,10 @@ SAU_CLTOMA_CHUNKS_HEALTH = 1526
 SAU_MATOCL_CHUNKS_HEALTH = 1527
 CHUNKS_HEALTH = (SAU_CLTOMA_CHUNKS_HEALTH, SAU_MATOCL_CHUNKS_HEALTH)
 
+SAU_CLTOMA_HOSTNAME = 1551
+SAU_MATOCL_HOSTNAME = 1552
+METADATA_HOSTNAME = (SAU_CLTOMA_HOSTNAME, SAU_MATOCL_HOSTNAME)
+
 
 class SaunaFSClient:
     def __init__(self, master_host: str, master_port: int):
@@ -247,15 +251,20 @@ class SaunaFSClient:
         buffer = self.send_and_receive(CHUNKS_HEALTH, b'\x00')
         return ChunkHealth.from_buffer(buffer)
 
+    def get_hostname(self, host, port) -> str:
+        # I cannot believe this is a actual protocol message...
+        buffer = self.send_and_receive(METADATA_HOSTNAME, host=host, port=port)
+        return unpack_string(buffer)
+
     def get_metadata_servers(self) -> List[Goal]:
         servers = []
-
-        # Add the master server
+        master_host = self.master_host
         master_ip = socket.gethostbyname(self.master_host)
+        master_host = self.get_hostname(self.master_host, self.master_port)
         master_v1, master_v2, master_v3 = self.master_version
         servers.append(MetadataServer(
             id=1,
-            hostname=self.master_host,
+            hostname=master_host,
             ip_address=master_ip,
             port=self.master_port,
             version=f"{master_v1}.{master_v2}.{master_v3}",
@@ -287,5 +296,6 @@ class SaunaFSClient:
             )
             logging.debug(f"metadata server status: server {server.hostname}, buffer {buffer}")
             server.status_from_buffer(buffer)
+            server.hostname = self.get_hostname(server.ip_address, server.port)
 
         return servers

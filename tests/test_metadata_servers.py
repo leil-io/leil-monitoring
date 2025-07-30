@@ -1,7 +1,6 @@
 import unittest
 import struct
 import ipaddress
-from unittest.mock import patch
 from models import MetadataServer
 from deserializer import DeserializationError
 
@@ -42,8 +41,7 @@ def serialize_metadata_server_status(
 
 class TestMetadataServerDeserialization(unittest.TestCase):
 
-    @patch('socket.gethostbyaddr', return_value=('mocked-hostname', [], []))
-    def test_from_buffer(self, mock_gethostbyaddr):
+    def test_from_buffer(self):
         version = "1.0.0"
         ip_address = "10.0.0.1"
         port = 9000
@@ -57,7 +55,9 @@ class TestMetadataServerDeserialization(unittest.TestCase):
         server = MetadataServer.from_buffer(buffer_copy)
 
         self.assertEqual(server.id, 0)  # ID is set by caller
-        self.assertEqual(server.hostname, "mocked-hostname")
+        # Hostname is empty, because there's another protocol call that actually
+        # provides the hostname
+        self.assertEqual(server.hostname, "")
         self.assertEqual(server.ip_address, ip_address)
         self.assertEqual(server.port, port)
         self.assertEqual(server.version, version)
@@ -70,17 +70,7 @@ class TestMetadataServerDeserialization(unittest.TestCase):
         with self.assertRaises(DeserializationError):
             MetadataServer.from_buffer(short_buffer)
 
-    def test_from_buffer_unresolved(self):
-        version = "1.0.0"
-        ip_address = "255.255.255.255"
-        port = 9000
-        mock_buffer = serialize_metadata_server(ip_address, port, version)
-
-        server = MetadataServer.from_buffer(mock_buffer)
-        self.assertEqual(server.hostname, "(unresolved)")
-
-    @patch('socket.gethostbyaddr', side_effect=lambda ip: ('mocked-hostname-' + ip, [], []))
-    def test_get_list(self, mock_gethostbyaddr):
+    def test_get_list(self):
         server1_data = {
             "version": "1.0.0", "ip_address": "10.0.0.1",
             "port": 9000
@@ -108,16 +98,19 @@ class TestMetadataServerDeserialization(unittest.TestCase):
         self.assertEqual(len(servers), 2)
 
         # Assertions for server 1
-        # MetadataServer.get_list does not include master and starts counting from 2
+        # MetadataServer.get_list does not include master and starts counting
+        # from 2
         self.assertEqual(servers[0].id, 2)
-        self.assertEqual(servers[0].hostname, f"mocked-hostname-{server1_data['ip_address']}")
+        # Hostname is empty, because there's another protocol call that actually
+        # provides the hostname
+        self.assertEqual(servers[0].hostname, "")
         self.assertEqual(servers[0].ip_address, server1_data['ip_address'])
         self.assertEqual(servers[0].port, server1_data['port'])
         self.assertEqual(servers[0].version, server1_data['version'])
 
         # Assertions for server 2
         self.assertEqual(servers[1].id, 3)
-        self.assertEqual(servers[1].hostname, f"mocked-hostname-{server2_data['ip_address']}")
+        self.assertEqual(servers[1].hostname, "")
         self.assertEqual(servers[1].ip_address, server2_data['ip_address'])
         self.assertEqual(servers[1].port, server2_data['port'])
         self.assertEqual(servers[1].version, server2_data['version'])

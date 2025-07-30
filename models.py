@@ -454,14 +454,10 @@ class MetadataServer(BaseModel):
         try:
             ip, port, v1, v2, v3 = unpack_from("LHHBB", buffer)
             ip_str = socket.inet_ntoa(struct.pack(">L", ip))
-            try:
-                hostname = socket.gethostbyaddr(ip_str)[0]
-            except socket.herror:
-                hostname = "(unresolved)"
 
             return cls(
                 id=0,  # Set by caller
-                hostname=hostname,
+                hostname="",  # Set by caller
                 ip_address=ip_str,
                 port=port,
                 version=f"{v1}.{v2}.{v3}",

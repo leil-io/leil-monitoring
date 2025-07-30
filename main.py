@@ -53,74 +53,74 @@ def format_timestamp(ts):
 templates.env.filters["format_timestamp"] = format_timestamp
 
 
-def get_client(master_host: str, master_port: int) -> SaunaFSClient:
+def get_client(masterhost: str, masterport: int) -> SaunaFSClient:
     try:
-        if master_host == "sfsmaster":
-            master_host = socket.gethostbyname(master_host)
+        if masterhost == "sfsmaster":
+            masterhost = socket.gethostbyname(masterhost)
     except socket.gaierror:
-        raise HTTPException(status_code=404, detail=f"Master host not found: {master_host}")
-    return SaunaFSClient(master_host=master_host, master_port=master_port)
+        raise HTTPException(status_code=404, detail=f"Master host not found: {masterhost}")
+    return SaunaFSClient(master_host=masterhost, master_port=masterport)
 
 # --- API Endpoints ---
 
 
 @app.get("/api/info", response_model=SystemInfo)
-async def api_get_info(master_host: str = "127.0.0.1", master_port: int = 9421):
-    client = get_client(master_host, master_port)
+async def api_get_info(masterhost: str = "127.0.0.1", masterport: int = 9421):
+    client = get_client(masterhost, masterport)
     return client.get_info()
 
 
 @app.get("/api/chunkhealth", response_model=ChunkHealth)
-async def api_get_chunk_health(master_host: str = "127.0.0.1", master_port: int = 9421):
-    client = get_client(master_host, master_port)
+async def api_get_chunk_health(masterhost: str = "127.0.0.1", masterport: int = 9421):
+    client = get_client(masterhost, masterport)
     return client.get_chunk_health()
 
 
 @app.get("/api/servers", response_model=List[Server])
-async def api_get_servers(master_host: str = "127.0.0.1", master_port: int = 9421):
-    client = get_client(master_host, master_port)
+async def api_get_servers(masterhost: str = "127.0.0.1", masterport: int = 9421):
+    client = get_client(masterhost, masterport)
     return client.get_list(client)
 
 
 @app.get("/api/disks", response_model=List[Disk])
-async def api_get_disks(master_host: str = "127.0.0.1", master_port: int = 9421):
-    client = get_client(master_host, master_port)
+async def api_get_disks(masterhost: str = "127.0.0.1", masterport: int = 9421):
+    client = get_client(masterhost, masterport)
     return client.get_disks()
 
 
 @app.get("/api/mounts", response_model=List[Mount])
-async def api_get_mounts(master_host: str = "127.0.0.1", master_port: int = 9421):
-    client = get_client(master_host, master_port)
+async def api_get_mounts(masterhost: str = "127.0.0.1", masterport: int = 9421):
+    client = get_client(masterhost, masterport)
     return client.get_mounts()
 
 
 @app.get("/api/metadataservers", response_model=List[MetadataServer])
-async def api_get_metadata_servers(master_host: str = "127.0.0.1", master_port: int = 9421):
-    client = get_client(master_host, master_port)
+async def api_get_metadata_servers(masterhost: str = "127.0.0.1", masterport: int = 9421):
+    client = get_client(masterhost, masterport)
     return client.get_metadata_servers()
 
 
 @app.get("/api/fscheckinfo", response_model=FsCheckInfo)
-async def api_get_fs_check_info(master_host: str = "127.0.0.1", master_port: int = 9421):
-    client = get_client(master_host, master_port)
+async def api_get_fs_check_info(masterhost: str = "127.0.0.1", masterport: int = 9421):
+    client = get_client(masterhost, masterport)
     return client.get_fs_check_info()
 
 
 @app.get("/api/chunkoperationsinfo", response_model=ChunkOperationsInfo)
-async def api_get_chunk_operations_info(master_host: str = "127.0.0.1", master_port: int = 9421):
-    client = get_client(master_host, master_port)
+async def api_get_chunk_operations_info(masterhost: str = "127.0.0.1", masterport: int = 9421):
+    client = get_client(masterhost, masterport)
     return client.get_chunk_operations_info()
 
 
 @app.get("/api/goals", response_model=List[Goal])
-async def api_get_goals(master_host: str = "127.0.0.1", master_port: int = 9421):
-    client = get_client(master_host, master_port)
+async def api_get_goals(masterhost: str = "127.0.0.1", masterport: int = 9421):
+    client = get_client(masterhost, masterport)
     return client.get_goals()
 
 
 @app.get("/api/chunkmatrix", response_model=ChunkMatrix)
-async def api_get_chunk_matrix(master_host: str = "127.0.0.1", master_port: int = 9421):
-    client = get_client(master_host, master_port)
+async def api_get_chunk_matrix(masterhost: str = "127.0.0.1", masterport: int = 9421):
+    client = get_client(masterhost, masterport)
     return client.get_chunk_matrix()
 
 

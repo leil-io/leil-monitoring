@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 import pytest
 from main import app
-from models import SystemInfo, ChunkHealth, Goal
+from models import SystemInfo, ChunkHealth, Goal, MetadataServer
 
 client = TestClient(app)
 
@@ -56,6 +56,25 @@ def test_api_get_goals():
     assert all(isinstance(goal, Goal) for goal in goals)
     assert len(goals) > 0
     assert goals[0].id == 1
+
+
+@pytest.mark.integration
+def test_api_get_metadata_servers():
+    """
+    Tests the /api/metadataservers endpoint against a live master server.
+    """
+    response = client.get(f"/api/metadataservers?master_host={MASTER_HOST}&master_port={MASTER_PORT}")
+
+    assert response.status_code == 200
+
+    # Validate the response against the Pydantic model
+    metadata_servers = [MetadataServer.model_validate(server) for server in response.json()]
+
+    assert isinstance(metadata_servers, list)
+    assert metadata_servers is not None
+    assert all(isinstance(server, MetadataServer) for server in metadata_servers)
+    assert len(metadata_servers) > 0
+    assert metadata_servers[0].personality == "master"
 
 
 @pytest.mark.integration

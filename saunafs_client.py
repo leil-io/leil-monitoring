@@ -275,14 +275,17 @@ class SaunaFSClient:
             METADATASERVERS_LIST,
             b""
         )
-        servers = MetadataServer.get_list(buffer)
+        servers.extend(MetadataServer.get_list(buffer))
 
         for i, server in enumerate(servers):
             payload = struct.pack(">L", 0)
             buffer = self.send_and_receive(
                 METADATASERVER_STATUS,
-                payload
+                payload,
+                host=server.ip_address,
+                port=server.port,
             )
+            logging.debug(f"metadata server status: server {server.hostname}, buffer {buffer}")
             server.status_from_buffer(buffer)
 
         return servers

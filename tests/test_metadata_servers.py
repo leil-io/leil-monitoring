@@ -108,14 +108,15 @@ class TestMetadataServerDeserialization(unittest.TestCase):
         self.assertEqual(len(servers), 2)
 
         # Assertions for server 1
-        self.assertEqual(servers[0].id, 1)
+        # MetadataServer.get_list does not include master and starts counting from 2
+        self.assertEqual(servers[0].id, 2)
         self.assertEqual(servers[0].hostname, f"mocked-hostname-{server1_data['ip_address']}")
         self.assertEqual(servers[0].ip_address, server1_data['ip_address'])
         self.assertEqual(servers[0].port, server1_data['port'])
         self.assertEqual(servers[0].version, server1_data['version'])
 
         # Assertions for server 2
-        self.assertEqual(servers[1].id, 2)
+        self.assertEqual(servers[1].id, 3)
         self.assertEqual(servers[1].hostname, f"mocked-hostname-{server2_data['ip_address']}")
         self.assertEqual(servers[1].ip_address, server2_data['ip_address'])
         self.assertEqual(servers[1].port, server2_data['port'])

@@ -444,7 +444,7 @@ class MetadataServer(BaseModel):
         logging.debug(f"MetadataServer::get_list: vector_size: {vector_size}")
         for i in range(vector_size):
             server = MetadataServer.from_buffer(buffer)
-            server.id = i + 1
+            server.id = i + 2  # master not included here
             servers.append(server)
 
         return servers
@@ -475,7 +475,7 @@ class MetadataServer(BaseModel):
 
     def status_from_buffer(self, buffer: bytearray):
         _, status, self.metadata_version = struct.unpack(">LBQ", buffer)  # First is msgid (useless)
-
+        logging.debug(f"server {self.hostname} status: {status}")
         if status == 1:
             self.personality = "master"
             self.state = "running"

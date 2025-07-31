@@ -79,7 +79,7 @@ async def api_get_chunk_health(masterhost: str = "127.0.0.1", masterport: int = 
 @app.get("/api/servers", response_model=List[Server])
 async def api_get_servers(masterhost: str = "127.0.0.1", masterport: int = 9421):
     client = get_client(masterhost, masterport)
-    return client.get_list(client)
+    return client.get_servers()
 
 
 @app.get("/api/disks", response_model=List[Disk])

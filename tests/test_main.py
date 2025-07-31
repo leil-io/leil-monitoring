@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 import pytest
 from main import app
-from models import SystemInfo, ChunkHealth, Goal, MetadataServer
+from models import SystemInfo, ChunkHealth, Goal, MetadataServer, Mount
 
 client = TestClient(app)
 
@@ -27,7 +27,7 @@ def test_api_get_info():
     """
     Tests the /api/info endpoint against a live master server.
     """
-    response = client.get(f"/api/info?master_host={MASTER_HOST}&master_port={MASTER_PORT}")
+    response = client.get(f"/api/info?masterhost={MASTER_HOST}&masterport={MASTER_PORT}")
 
     assert response.status_code == 200
 
@@ -44,7 +44,7 @@ def test_api_get_goals():
     """
     Tests the /api/goals endpoint against a live master server.
     """
-    response = client.get(f"/api/goals?master_host={MASTER_HOST}&master_port={MASTER_PORT}")
+    response = client.get(f"/api/goals?masterhost={MASTER_HOST}&masterport={MASTER_PORT}")
 
     assert response.status_code == 200
 
@@ -63,7 +63,7 @@ def test_api_get_metadata_servers():
     """
     Tests the /api/metadataservers endpoint against a live master server.
     """
-    response = client.get(f"/api/metadataservers?master_host={MASTER_HOST}&master_port={MASTER_PORT}")
+    response = client.get(f"/api/metadataservers?masterhost={MASTER_HOST}&masterport={MASTER_PORT}")
 
     assert response.status_code == 200
 
@@ -82,7 +82,7 @@ def test_api_get_chunk_health():
     """
     Tests the /api/chunkhealth endpoint against a live master server.
     """
-    response = client.get(f"/api/chunkhealth?master_host={MASTER_HOST}&master_port={MASTER_PORT}")
+    response = client.get(f"/api/chunkhealth?masterhost={MASTER_HOST}&masterport={MASTER_PORT}")
 
     assert response.status_code == 200
 
@@ -126,3 +126,17 @@ def test_get_sfs_info_connection_error():
 
     assert response.status_code == 200  # The page itself should still render
     assert "Can&#39;t connect to SaunaFS master" in response.text
+
+
+@pytest.mark.integration
+def test_get_mounts():
+    """
+    Tests the /api/mounts endpoint against a live master server
+    """
+    # Use a port that is unlikely to be open
+    response = client.get("/api/mounts?masterhost=localhost&masterport=9421")
+
+    assert response.status_code == 200
+    # Validate the response against the Pydantic model
+    mounts = [Mount.model_validate(mount) for mount in response.json()]
+    assert all(isinstance(mount, Mount) for mount in mounts)

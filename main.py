@@ -202,13 +202,23 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
 
 
 @app.get("/chart.cgi")
-async def get_chart(host: str, port: int, id: int):
-    client = get_client("127.0.0.1", 9421)  # Dummy client for now
+async def get_chart(id: int, host: str = "127.0.0.1", port: int = 9421):
+    client = get_client(host, port)
     try:
-        imageData = client.get_chart(host, port, id)
-        mediaType = "image/gif" if imageData.startswith(b"GIF") else "image/png"
-        return Response(content=imageData, media_type=mediaType)
-    except Exception:
+        image_data = client.get_chart(host, port, id)
+        media_type = ""
+        if image_data.startswith(b"\x89PNG\r\n\x1a\n"):
+            media_type = "image/png"
+        elif image_data.startswith(b"timestamp"):
+            media_type = "text/plain"
+        else:
+            media_type = "image/gif"
+
+        logging.debug(f"returning media_type: {media_type}")
+        return Response(content=bytes(image_data), media_type=media_type)
+    except Exception as e:
+        logging.error(f"Could not get charts {e}")
+        traceback.print_exc()
         with open("static/err.gif", "rb") as f:
             return Response(content=f.read(), media_type="image/gif")
 

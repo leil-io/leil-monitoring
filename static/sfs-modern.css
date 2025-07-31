@@ -146,3 +146,11 @@ td.LOGO img {
 td.MENU {
     padding-left: 20px;
 }
+
+.chart-container {
+    position: relative;
+    height:40vh;
+    width:80vw;
+    max-width: 900px;
+    margin: 0 auto 20px auto;
+}

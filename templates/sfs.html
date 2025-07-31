@@ -229,8 +229,87 @@
 					</tr>
 					{% endif %}
 					{% endfor %}
+					<tr>
+						<th>all</th>
+						<th>{{goalmap | sum (attribute='safe')}}</th>
+						<th>{{goalmap | sum (attribute='endangered')}}</th>
+						<th>{{goalmap | sum (attribute='lost')}}</th>
+						<th>{{goalmap | sum (attribute='total')}}</th>
+					</tr>
 				</table>
 				<br/>
+				<table class="FR" caption="Chunks which need replication">
+
+					<tr>
+						<th colspan="12">Chunks which need replication</th>
+					</tr>
+					<tr>
+						<th>goal</th>
+						<th class="PERC8">0 copies<br/>to replicate</th>
+						<th class="PERC8">1 copy<br/>to replicate</th>
+						<th class="PERC8">2 copies<br/>to replicate</th>
+						<th class="PERC8">3 copies<br/>to replicate</th>
+						<th class="PERC8">4 copies<br/>to replicate</th>
+						<th class="PERC8">5 copies<br/>to replicate</th>
+						<th class="PERC8">6 copies<br/>to replicate</th>
+						<th class="PERC8">7 copies<br/>to replicate</th>
+						<th class="PERC8">8 copies<br/>to replicate</th>
+						<th class="PERC8">9 copies<br/>to replicate</th>
+						<th class="PERC8">10+ copies<br/>to replicate</th>
+					</tr>
+					{% for goal in goalmap %}
+					{% if goal.total != 0 %}
+					<tr class="CI">
+						<th class="LEFT">{{goal.name}}</th>
+						{% for replicate in goal.replication %}
+						<td align="center">{{replicate}}</td>
+						{% endfor %}
+					</tr>
+					{% endif %}
+					{% endfor %}
+					<tr>
+						<th>all</th>
+					{% for sum in replication_sums %}
+						<th>{{sum}}</th>
+					{% endfor %}
+					</tr>
+				</table>
+				<table class="FR" caption="Chunks which need deletion">
+
+					<tr>
+						<th colspan="12">Chunks which need deletion</th>
+					</tr>
+					<tr>
+						<th>goal</th>
+						<th class="PERC8">0 copies<br/>to delete</th>
+						<th class="PERC8">1 copy<br/>to delete</th>
+						<th class="PERC8">2 copies<br/>to delete</th>
+						<th class="PERC8">3 copies<br/>to delete</th>
+						<th class="PERC8">4 copies<br/>to delete</th>
+						<th class="PERC8">5 copies<br/>to delete</th>
+						<th class="PERC8">6 copies<br/>to delete</th>
+						<th class="PERC8">7 copies<br/>to delete</th>
+						<th class="PERC8">8 copies<br/>to delete</th>
+						<th class="PERC8">9 copies<br/>to delete</th>
+						<th class="PERC8">10+ copies<br/>to delete</th>
+					</tr>
+					{% for goal in goalmap %}
+					{% if goal.total != 0 %}
+					<tr class="CI">
+						<th class="LEFT">{{goal.name}}</th>
+						{% for delete in goal.deletion %}
+						<td align="center">{{delete}}</td>
+						{% endfor %}
+					</tr>
+					{% endif %}
+					{% endfor %}
+					<tr>
+						<th>all</th>
+					{% for sum in deletion_sums %}
+						<th>{{sum}}</th>
+					{% endfor %}
+					</tr>
+				</table>
 				{% endif %}
 
 				<!-- Chunk Servers Table -->

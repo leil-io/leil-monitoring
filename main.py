@@ -61,6 +61,18 @@ def get_client(masterhost: str, masterport: int) -> SaunaFSClient:
         raise HTTPException(status_code=404, detail=f"Master host not found: {masterhost}")
     return SaunaFSClient(master_host=masterhost, master_port=masterport)
 
+
+def get_goal_chunk_sums(goals: List[ChunkMappedHealth], attribute: str) -> List[int]:
+    sums = []
+    for i in range(11):
+        total = 0
+        for goal in goals:
+            if goal.replication:  # Equivalent to len(goal.replication) > 0
+                total += getattr(goal, attribute)[i]
+        sums.append(total)
+
+    return sums
+
 # --- API Endpoints ---
 
 
@@ -156,11 +168,14 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
         chunks_health = client.get_chunk_health() if "CH" in activeSections else None
         op_names = list(OperationStats.model_fields.keys())
         goalmap = None
+        replication_sums = None
         if chunks_health:
             if goals:
                 goalmap = ChunkMappedHealth.from_chunk_health(chunks_health, goals)
             else:
                 goalmap = ChunkMappedHealth.from_chunk_health(chunks_health, client.get_goals())
+            replication_sums = get_goal_chunk_sums(goalmap, "replication")
+            deletion_sums = get_goal_chunk_sums(goalmap, "deletion")
 
         context = {
             "request": request, "mastername": mastername, "masterhost": masterhost,
@@ -176,6 +191,8 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
             "chunks_health": chunks_health,
             "goalmap": goalmap,
             "goals": goals,
+            "replication_sums": replication_sums,
+            "deletion_sums": deletion_sums,
         }
         return templates.TemplateResponse(request, "sfs.html", context)
     except Exception as e:

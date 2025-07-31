@@ -2,7 +2,7 @@
 
 ## TODO:
 - [x] Get goal definitions
-- [ ] Get chunk information
+- [x] Get chunk information
 - [ ] Get charts for master
 - [ ] Get charts for chunkservers
 - [ ] Add chunkserver removal

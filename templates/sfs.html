@@ -8,6 +8,8 @@
 		<link rel="stylesheet" href="/static/sfs-modern.css" type="text/css" />
 		<script src="/static/papaparse.min.js"></script>
 		<script src="/static/chart.umd.js"></script>
+		<script src="/static/date-fns.min.js"></script>
+		<script src="/static/chartjs-adapter-date-fns.bundle.min.js"></script>
 	</head>
 	<body>
 		<div id="header">
@@ -623,11 +625,26 @@
 				<br/>
 				{% endif %}
 			{% endif %}
-			<div class="chart-container" style="position: relative; height:40vh; width:80vw">
-				<canvas id="memoryChart"></canvas>
+			<div class="chart-containers">
+				<div class="chart-header">
+				Master charts
+				</div>
+				<div class="chart-container" style="">
+					<canvas id="memoryChart"></canvas>
+					<div class="chart-options"
+					data-chart="memory"
+					data-chartLabel="Memory used"
+					data-chartUnit="1"
+					>
+						<div data-time-range="0">Short</div>
+						<div data-time-range="1">Medium</div>
+						<div data-time-range="2">Long</div>
+						<div data-time-range="3">Very Long</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<script src="/static/sfs-sort.js"></script>
-		<script src="/static/charts.js"></script>
+		<script src="/static/charts.js" type="module"></script>
 	</body>
 </html>

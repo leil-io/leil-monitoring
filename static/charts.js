@@ -9,15 +9,15 @@ const timeRange = Object.freeze({
  * @typedef UnitType
  * @type {object}
  * @property {number} NONE - Raw count
- * @property {number} BYTE - Byte count
- * @property {number} BIT - Bit count
+ * @property {number} BYTE - Byte/Bit count
+ * @property {number} CPUTIME - CPU time (in microseconds)
  */
 
 /** @type {UnitType} */
 const dataUnit = Object.freeze({
 	NONE: 0,
 	BYTE: 1,
-	BIT: 2,
+	CPUTIME: 3,
 });
 
 
@@ -33,17 +33,149 @@ const dataUnit = Object.freeze({
 /** @type {ChartInfo[]} */
 let masterCharts = [
 	{
+		name: "cpu",
+		id: 91000,
+		labels: ["Userspace CPU %", "Kernelspace CPU %"],
+		unit: dataUnit.CPUTIME,
+	},
+	{
 		name: "memory",
 		id: 90200,
 		labels: ["Memory used"],
 		unit: dataUnit.BYTE,
 	},
-	// {
-	// 	name: "cpu",
-	// 	id: 91001,
-	// 	labels: ["Userspace CPU %", "Kernelspace CPU %"],
-	// 	unit: dataUnit.BYTE,
-	// }
+	{
+		name: "chunkDels",
+		id: 90020,
+		labels: ["Chunk deletions (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "chunkReps",
+		id: 90030,
+		labels: ["Chunk replications (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "statfs",
+		id: 90040,
+		labels: ["statfs operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "getattr",
+		id: 90050,
+		labels: ["getattr operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "setattr",
+		id: 90060,
+		labels: ["setattr operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "lookup",
+		id: 90070,
+		labels: ["lookup operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "mkdir",
+		id: 90080,
+		labels: ["mkdir operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "rmdir",
+		id: 90090,
+		labels: ["rmdir operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "symlink",
+		id: 90100,
+		labels: ["symlink operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "readlink",
+		id: 90110,
+		labels: ["readlink operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "mknod",
+		id: 90120,
+		labels: ["mknod operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "unlink",
+		id: 90130,
+		labels: ["unlink operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "rename",
+		id: 90140,
+		labels: ["rename operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "link",
+		id: 90150,
+		labels: ["link operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "readdir",
+		id: 90160,
+		labels: ["readdir operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "open",
+		id: 90170,
+		labels: ["open operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "read",
+		id: 90180,
+		labels: ["read operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "write",
+		id: 90190,
+		labels: ["write operations (per minute)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "packetsReceived",
+		id: 90210,
+		labels: ["Packets received (per second)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "packetsSent",
+		id: 90220,
+		labels: ["Packets sent (per second)"],
+		unit: dataUnit.NONE,
+	},
+	{
+		name: "bitsReceived",
+		id: 90230,
+		labels: ["Bits received (per second)"],
+		unit: dataUnit.BYTE,
+	},
+	{
+		name: "bitsSent",
+		id: 90240,
+		labels: ["Bits sent (per second)"],
+		unit: dataUnit.BYTE,
+	},
 ]
 
 function bytePowerOf(num) {
@@ -63,12 +195,29 @@ function bytePowerOf(num) {
 	return `N/A`;
 }
 
-function setupSingleLineChart(id, label, labels, data) {
+function setupLineChart(id, label, labels, data) {
+	let datasets = []
+	for (const [_, row] of data.entries()) {
+		for (const [i, col] of row.entries()) {
+			if (typeof label[i] === 'undefined') {
+				continue
+			}
+			if (datasets.length < i + 1) {
+				datasets.push({
+						label: label[i],
+						data: [],
+						borderWidth: 2,
+						fill: true,
+						tension: 0.1
+				})
+			}
+			datasets[i].data.push(col)
+		}
+	}
 	let chart = Chart.getChart(id + "Chart")
 	if (chart !== undefined) {
 		chart.data.labels = labels
-		chart.data.datasets[0].label = label
-		chart.data.datasets[0].data = data
+		chart.data.datasets = datasets
 		chart.update()
 		return
 	} else {
@@ -76,15 +225,7 @@ function setupSingleLineChart(id, label, labels, data) {
 			type: 'line',
 			data: {
 				labels: labels,
-				datasets: [
-					{
-						label: label,
-						data: data,
-						borderWidth: 2,
-						fill: true,
-						tension: 0.1
-					}
-				]
+				datasets: datasets
 			},
 			options: {
 				responsive: true,
@@ -104,8 +245,38 @@ function setupSingleLineChart(id, label, labels, data) {
 }
 
 function parseData(csvData) {
-	const result = Papa.parse(csvData, { header: false });
-	return result.data.filter(row => row[0] && row[1]); // remove empty rows
+	const result = Papa.parse(csvData, { header: false, skipEmptyLines: true });
+	const data = result.data.splice(1)
+
+	return data.map(row =>
+		row.map(cell => (cell === "" || cell === null || cell === undefined) ? 0 : cell)
+	);
+}
+
+/**
+ * @param {number} time - CPU time (microseconds)
+ * @param {RangeValue} range
+ * @returns {number} Percentage of usage
+ */
+function parseCPUtime(time, range) {
+	let intervalSeconds = 0;
+	switch (parseInt(range)) {
+		case timeRange.SHORT.id:
+			intervalSeconds = 60
+			break;
+		case timeRange.MEDIUM.id:
+			intervalSeconds = 360
+			break;
+		case timeRange.LONG.id:
+			intervalSeconds = 1800
+			break;
+		case timeRange.VERYLONG.id:
+			intervalSeconds = 86400
+			break;
+		default:
+			throw new Error("Invalid time range")
+	}
+	return ((time / (intervalSeconds * 1_000_000)) * 100).toFixed(2)
 }
 
 /**
@@ -130,22 +301,83 @@ async function getMasterData(chart, timePeriod) {
  * @param {RangeValue} [range=timeRange.SHORT] - What time range to use
  */
 async function setupChartInfo(chart, range = timeRange.SHORT.id) {
-	const csvData = await getMasterData(chart, range)
-	let values;
-	const rows = parseData(csvData)
+	const csvData = await getMasterData(chart, range);
+	const rows = parseData(csvData);
 	const labels = rows.map(row => dateFns.fromUnixTime(row[0]))
 	if (chart.unit == dataUnit.BYTE) {
 		const [labelSize, power] = bytePowerOf(rows.reduce((max, row) => {
-			return Math.max(max, row[1]);
+			let rowMaxSize = 0;
+			for (const [i, cell] of row.entries()) {
+				if (i === 0 || cell === 0) {
+					continue // Skip timestamp and empty values
+				}
+				rowMaxSize = Math.max(rowMaxSize, cell)
+			}
+			return Math.max(max, rowMaxSize);
 		}, 0))
-		values = rows.map(row => parseInt(row[1]) / Math.pow(1024, power));
-		setupSingleLineChart(chart.name, `${chart.labels[0]} (${labelSize})`, labels, values)
+		const values = rows.map(row => {
+			let data = [];
+			for (const [i, cell] of row.entries()) {
+				if (i === 0) {
+					continue // Skip timestamp
+				}
+				if (cell === 0) {
+					data.push(cell)
+				} else {
+					data.push(parseInt(cell) / Math.pow(1024, power))
+				}
+			}
+			return data
+		});
+		for (let [idx, _] of chart.labels.entries()) {
+			chart.labels[idx] = `${chart.labels[idx]} (${labelSize})`
+		}
+		setupLineChart(chart.name, chart.labels, labels, values)
+	} else if (chart.unit == dataUnit.NONE) {
+		const values = rows.map(row => {
+			let data = [];
+			for (const [i, cell] of row.entries()) {
+				if (i === 0) {
+					continue // Skip timestamp
+				}
+				if (cell === 0) {
+					data.push(cell)
+				} else {
+					data.push(cell, range)
+				}
+			}
+			return data
+		});
+		for (let [idx, _] of chart.labels.entries()) {
+			chart.labels[idx] = `${chart.labels[idx]}`
+		}
+		setupLineChart(chart.name, chart.labels, labels, values)
+
+	} else if (chart.unit == dataUnit.CPUTIME) {
+		const values = rows.map(row => {
+			let data = [];
+			for (const [i, cell] of row.entries()) {
+				if (i === 0) {
+					continue // Skip timestamp
+				}
+				if (cell === 0) {
+					data.push(cell)
+				} else {
+					data.push(parseCPUtime(cell, range))
+				}
+			}
+			return data
+		});
+		for (let [idx, _] of chart.labels.entries()) {
+			chart.labels[idx] = `${chart.labels[idx]}`
+		}
+		setupLineChart(chart.name, chart.labels, labels, values)
 	}
 }
 
 /**
  * @param {ChartInfo} chart - Chart to setup
- * @param {string} chartContainerId - Container for the chart
+ * @param {string} chartContainerI - Container for the chart
  */
 function setupChart(chart, chartContainerId) {
 	const chartContainer = document.getElementById(chartContainerId)

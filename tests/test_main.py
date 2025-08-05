@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 import pytest
+import csv
 from main import app
 from models import SystemInfo, ChunkHealth, Goal, MetadataServer, Mount
 
@@ -133,10 +134,55 @@ def test_get_mounts():
     """
     Tests the /api/mounts endpoint against a live master server
     """
-    # Use a port that is unlikely to be open
     response = client.get("/api/mounts?masterhost=localhost&masterport=9421")
 
     assert response.status_code == 200
     # Validate the response against the Pydantic model
     mounts = [Mount.model_validate(mount) for mount in response.json()]
     assert all(isinstance(mount, Mount) for mount in mounts)
+
+
+@pytest.mark.integration
+def test_get_chart_csv_right_range():
+    """
+    Tests the chart CSV endpoint against a live master server, making sure the
+    ranges are valid
+    """
+    ids = [
+        90060,
+        90051,
+        90042,
+        90033,
+    ]
+    responses = [
+    ]
+    for id in ids:
+        responses.append(client.get(f"/chart.cgi?id={id}&host=localhost&port=9421"))
+
+    for indx, response in enumerate(responses):
+        assert response.status_code == 200
+        timestamps = []
+        csv_reader = csv.reader(response.text.strip().splitlines())
+        # Skip header
+        next(csv_reader)
+        for row in csv_reader:
+            assert row[0].isdigit()
+            timestamps.append(int(row[0]))
+
+        id_range = int(ids[indx]) % 90000 % 10
+        last_timestamp = 0
+        for i in range(1, len(timestamps)):
+            if last_timestamp == 0:
+                last_timestamp = timestamps[i]
+                continue
+            if id_range == 0:
+                assert timestamps[i] - last_timestamp == 60
+            elif id_range == 1:
+                assert timestamps[i] - last_timestamp == 360
+            elif id_range == 2:
+                assert timestamps[i] - last_timestamp == 1800
+            elif id_range == 3:
+                assert timestamps[i] - last_timestamp == 86400
+            else:
+                raise Exception(f"Unexpected range {id_range}")
+            last_timestamp = timestamps[i]

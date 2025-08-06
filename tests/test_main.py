@@ -97,7 +97,9 @@ def test_get_sfs_info_html():
     """
     Tests that the main HTML page for the legacy UI renders successfully.
     """
-    response = client.get("/sfs.cgi?masterhost=localhost&masterport=9421")
+    response = client.get(
+        "/sfs.cgi?masterhost=localhost&masterport=9421&sections=IN|CS|HD|ML|MS|EX|MO|EX|CH|MC"
+    )
 
     assert response.status_code == 200
     assert response.headers['content-type'] == 'text/html; charset=utf-8'

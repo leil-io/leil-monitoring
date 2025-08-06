@@ -12,18 +12,29 @@
 		<script src="/static/chartjs-adapter-date-fns.bundle.min.js"></script>
 	</head>
 	<body>
-		<div id="header">
-			<table class="HDR" cellpadding="0" cellspacing="0" border="0" caption="Page header">
-				<tr>
-					<td class="LOGO"><a href="https://saunafs.com"><img src="/static/logomini.svg" alt="logo" style="border:0;width:110px;height:38px" /></a></td>
-					<td class="MENU">
-						{# Menu logic would go here to show/hide sections #}
-					</td>
-					<td class="FILLER"></td>
-				</tr>
-			</table>
+		<header id="header">
+		<div class="logo">
+			<a href="sfs.cgi?sections=IN">
+				<img src="/static/logomini.svg" alt="logo" width="110" height="38" />
+			</a>
 		</div>
 
+		<nav class="menu">
+			<a class="button" href="sfs.cgi?sections=IN">Info</a>
+			<a class="button" href="sfs.cgi?sections=CH">Chunks</a>
+			<a class="button" href="sfs.cgi?sections=CS">Servers</a>
+			<a class="button" href="sfs.cgi?sections=HD">Disks</a>
+			<a class="button" href="sfs.cgi?sections=EX">Config</a>
+			<a class="button" href="sfs.cgi?sections=MS">Mounts</a>
+			<a class="button" href="sfs.cgi?sections=MO">Operations</a>
+			<a class="button" href="sfs.cgi?sections=MC">Master Charts</a>
+			<a class="button" href="sfs.cgi?sections=CC">Server Charts</a>
+			<a class="button" href="sfs.cgi?sections=HELP">Help</a>
+		</nav>
+
+		<div class="filler"></div>
+	</header>
+		</div>
 		<div id="container">
 			{% if error_message %}
 				<h1 align="center">{{ error_message }}</h1>
@@ -625,13 +636,16 @@
 				<br/>
 				{% endif %}
 			{% endif %}
+			{% if 'MC' in active_sections %}
 			<div class="chart-containers" id="masterCharts">
 				<div class="chart-header">
 				Master charts
 				</div>
 			</div>
+			{% endif %}
 		</div>
 		<script src="/static/sfs-sort.js"></script>
 		<script src="/static/charts.js" type="module"></script>
+		<script src="/static/links.js"></script>
 	</body>
 </html>

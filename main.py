@@ -145,7 +145,7 @@ async def read_root():
 @app.get("/sfs.cgi", response_class=HTMLResponse)
 async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
                        masterport: int = 9421, mastername: str = "SaunaFS",
-                       sections: str = "IN|CS|HD|ML|MS|EX|MO|EX|CH"):
+                       sections: str = "IN"):
     try:
         client = get_client(masterhost, masterport)
 
@@ -169,6 +169,7 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
         op_names = list(OperationStats.model_fields.keys())
         goalmap = None
         replication_sums = None
+        deletion_sums = None
         if chunks_health:
             if goals:
                 goalmap = ChunkMappedHealth.from_chunk_health(chunks_health, goals)
@@ -193,6 +194,7 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
             "goals": goals,
             "replication_sums": replication_sums,
             "deletion_sums": deletion_sums,
+            "active_sections": activeSections
         }
         return templates.TemplateResponse(request, "sfs.html", context)
     except Exception as e:

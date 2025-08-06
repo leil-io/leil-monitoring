@@ -11,6 +11,7 @@
     --orange: #ff9e64;
     --red: #f7768e;
     --yellow: #e0af68;
+    --selected-color: #2b3254
 }
 
 body {
@@ -19,8 +20,8 @@ body {
     background-color: var(--bg-color);
     color: var(--fg-color);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 0.7em;
+    line-height: 1.0;
 }
 
 #header {
@@ -32,7 +33,7 @@ body {
 }
 
 #container {
-    padding: 20px;
+    padding: 2em;
 }
 
 a {
@@ -41,6 +42,53 @@ a {
 }
 a:hover {
     text-decoration: underline;
+}
+
+#header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #ddd;
+}
+
+.logo img {
+    display: block;
+    padding-right: 1em
+}
+
+.menu {
+    display: flex;
+    gap: 1rem;
+    padding-right: 10em;
+}
+
+.menu > a {
+    text-decoration: none;
+    font-weight: 500;
+    background-color: var(--header-bg);
+    color: var(--fg-color);
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 600;
+    font-size: 0.9em;
+    border: 1px solid var(--border-color);
+}
+
+.menu > a.active {
+    background-color: var(--accent-color);
+    color: var(--bg-color);
+    border-color: var(--accent-color);
+}
+
+.menu > a.onlyActive {
+    padding-top: 1.5em;
+}
+
+.filler {
+    flex: 0; /* Optional, depends on desired layout */
 }
 
 /* Table Styles */
@@ -171,7 +219,7 @@ td.MENU {
     justify-content: center;
 }
 
-.chart-options div {
+.chart-options .button {
     background-color: var(--header-bg);
     color: var(--fg-color);
     padding: 8px 15px;
@@ -183,13 +231,13 @@ td.MENU {
     border: 1px solid var(--border-color);
 }
 
-.chart-options div:hover {
+.button:hover {
     background-color: var(--accent-color);
     color: var(--bg-color);
     border-color: var(--accent-color);
 }
 
-.chart-options div.active {
+.button .active {
     background-color: var(--accent-color);
     color: var(--bg-color);
     border-color: var(--accent-color);
@@ -206,4 +254,14 @@ td.MENU {
     text-transform: uppercase;
     font-size: 0.85em;
     letter-spacing: 0.5px;
+}
+
+.selectSection {
+    font-size: 2em;
+    color: white;
+}
+
+.selectSection:hover {
+    color: var(--bg-color);
+    text-decoration: none;
 }

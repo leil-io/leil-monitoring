@@ -398,6 +398,7 @@ function setupChart(chart, chartContainerId) {
 		const chartOption = document.createElement('div')
 		chartOption.dataset.timeRange = value.id
 		chartOption.innerHTML = value.name
+		chartOption.classList.add("button")
 		chartOptions.appendChild(chartOption)
 	}
 	newChart.appendChild(chartOptions)
@@ -406,8 +407,10 @@ function setupChart(chart, chartContainerId) {
 	setupChartInfo(chart)
 }
 
-for (const chart of masterCharts) {
-	setupChart(chart, "masterCharts")
+if (document.getElementById("masterCharts") !== null) {
+	for (const chart of masterCharts) {
+		setupChart(chart, "masterCharts")
+	}
 }
 
 document.querySelectorAll('.chart-options div').forEach(button => {

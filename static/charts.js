@@ -377,9 +377,11 @@ async function setupChartInfo(chart, range = timeRange.SHORT.id) {
 
 /**
  * @param {ChartInfo} chart - Chart to setup
- * @param {string} chartContainerI - Container for the chart
+ * @param {string} chartContainerId - Container for the chart
+ * @param {number} timeout - Timeout before loading the chart
+ * @returns HTMLDivElem - The new chart container
  */
-function setupChart(chart, chartContainerId) {
+function setupChart(chart, chartContainerId, timeout) {
 	const chartContainer = document.getElementById(chartContainerId)
 	const newChart = document.createElement('div')
 	newChart.classList.add("chart-container")
@@ -404,24 +406,48 @@ function setupChart(chart, chartContainerId) {
 	newChart.appendChild(chartOptions)
 
 	chartContainer.appendChild(newChart)
-	setupChartInfo(chart)
+	return newChart
 }
 
+const BASE_TIMEOUT_MS = 50
+const BASE_TIMEOUT_MS_STEP = 200
+
+// Dynamically load charts as needed
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const chart = JSON.parse(entry.target.dataset.chartinfo);
+      setupChartInfo(chart);
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+
 if (document.getElementById("masterCharts") !== null) {
-	for (const chart of masterCharts) {
-		setupChart(chart, "masterCharts")
-	}
+	let timeout = BASE_TIMEOUT_MS
+	masterCharts.forEach(chart => {
+		const elem = setupChart(chart, "masterCharts", timeout)
+		timeout += BASE_TIMEOUT_MS_STEP
+		// We use timeout to prevent loading all the charts immediately,
+		// otherwise it's quite slow. Potentially there could be a better
+		// solution
+		elem.dataset.chartinfo = JSON.stringify(chart);
+		observer.observe(elem)
+		// setTimeout(setupChartInfo, timeout, chart)
+	})
 }
 
 document.querySelectorAll('.chart-options div').forEach(button => {
 	button.addEventListener('click', function() {
 		/** @type ChartInfo */
-		const chart = {
-			name: button.parentElement.dataset.chart,
-			labels: button.parentElement.dataset.chartlabel.split(","),
-			id: parseInt(button.parentElement.dataset.id),
-			unit: button.parentElement.dataset.chartunit,
-		}
+		const chart = JSON.parse(button.parentElement.parentElement.dataset.chartinfo);
+		// const chart = {
+		// 	name: button.parentElement.dataset.chart,
+		// 	labels: button.parentElement.dataset.chartlabel.split(","),
+		// 	id: parseInt(button.parentElement.dataset.id),
+		// 	unit: button.parentElement.dataset.chartunit,
+		// }
 		const range =  this.dataset.timeRange
 		setupChartInfo(chart, range)
 	});

@@ -178,6 +178,15 @@ let masterCharts = [
 	},
 ]
 
+let chunkServerCharts = [
+	{
+		name: "cpu",
+		id: 91000,
+		labels: ["Userspace CPU %", "Kernelspace CPU %"],
+		unit: dataUnit.CPUTIME,
+	},
+]
+
 function bytePowerOf(num) {
 	if (typeof num !== "number" || isNaN(num)) {
 		return "N/A";
@@ -204,16 +213,17 @@ function setupLineChart(id, label, labels, data) {
 			}
 			if (datasets.length < i + 1) {
 				datasets.push({
-						label: label[i],
-						data: [],
-						borderWidth: 2,
-						fill: true,
-						tension: 0.1
+					label: label[i],
+					data: [],
+					borderWidth: 2,
+					fill: true,
+					tension: 0.1
 				})
 			}
 			datasets[i].data.push(col)
 		}
 	}
+
 	let chart = Chart.getChart(id + "Chart")
 	if (chart !== undefined) {
 		chart.data.labels = labels
@@ -283,16 +293,11 @@ function parseCPUtime(time, range) {
  * @param {ChartInfo} chart
  * @param {object} timePeriod - What time range to use
  */
-async function getMasterData(chart, timePeriod) {
+async function getData(chart, host, port, timePeriod) {
 	const url = new URL("/chart.cgi", location.origin);
 	url.searchParams.set("id", chart.id + parseInt(timePeriod));
-	const existingParams = new URLSearchParams(location.search);
-	if (existingParams.has("masterhost")) {
-		url.searchParams.set("host", existingParams.get("masterhost"));
-	}
-	if (existingParams.has("masterport")) {
-		url.searchParams.set("port", existingParams.get("masterport"));
-	}
+	url.searchParams.set("host", host);
+	url.searchParams.set("port", port);
 	return fetch(url).then(res => res.text());
 }
 
@@ -300,10 +305,12 @@ async function getMasterData(chart, timePeriod) {
  * @param {ChartInfo} chart - Chart to setup
  * @param {RangeValue} [range=timeRange.SHORT] - What time range to use
  */
-async function setupChartInfo(chart, range = timeRange.SHORT.id) {
-	const csvData = await getMasterData(chart, range);
+async function setupChartInfo(chart, host, port, range = timeRange.SHORT.id) {
+	const csvData = await getData(chart, host, port, range);
 	const rows = parseData(csvData);
 	const labels = rows.map(row => dateFns.fromUnixTime(row[0]))
+
+	// TODO: A callback could be used here
 	if (chart.unit == dataUnit.BYTE) {
 		const [labelSize, power] = bytePowerOf(rows.reduce((max, row) => {
 			let rowMaxSize = 0;
@@ -377,78 +384,93 @@ async function setupChartInfo(chart, range = timeRange.SHORT.id) {
 
 /**
  * @param {ChartInfo} chart - Chart to setup
- * @param {string} chartContainerId - Container for the chart
- * @param {number} timeout - Timeout before loading the chart
+ * @param {Element} chartContainer - Container for the chart
  * @returns HTMLDivElem - The new chart container
  */
-function setupChart(chart, chartContainerId, timeout) {
-	const chartContainer = document.getElementById(chartContainerId)
-	const newChart = document.createElement('div')
-	newChart.classList.add("chart-container")
+function setupChart(chart, chartContainer) {
+	const newChart = document.createElement('div');
+	newChart.classList.add("chart-container");
 
-	const canvas = document.createElement('canvas')
-	canvas.id = chart.name + "Chart"
-	newChart.appendChild(canvas)
+	const canvas = document.createElement('canvas');
+	canvas.id = chart.name + "Chart";
+	newChart.appendChild(canvas);
 
-	const chartOptions = document.createElement('div')
-	chartOptions.classList.add("chart-options")
-	chartOptions.dataset.chart = chart.name
-	chartOptions.dataset.chartlabel = chart.labels.join(",")
-	chartOptions.dataset.chartunit = chart.unit
-	chartOptions.dataset.id = chart.id
+	const chartOptions = document.createElement('div');
+	chartOptions.classList.add("chart-options");
+	chartOptions.dataset.chart = chart.name;
+	chartOptions.dataset.chartlabel = chart.labels.join(",");
+	chartOptions.dataset.chartunit = chart.unit;
+	chartOptions.dataset.id = chart.id;
 	for (const [_, value] of Object.entries(timeRange)) {
-		const chartOption = document.createElement('div')
-		chartOption.dataset.timeRange = value.id
-		chartOption.innerHTML = value.name
-		chartOption.classList.add("button")
-		chartOptions.appendChild(chartOption)
+		const chartOption = document.createElement('div');
+		chartOption.dataset.timeRange = value.id;
+		chartOption.innerHTML = value.name;
+		chartOption.classList.add("button");
+		chartOptions.appendChild(chartOption);
 	}
-	newChart.appendChild(chartOptions)
+	newChart.appendChild(chartOptions);
 
-	chartContainer.appendChild(newChart)
-	return newChart
+	chartContainer.appendChild(newChart);
+	return newChart;
 }
-
-const BASE_TIMEOUT_MS = 50
-const BASE_TIMEOUT_MS_STEP = 200
 
 // Dynamically load charts as needed
 const observer = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const chart = JSON.parse(entry.target.dataset.chartinfo);
-      setupChartInfo(chart);
-      observer.unobserve(entry.target);
-    }
-  });
+	entries.forEach(entry => {
+		if (entry.isIntersecting) {
+			/** @type {ChartInfo} */
+			const chart = JSON.parse(entry.target.dataset.chartinfo);
+			const host = entry.target.closest(".chart-containers").dataset.host;
+			const port = entry.target.closest(".chart-containers").dataset.port;
+			setupChartInfo(chart, host, port);
+			observer.unobserve(entry.target);
+		}
+	});
 }, { threshold: 0.1 });
 
 
-if (document.getElementById("masterCharts") !== null) {
-	let timeout = BASE_TIMEOUT_MS
-	masterCharts.forEach(chart => {
-		const elem = setupChart(chart, "masterCharts", timeout)
-		timeout += BASE_TIMEOUT_MS_STEP
-		// We use timeout to prevent loading all the charts immediately,
-		// otherwise it's quite slow. Potentially there could be a better
-		// solution
-		elem.dataset.chartinfo = JSON.stringify(chart);
-		observer.observe(elem)
-		// setTimeout(setupChartInfo, timeout, chart)
-	})
+
+function setupCharts(elemQuery, charts) {
+	document.querySelectorAll(elemQuery).forEach(elem => {
+		charts.forEach(chart => {
+			const host = elem.closest(".chart-containers").dataset.host;
+			const port = elem.closest(".chart-containers").dataset.port;
+			chart.name = chart.name + "_" + host + "_" + port + "_";
+			const newChart = setupChart(chart, elem);
+			newChart.dataset.chartinfo = JSON.stringify(chart);
+			observer.observe(newChart);
+		})
+	});
 }
+
+setupCharts(".masterCharts > .chart-content", masterCharts);
+setupCharts(".chunkServerCharts > .chart-content", chunkServerCharts);
 
 document.querySelectorAll('.chart-options div').forEach(button => {
 	button.addEventListener('click', function() {
-		/** @type ChartInfo */
 		const chart = JSON.parse(button.parentElement.parentElement.dataset.chartinfo);
-		// const chart = {
-		// 	name: button.parentElement.dataset.chart,
-		// 	labels: button.parentElement.dataset.chartlabel.split(","),
-		// 	id: parseInt(button.parentElement.dataset.id),
-		// 	unit: button.parentElement.dataset.chartunit,
-		// }
-		const range =  this.dataset.timeRange
-		setupChartInfo(chart, range)
+		const host = button.closest(".chart-containers").dataset.host;
+		const port = button.closest(".chart-containers").dataset.port;
+		const range =  this.dataset.timeRange;
+		chart.name = chart.name + host + port;
+		setupChartInfo(chart, host, port, range);
 	});
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.chart-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const content = this.nextElementSibling;
+			if (content.classList.contains("show")) {
+				content.classList.toggle('show');
+				return;
+			}
+            content.classList.toggle('transition');
+			setTimeout(() => {
+				content.classList.toggle('transition');
+				content.classList.toggle('show');
+			}, 500); {
+			}
+        });
+    });
 });

@@ -155,10 +155,10 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
         activeSections = sections.split("|")
 
         infoData = client.get_info() if "IN" in activeSections else None
-        serversData = client.get_servers() if "CS" in activeSections else None
+        serversData = client.get_servers() if "CS" in activeSections or "CC" in activeSections else None
         disksData = client.get_disks() if "HD" in activeSections else None
         metaloggersData = client.get_metaloggers() if "ML" in activeSections else None
-        mountsData = client.get_mounts() if "MS" in activeSections or "MO" in activeSections else None
+        mountsData = client.get_mounts() if "MS" in activeSections else None
         exportsData = client.get_exports() if "EX" in activeSections else None
         metadataServersData = client.get_metadata_servers() if "CS" in activeSections else None
         fsCheckInfoData = client.get_fs_check_info() if "IN" in activeSections else None
@@ -167,6 +167,7 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
         goals = client.get_goals() if "EX" in activeSections else None
         chunks_health = client.get_chunk_health() if "CH" in activeSections else None
         op_names = list(OperationStats.model_fields.keys())
+
         goalmap = None
         replication_sums = None
         deletion_sums = None

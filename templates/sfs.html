@@ -26,10 +26,8 @@
 			<a class="button" href="sfs.cgi?sections=HD">Disks</a>
 			<a class="button" href="sfs.cgi?sections=EX">Config</a>
 			<a class="button" href="sfs.cgi?sections=MS">Mounts</a>
-			<a class="button" href="sfs.cgi?sections=MO">Operations</a>
 			<a class="button" href="sfs.cgi?sections=MC">Master Charts</a>
 			<a class="button" href="sfs.cgi?sections=CC">Server Charts</a>
-			<a class="button" href="sfs.cgi?sections=HELP">Help</a>
 		</nav>
 
 		<div class="filler"></div>
@@ -328,7 +326,7 @@
 				{% endif %}
 
 				<!-- Chunk Servers Table -->
-				{% if servers %}
+				{% if 'CS' in active_sections %}
 				<table class="FR sortable" cellspacing="0" caption="Metadata Servers">
 					<thead>
 						<tr><th colspan="8">Metadata Servers</th></tr>
@@ -523,10 +521,6 @@
 					</tbody>
 				</table>
 				<br/>
-				{% endif %}
-
-				<!-- Operations Table -->
-				{% if "MO" in sections and mounts %}
 				<table class="FR sortable" cellspacing="0" caption="Operations">
 					<thead>
 						<tr><th colspan="{{ 4 + op_names | length }}">Operations (current)</th></tr>
@@ -555,6 +549,8 @@
 					</tbody>
 				</table>
 				<br/>
+
+				<!-- Operations Table -->
 				<table class="FR sortable" cellspacing="0" caption="Operations">
 					<thead>
 						<tr><th colspan="{{ 4 + op_names | length }}">Operations (last hour)</th></tr>
@@ -637,15 +633,29 @@
 				{% endif %}
 			{% endif %}
 			{% if 'MC' in active_sections %}
-			<div class="chart-containers" id="masterCharts">
+			<div class="chart-containers masterCharts" data-host="{{masterhost}}" data-port="{{masterport}}">
 				<div class="chart-header">
 				Master charts
 				</div>
+				<div class="chart-content">
+				</div>
 			</div>
+			{% endif %}
+
+			{% if 'CC' in active_sections %}
+				{% for server in servers %}
+				
+				<div class="chart-containers chunkServerCharts"
+					 data-host="{{server.ip_address}}" data-port="{{server.port}}">
+					<div class="chart-header">
+				Chunkserver {{server.hostname}} ({{server.ip_address}}:{{server.port}}) charts
+					</div>
+					<div class="chart-content">
+					</div>
+				</div>
+				{% endfor %}
 			{% endif %}
 		</div>
 		<script src="/static/sfs-sort.js"></script>
 		<script src="/static/charts.js" type="module"></script>
 		<script src="/static/links.js"></script>
-	</body>
-</html>

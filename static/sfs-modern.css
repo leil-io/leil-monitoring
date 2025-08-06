@@ -254,6 +254,7 @@ td.MENU {
     text-transform: uppercase;
     font-size: 0.85em;
     letter-spacing: 0.5px;
+    cursor: pointer;
 }
 
 .selectSection {
@@ -264,4 +265,21 @@ td.MENU {
 .selectSection:hover {
     color: var(--bg-color);
     text-decoration: none;
+}
+
+.chart-content {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.4s ease;
+}
+
+.chart-content.transition {
+    max-height: 1000em; /* something large enough to fit content */
+    opacity: 1;
+}
+
+.chart-content.show {
+    max-height: unset; /* something large enough to fit content */
+    opacity: 1;
 }

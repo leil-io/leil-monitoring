@@ -214,8 +214,10 @@ async def get_chart(id: int, host: str = "127.0.0.1", port: int = 9421):
             media_type = "image/png"
         elif image_data.startswith(b"timestamp"):
             media_type = "text/plain"
-        else:
+        elif image_data.startswith(b"GIF"):
             media_type = "image/gif"
+        else:
+            raise Exception(f"unknown data: {image_data}")
 
         logging.debug(f"returning media_type: {media_type}")
         return Response(content=bytes(image_data), media_type=media_type)

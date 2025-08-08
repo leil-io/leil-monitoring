@@ -1,3 +1,21 @@
+/**
+ * @typedef SFSRange
+ * @type {object}
+ * @property {number} id - SaunaFS id for range
+ * @property {number} name - Human readable name
+ */
+
+/**
+ * @typedef SFSRanges
+ * @type {object}
+ * @property {Range} SHORT - 1 minute interval
+ * @property {Range} MEDIUM - 6 minute interval
+ * @property {Range} LONG - 30 minute interval
+ * @property {Range} VERYLONG - 1 day interval
+ */
+
+
+/** @type {SFSRanges} */
 const timeRange = Object.freeze({
 	SHORT: {id: 0, name: "Short"}, // 1 minute interval
 	MEDIUM: {id: 1, name: "Medium"}, // 6 minute interval
@@ -9,7 +27,8 @@ const timeRange = Object.freeze({
  * @typedef UnitType
  * @type {object}
  * @property {number} NONE - Raw count
- * @property {number} BYTE - Byte/Bit count
+ * @property {number} BYTE - Byte count
+ * @property {number} BIT - Bit count
  * @property {number} CPUTIME - CPU time (in microseconds)
  */
 
@@ -18,6 +37,7 @@ const dataUnit = Object.freeze({
 	NONE: 0,
 	BYTE: 1,
 	CPUTIME: 3,
+	TIME: 4,
 });
 
 
@@ -28,6 +48,7 @@ const dataUnit = Object.freeze({
  * @property {number} id - ID of the chart for SFS backend
  * @property {string[]} labels - Label to use for chart
  * @property {UnitType} unit - Unit type of data
+ * @property {boolean} rate - Whether the value is rate
  */
 
 /** @type {ChartInfo[]} */
@@ -37,144 +58,168 @@ let masterCharts = [
 		id: 91000,
 		labels: ["Userspace CPU %", "Kernelspace CPU %"],
 		unit: dataUnit.CPUTIME,
+		rate: false,
 	},
 	{
 		name: "memory",
 		id: 90200,
 		labels: ["Memory used"],
 		unit: dataUnit.BYTE,
+		rate: false,
 	},
 	{
 		name: "chunkDels",
 		id: 90020,
-		labels: ["Chunk deletions (per minute)"],
+		labels: ["Chunk deletions"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "chunkReps",
 		id: 90030,
-		labels: ["Chunk replications (per minute)"],
+		labels: ["Chunk replications"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "statfs",
 		id: 90040,
-		labels: ["statfs operations (per minute)"],
+		labels: ["statfs operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "getattr",
 		id: 90050,
-		labels: ["getattr operations (per minute)"],
+		labels: ["getattr operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "setattr",
 		id: 90060,
-		labels: ["setattr operations (per minute)"],
+		labels: ["setattr operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "lookup",
 		id: 90070,
-		labels: ["lookup operations (per minute)"],
+		labels: ["lookup operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "mkdir",
 		id: 90080,
-		labels: ["mkdir operations (per minute)"],
+		labels: ["mkdir operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "rmdir",
 		id: 90090,
-		labels: ["rmdir operations (per minute)"],
+		labels: ["rmdir operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "symlink",
 		id: 90100,
-		labels: ["symlink operations (per minute)"],
+		labels: ["symlink operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "readlink",
 		id: 90110,
-		labels: ["readlink operations (per minute)"],
+		labels: ["readlink operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "mknod",
 		id: 90120,
-		labels: ["mknod operations (per minute)"],
+		labels: ["mknod operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "unlink",
 		id: 90130,
-		labels: ["unlink operations (per minute)"],
+		labels: ["unlink operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "rename",
 		id: 90140,
-		labels: ["rename operations (per minute)"],
+		labels: ["rename operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "link",
 		id: 90150,
-		labels: ["link operations (per minute)"],
+		labels: ["link operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "readdir",
 		id: 90160,
-		labels: ["readdir operations (per minute)"],
+		labels: ["readdir operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "open",
 		id: 90170,
-		labels: ["open operations (per minute)"],
+		labels: ["open operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "read",
 		id: 90180,
-		labels: ["read operations (per minute)"],
+		labels: ["read operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "write",
 		id: 90190,
-		labels: ["write operations (per minute)"],
+		labels: ["write operations"],
 		unit: dataUnit.NONE,
+		rate: false,
 	},
 	{
 		name: "packetsReceived",
 		id: 90210,
 		labels: ["Packets received (per second)"],
 		unit: dataUnit.NONE,
+		rate: true,
 	},
 	{
 		name: "packetsSent",
 		id: 90220,
 		labels: ["Packets sent (per second)"],
 		unit: dataUnit.NONE,
+		rate: true,
 	},
 	{
-		name: "bitsReceived",
+		name: "bytesReceived",
 		id: 90230,
 		labels: ["Bits received (per second)"],
 		unit: dataUnit.BYTE,
+		rate: true,
 	},
 	{
-		name: "bitsSent",
+		name: "bytesSent",
 		id: 90240,
 		labels: ["Bits sent (per second)"],
 		unit: dataUnit.BYTE,
+		rate: true,
 	},
 ]
 
@@ -184,10 +229,143 @@ let chunkServerCharts = [
 		id: 91000,
 		labels: ["Userspace CPU %", "Kernelspace CPU %"],
 		unit: dataUnit.CPUTIME,
+		rate: false,
 	},
+	{
+		name: "bytesReceivedClient",
+		id: 91010,
+		labels: ["Client/Chunkserver bytes received (per second)"],
+		unit: dataUnit.BYTE,
+		rate: true,
+	},
+	{
+		name: "bytesSentClient",
+		id: 91020,
+		labels: ["Client/Chunkserver bytes sent (per second)"],
+		unit: dataUnit.BYTE,
+		rate: true,
+	},
+	{
+		name: "bytesReadOverhead",
+		id: 91030,
+		labels: ["Bytes read total (per second)", "Bytes read overhead (per second)"],
+		unit: dataUnit.BYTE,
+		rate: true,
+	},
+	{
+		name: "bytesWrittenOverhead",
+		id: 91040,
+		labels: ["Bytes written total (per second)", "Bytes written overhead (per second)"],
+		unit: dataUnit.BYTE,
+		rate: true,
+	},
+	{
+		name: "bytesReceivedMaster",
+		id: 90020,
+		labels: ["Bytes received from master (per second)"],
+		unit: dataUnit.BYTE,
+		rate: true,
+	},
+	{
+		name: "bytesSentMaster",
+		id: 90030,
+		labels: ["Bytes sent to master (per second)"],
+		unit: dataUnit.BYTE,
+		rate: true,
+	},
+	{
+		name: "lowLevelReadOps",
+		id: 91050,
+		labels: ["Low-level read operations total", "Low-level read operations overhead"],
+		unit: dataUnit.NONE,
+		rate: false,
+	},
+	{
+		name: "lowLevelWriteOps",
+		id: 91060,
+		labels: ["Low-level write operations total", "Low-level write operations overhead"],
+		unit: dataUnit.NONE,
+		rate: false,
+	},
+	{
+		name: "highLevelWriteOps",
+		id: 90170,
+		labels: ["High-level write operations total"],
+		unit: dataUnit.NONE,
+		rate: false,
+	},
+	{
+		name: "dataReadTime",
+		id: 90180,
+		labels: ["Time of data read operations"],
+		unit: dataUnit.TIME,
+		rate: true,
+	},
+	{
+		name: "dataWriteTime",
+		id: 90190,
+		labels: ["Time of data write operations"],
+		unit: dataUnit.TIME,
+		rate: true,
+	},
+	{
+		name: "chunkReplications",
+		id: 90200,
+		labels: ["Number of chunk replications"],
+		unit: dataUnit.NONE,
+		rate: false,
+	},
+	{
+		name: "chunkCreations",
+		id: 90210,
+		labels: ["Number of chunk creations"],
+		unit: dataUnit.NONE,
+		rate: false,
+	},
+	{
+		name: "chunkDeletions",
+		id: 90220,
+		labels: ["Number of chunk deletions"],
+		unit: dataUnit.NONE,
+		rate: false,
+	},
+	{
+		name: "chunkTests",
+		id: 90270,
+		labels: ["Number of chunk tests"],
+		unit: dataUnit.NONE,
+		rate: false,
+	},
+	// {
+	// 	name: "memory",
+	// 	id: 90300,
+	// 	labels: ["Memory used"],
+	// 	unit: dataUnit.BYTE,
+	// },
 ]
 
-function bytePowerOf(num) {
+function secondPowerOf(num) {
+	if (typeof num !== "number" || isNaN(num)) {
+		return "N/A";
+	}
+	const suffix = "s"
+
+	const units = ["μ", "m"];
+	let powerOf = 0
+	for (let unit of units) {
+		if (unit == units[units.length - 1]) {
+			return [`${unit}${suffix}`, powerOf];
+		}
+		if (Math.abs(num) < 1000) {
+			return [`${unit}${suffix}`, powerOf];
+		}
+		num /= 1000;
+		powerOf++;
+	}
+	return `N/A`;
+}
+
+function bytePowerOf(num, unitType) {
 	if (typeof num !== "number" || isNaN(num)) {
 		return "N/A";
 	}
@@ -196,7 +374,13 @@ function bytePowerOf(num) {
 	let powerOf = 0
 	for (let unit of units) {
 		if (Math.abs(num) < 1024.0) {
-			return [`${unit}B`, powerOf];
+			let suffix = "N/A"
+			if (unitType === dataUnit.BIT) {
+				suffix = "b"
+			} else if (unitType == dataUnit.BYTE) {
+				suffix = "B"
+			}
+			return [`${unit}${suffix}`, powerOf];
 		}
 		num /= 1024.0;
 		powerOf++;
@@ -224,14 +408,14 @@ function setupLineChart(id, label, labels, data) {
 		}
 	}
 
-	let chart = Chart.getChart(id + "Chart")
+	let chart = Chart.getChart(id)
 	if (chart !== undefined) {
 		chart.data.labels = labels
 		chart.data.datasets = datasets
 		chart.update()
 		return
 	} else {
-		new Chart(document.getElementById(id + "Chart"), {
+		new Chart(document.getElementById(id), {
 			type: 'line',
 			data: {
 				labels: labels,
@@ -254,6 +438,12 @@ function setupLineChart(id, label, labels, data) {
 	}
 }
 
+function getIntervalFromData(rows) {
+	// We trust the timestamps are consistent
+	if (rows.length < 2) throw new Error("Not enough rows to determine interval");
+	return rows[1][0] - rows[0][0];
+}
+
 function parseData(csvData) {
 	const result = Papa.parse(csvData, { header: false, skipEmptyLines: true });
 	const data = result.data.splice(1)
@@ -264,28 +454,31 @@ function parseData(csvData) {
 }
 
 /**
- * @param {number} time - CPU time (microseconds)
- * @param {RangeValue} range
- * @returns {number} Percentage of usage
+ * @param {number} Range enum id
+ * @returns {number} Seconds in interval
  */
-function parseCPUtime(time, range) {
-	let intervalSeconds = 0;
+function getIntervalSecs(range) {
 	switch (parseInt(range)) {
 		case timeRange.SHORT.id:
-			intervalSeconds = 60
-			break;
+			return 60
 		case timeRange.MEDIUM.id:
-			intervalSeconds = 360
-			break;
+			return 360
 		case timeRange.LONG.id:
-			intervalSeconds = 1800
-			break;
+			return 1800
 		case timeRange.VERYLONG.id:
-			intervalSeconds = 86400
-			break;
+			return 86400
 		default:
 			throw new Error("Invalid time range")
 	}
+}
+
+/**
+ * @param {number} time - CPU time (microseconds)
+ * @param {number} range - Range enum id
+ * @returns {number} Percentage of usage
+ */
+function parseCPUtime(time, range) {
+	let intervalSeconds = getIntervalSecs(range);
 	return ((time / (intervalSeconds * 1_000_000)) * 100).toFixed(2)
 }
 
@@ -303,82 +496,104 @@ async function getData(chart, host, port, timePeriod) {
 
 /**
  * @param {ChartInfo} chart - Chart to setup
- * @param {RangeValue} [range=timeRange.SHORT] - What time range to use
+ * @param {number} [range=timeRange.SHORT.id] - What time range to use
+ */
+/**
+ * @param {ChartInfo} chart - Chart to setup
+ * @param {number} [range=timeRange.SHORT.id] - What time range to use
  */
 async function setupChartInfo(chart, host, port, range = timeRange.SHORT.id) {
 	const csvData = await getData(chart, host, port, range);
 	const rows = parseData(csvData);
-	const labels = rows.map(row => dateFns.fromUnixTime(row[0]))
+	const intervalSecs = getIntervalFromData(rows)
 
-	// TODO: A callback could be used here
-	if (chart.unit == dataUnit.BYTE) {
-		const [labelSize, power] = bytePowerOf(rows.reduce((max, row) => {
-			let rowMaxSize = 0;
-			for (const [i, cell] of row.entries()) {
-				if (i === 0 || cell === 0) {
-					continue // Skip timestamp and empty values
-				}
-				rowMaxSize = Math.max(rowMaxSize, cell)
-			}
-			return Math.max(max, rowMaxSize);
-		}, 0))
-		const values = rows.map(row => {
-			let data = [];
-			for (const [i, cell] of row.entries()) {
-				if (i === 0) {
-					continue // Skip timestamp
-				}
-				if (cell === 0) {
-					data.push(cell)
-				} else {
-					data.push(parseInt(cell) / Math.pow(1024, power))
-				}
-			}
-			return data
-		});
-		for (let [idx, _] of chart.labels.entries()) {
-			chart.labels[idx] = `${chart.labels[idx]} (${labelSize})`
-		}
-		setupLineChart(chart.name, chart.labels, labels, values)
-	} else if (chart.unit == dataUnit.NONE) {
-		const values = rows.map(row => {
-			let data = [];
-			for (const [i, cell] of row.entries()) {
-				if (i === 0) {
-					continue // Skip timestamp
-				}
-				if (cell === 0) {
-					data.push(cell)
-				} else {
-					data.push(cell, range)
-				}
-			}
-			return data
-		});
-		for (let [idx, _] of chart.labels.entries()) {
-			chart.labels[idx] = `${chart.labels[idx]}`
-		}
-		setupLineChart(chart.name, chart.labels, labels, values)
+	// X-axis labels (timestamps -> Date)
+	const labels = rows.map(row => dateFns.fromUnixTime(row[0]));
 
-	} else if (chart.unit == dataUnit.CPUTIME) {
-		const values = rows.map(row => {
-			let data = [];
-			for (const [i, cell] of row.entries()) {
-				if (i === 0) {
-					continue // Skip timestamp
+	// Helper: iterate cells (skip timestamp), allowing per-cell transform to return
+	// either a scalar or an array of scalars (we flatten).
+	const mapCellValues = (rows, transform, rate=false) =>
+		rows.map(row => {
+			const out = [];
+			for (let i = 1; i < row.length; i += 1) {
+				const cell = row[i];
+				let v = cell === 0 ? 0 : transform(cell, range);
+				if (v !== 0 && rate) {
+					v = v / intervalSecs
 				}
-				if (cell === 0) {
-					data.push(cell)
-				} else {
-					data.push(parseCPUtime(cell, range))
-				}
+				if (Array.isArray(v)) out.push(...v);
+					else out.push(v);
 			}
-			return data
+			return out;
 		});
-		for (let [idx, _] of chart.labels.entries()) {
-			chart.labels[idx] = `${chart.labels[idx]}`
+
+	// Helper: label formatting without mutating the original array
+	const withSuffix = (labels, suffix = "") =>
+		labels.map(l => (suffix ? `${l} ${suffix}` : `${l}`));
+
+	// Helper: Find peak magnitude across all non-zero cells
+	const peakMagnitude = (rows) => {
+		return rows.reduce((max, row) => {
+				let rowMax = 0;
+				for (let i = 1; i < row.length; i += 1) {
+					rowMax = Math.max(rowMax, row[i] || 0);
+				}
+				return Math.max(max, rowMax);
+			}, 0);
+	}
+
+	// Branch by unit
+	switch (chart.unit) {
+		case dataUnit.BYTE:
+		case dataUnit.BIT: {
+			let maxVal = peakMagnitude(rows)
+			if (maxVal !== 0 && chart.rate) {
+				maxVal = maxVal / intervalSecs
+			}
+
+			const [labelSize, power] = bytePowerOf(maxVal, chart.unit);
+
+			const values = mapCellValues(rows, cell =>
+				parseInt(cell, 10) / Math.pow(1024, power)
+			, chart.rate);
+
+			const yLabels = withSuffix(chart.labels, `(${labelSize})`);
+			setupLineChart(chart.name, yLabels, labels, values);
+			return;
 		}
-		setupLineChart(chart.name, chart.labels, labels, values)
+
+		case dataUnit.NONE: {
+			const values = mapCellValues(rows, (cell, rng) => [cell], chart.rate);
+			const yLabels = withSuffix(chart.labels);
+			setupLineChart(chart.name, yLabels, labels, values);
+			return;
+		}
+
+		case dataUnit.CPUTIME: {
+			const values = mapCellValues(rows, (cell, rng) => parseCPUtime(cell, rng), chart.rate);
+			const yLabels = withSuffix(chart.labels);
+			setupLineChart(chart.name, yLabels, labels, values);
+			return;
+		}
+
+		case dataUnit.TIME: {
+			let maxVal = peakMagnitude(rows)
+
+			if (maxVal !== 0 && chart.rate) {
+				maxVal = maxVal / intervalSecs
+			}
+
+			const [labelSize, power] = secondPowerOf(maxVal);
+
+			const values = mapCellValues(rows, cell =>
+				parseInt(cell, 10) / Math.pow(1000, power)
+			, chart.rate);
+
+			const yLabels = withSuffix(chart.labels, `(${labelSize})`);
+			setupLineChart(chart.name, yLabels, labels, values);
+			return;
+		}
+
 	}
 }
 
@@ -392,7 +607,7 @@ function setupChart(chart, chartContainer) {
 	newChart.classList.add("chart-container");
 
 	const canvas = document.createElement('canvas');
-	canvas.id = chart.name + "Chart";
+	canvas.id = chart.name;
 	newChart.appendChild(canvas);
 
 	const chartOptions = document.createElement('div');
@@ -435,7 +650,7 @@ function setupCharts(elemQuery, charts) {
 		charts.forEach(chart => {
 			const host = elem.closest(".chart-containers").dataset.host;
 			const port = elem.closest(".chart-containers").dataset.port;
-			chart.name = chart.name + "_" + host + "_" + port + "_";
+			chart.name = chart.name + "_" + host + "_" + port + "_" + "Chart";
 			const newChart = setupChart(chart, elem);
 			newChart.dataset.chartinfo = JSON.stringify(chart);
 			observer.observe(newChart);
@@ -451,8 +666,8 @@ document.querySelectorAll('.chart-options div').forEach(button => {
 		const chart = JSON.parse(button.parentElement.parentElement.dataset.chartinfo);
 		const host = button.closest(".chart-containers").dataset.host;
 		const port = button.closest(".chart-containers").dataset.port;
-		const range =  this.dataset.timeRange;
-		chart.name = chart.name + host + port;
+		const range =  this.dataset.timeRange
+		chart.name = chart.name
 		setupChartInfo(chart, host, port, range);
 	});
 });

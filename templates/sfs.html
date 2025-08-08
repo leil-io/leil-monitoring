@@ -635,7 +635,8 @@
 			{% if 'MC' in active_sections %}
 			<div class="chart-containers masterCharts" data-host="{{masterhost}}" data-port="{{masterport}}">
 				<div class="chart-header">
-				Master charts
+					Master charts
+					<div class="arrow-down"></div>
 				</div>
 				<div class="chart-content">
 				</div>
@@ -648,7 +649,8 @@
 				<div class="chart-containers chunkServerCharts"
 					 data-host="{{server.ip_address}}" data-port="{{server.port}}">
 					<div class="chart-header">
-				Chunkserver {{server.hostname}} ({{server.ip_address}}:{{server.port}}) charts
+						Chunkserver {{server.hostname}} ({{server.ip_address}}:{{server.port}}) charts
+						<div class="arrow-down"></div>
 					</div>
 					<div class="chart-content">
 					</div>

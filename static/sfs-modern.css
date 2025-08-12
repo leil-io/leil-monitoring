@@ -282,7 +282,7 @@ td.MENU {
 }
 
 .chart-content.show {
-    max-height: unset; /* something large enough to fit content */
+    max-height: unset;
     opacity: 1;
 }
 

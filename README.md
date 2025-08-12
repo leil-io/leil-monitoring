@@ -6,12 +6,15 @@
 - [x] Get chunk information
 - [x] Get charts for master
 - [x] Add tabs
-- [ ] Add metalogger list
-- [ ] Get charts for chunkservers
+- [x] Get charts for chunkservers
+- [x] Add metalogger list
+- [ ] Add deb packaging
+- [ ] Add CI/CD pipeline
 - [ ] Add chunkserver removal
 - [ ] Add disk scanning progress
 - [ ] Add legend to matrix table
-- [ ] Add switch between old and new theme
+- [ ] Do some more styling (arrows on chart etc.)
+- [ ] Add switch between old and new theme (optional)
 
 This directory contains a modern rewrite of the SaunaFS CGI monitoring interface using the FastAPI web framework.
 

@@ -407,6 +407,33 @@
 					</tbody>
 				</table>
 				<br/>
+
+				<!-- Metaloggers Table -->
+				{% if metaloggers %}
+				<table class="FR sortable" cellspacing="0" caption="Metadata Backup Loggers">
+					<thead>
+						<tr><th colspan="4">Metadata Backup Loggers</th></tr>
+						<tr>
+							<th>#</th>
+							<th>Host</th>
+							<th>IP</th>
+							<th>Version</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for logger in metaloggers %}
+						<tr class="C{{ loop.index % 2 + 1 }}">
+							<td align="right">{{ logger.id }}</td>
+							<td align="left">{{ logger.hostname }}</td>
+							<td align="center">{{ logger.ip_address }}</td>
+							<td align="center">{{ logger.version }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+				<br/>
+
+				{% endif %}
 				{% endif %}
 
 				<!-- Disks Table -->
@@ -441,31 +468,6 @@
 				<br/>
 				{% endif %}
 
-				<!-- Metaloggers Table -->
-				{% if metaloggers %}
-				<table class="FR sortable" cellspacing="0" caption="Metadata Backup Loggers">
-					<thead>
-						<tr><th colspan="4">Metadata Backup Loggers</th></tr>
-						<tr>
-							<th>#</th>
-							<th>Host</th>
-							<th>IP</th>
-							<th>Version</th>
-						</tr>
-					</thead>
-					<tbody>
-						{% for logger in metaloggers %}
-						<tr class="C{{ loop.index % 2 + 1 }}">
-							<td align="right">{{ logger.id }}</td>
-							<td align="left">{{ logger.hostname }}</td>
-							<td align="center">{{ logger.ip_address }}</td>
-							<td align="center">{{ logger.version }}</td>
-						</tr>
-						{% endfor %}
-					</tbody>
-				</table>
-				<br/>
-				{% endif %}
 
 				<!-- Mounts Table -->
 				{% if mounts %}

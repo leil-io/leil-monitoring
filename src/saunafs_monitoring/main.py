@@ -10,8 +10,7 @@ from datetime import datetime
 import pathlib
 from saunafs_client import SaunaFSClient
 from saunafs_client.models import (
-    SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo,
-    ChunkOperationsInfo, OperationStats, ChunkMatrix, Goal, ChunkHealth,
+    OperationStats,
     ChunkMappedHealth
 )
 
@@ -73,70 +72,8 @@ def get_goal_chunk_sums(goals: List[ChunkMappedHealth], attribute: str) -> List[
 
     return sums
 
-# --- API Endpoints ---
 
-
-@app.get("/api/info", response_model=SystemInfo)
-async def api_get_info(masterhost: str = "127.0.0.1", masterport: int = 9421):
-    client = get_client(masterhost, masterport)
-    return client.get_info()
-
-
-@app.get("/api/chunkhealth", response_model=ChunkHealth)
-async def api_get_chunk_health(masterhost: str = "127.0.0.1", masterport: int = 9421):
-    client = get_client(masterhost, masterport)
-    return client.get_chunk_health()
-
-
-@app.get("/api/servers", response_model=List[Server])
-async def api_get_servers(masterhost: str = "127.0.0.1", masterport: int = 9421):
-    client = get_client(masterhost, masterport)
-    return client.get_servers()
-
-
-@app.get("/api/disks", response_model=List[Disk])
-async def api_get_disks(masterhost: str = "127.0.0.1", masterport: int = 9421):
-    client = get_client(masterhost, masterport)
-    return client.get_disks()
-
-
-@app.get("/api/mounts", response_model=List[Mount])
-async def api_get_mounts(masterhost: str = "127.0.0.1", masterport: int = 9421):
-    client = get_client(masterhost, masterport)
-    return client.get_mounts()
-
-
-@app.get("/api/metadataservers", response_model=List[MetadataServer])
-async def api_get_metadata_servers(masterhost: str = "127.0.0.1", masterport: int = 9421):
-    client = get_client(masterhost, masterport)
-    return client.get_metadata_servers()
-
-
-@app.get("/api/fscheckinfo", response_model=FsCheckInfo)
-async def api_get_fs_check_info(masterhost: str = "127.0.0.1", masterport: int = 9421):
-    client = get_client(masterhost, masterport)
-    return client.get_fs_check_info()
-
-
-@app.get("/api/chunkoperationsinfo", response_model=ChunkOperationsInfo)
-async def api_get_chunk_operations_info(masterhost: str = "127.0.0.1", masterport: int = 9421):
-    client = get_client(masterhost, masterport)
-    return client.get_chunk_operations_info()
-
-
-@app.get("/api/goals", response_model=List[Goal])
-async def api_get_goals(masterhost: str = "127.0.0.1", masterport: int = 9421):
-    client = get_client(masterhost, masterport)
-    return client.get_goals()
-
-
-@app.get("/api/chunkmatrix", response_model=ChunkMatrix)
-async def api_get_chunk_matrix(masterhost: str = "127.0.0.1", masterport: int = 9421):
-    client = get_client(masterhost, masterport)
-    return client.get_chunk_matrix()
-
-
-# --- Legacy UI Endpoints ---
+# Probably don't need FastAPI for these, just a simple HTTP server should do
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def read_root():
     return RedirectResponse(url="/sfs.cgi")

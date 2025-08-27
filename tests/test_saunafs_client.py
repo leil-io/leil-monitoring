@@ -4,12 +4,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from saunafs_client import (
+from saunafs_client.saunafs_client import (
     SaunaFSClient, MATOCL_INFO, ANTOCU_CHART, SAU_MATOCL_CSERV_LIST,
     MATOCL_HDD_LIST_V2
 )
 
-from models import (
+from saunafs_client.models import (
     SystemInfo
 )
 

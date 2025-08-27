@@ -1,8 +1,8 @@
 import unittest
 import struct
 import random
-from models import ChunkHealth
-from deserializer import DeserializationError
+from saunafs_client.models import ChunkHealth
+from saunafs_client.deserializer import DeserializationError
 
 
 def serialize_chunk_health(regular_only, safe, endangered, lost, replication, deletion) -> bytearray:

@@ -1,8 +1,8 @@
 import unittest
 import struct
 from unittest.mock import patch
-from models import Server
-from deserializer import DeserializationError
+from saunafs_client.models import Server
+from saunafs_client.deserializer import DeserializationError
 from tests.test_utils import serialize_server
 
 

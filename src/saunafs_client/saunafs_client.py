@@ -3,20 +3,20 @@ import struct
 import select
 import logging
 from typing import List, Tuple
-from models import (Mount,
-                    Export,
-                    MetadataServer,
-                    FsCheckInfo,
-                    ChunkOperationsInfo,
-                    ChunkMatrix,
-                    Metalogger,
-                    Server,
-                    Disk,
-                    SystemInfo,
-                    Goal,
-                    ChunkHealth
-                    )
-from deserializer import unpack_string
+from .models import (Mount,
+                     Export,
+                     MetadataServer,
+                     FsCheckInfo,
+                     ChunkOperationsInfo,
+                     ChunkMatrix,
+                     Metalogger,
+                     Server,
+                     Disk,
+                     SystemInfo,
+                     Goal,
+                     ChunkHealth
+                     )
+from .deserializer import unpack_string
 
 
 # Message type and protocol constants

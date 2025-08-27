@@ -1,8 +1,8 @@
 import unittest
 import struct
 import ipaddress
-from models import MetadataServer
-from deserializer import DeserializationError
+from saunafs_client.models import MetadataServer
+from saunafs_client.deserializer import DeserializationError
 
 
 def serialize_metadata_server(

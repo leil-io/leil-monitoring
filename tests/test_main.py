@@ -1,8 +1,8 @@
 from fastapi.testclient import TestClient
 import pytest
 import csv
-from main import app
-from models import SystemInfo, ChunkHealth, Goal, MetadataServer, Mount
+from saunafs_monitoring.main import app
+from saunafs_client.models import SystemInfo, ChunkHealth, Goal, MetadataServer, Mount
 
 client = TestClient(app)
 

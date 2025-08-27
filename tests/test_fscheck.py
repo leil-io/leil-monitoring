@@ -1,7 +1,7 @@
 import unittest
 import struct
-from models import FsCheckInfo
-from deserializer import DeserializationError
+from saunafs_client.models import FsCheckInfo
+from saunafs_client.deserializer import DeserializationError
 from tests.test_utils import serialize_fscheck_info
 
 

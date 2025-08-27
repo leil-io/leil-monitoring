@@ -1,7 +1,7 @@
 import unittest
 import struct
-from models import Mount, OperationStats
-from deserializer import DeserializationError
+from saunafs_client.models import Mount, OperationStats
+from saunafs_client.deserializer import DeserializationError
 from tests.test_utils import serialize_mount, serialize_mount_info
 
 

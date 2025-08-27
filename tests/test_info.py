@@ -1,7 +1,7 @@
 import unittest
 import struct
-from models import SystemInfo
-from deserializer import DeserializationError
+from saunafs_client.models import SystemInfo
+from saunafs_client.deserializer import DeserializationError
 from tests.test_utils import serialize_info
 
 

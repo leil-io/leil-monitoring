@@ -9,7 +9,7 @@ from typing import List
 from datetime import datetime
 import pathlib
 from saunafs_client import SaunaFSClient
-from models import (
+from saunafs_client.models import (
     SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo,
     ChunkOperationsInfo, OperationStats, ChunkMatrix, Goal, ChunkHealth,
     ChunkMappedHealth

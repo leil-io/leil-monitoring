@@ -1,7 +1,7 @@
 import unittest
 import struct
-from models import Disk
-from deserializer import DeserializationError
+from saunafs_client.models import Disk
+from saunafs_client.deserializer import DeserializationError
 from tests.test_utils import serialize_disk
 
 

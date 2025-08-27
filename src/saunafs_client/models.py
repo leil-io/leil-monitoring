@@ -1,7 +1,7 @@
 from __future__ import annotations
 from pydantic import BaseModel
 from typing import List, Optional, Dict
-from deserializer import unpack_list, unpack_primitive, unpack_string, DeserializationError, unpack_from
+from .deserializer import unpack_list, unpack_primitive, unpack_string, DeserializationError, unpack_from
 import logging
 import socket
 import struct

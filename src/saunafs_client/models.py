@@ -317,7 +317,7 @@ class Mount(BaseModel):
                 stat, = unpack_from("L", buffer)
                 last_hour_op_stats_list.append(stat)
 
-            last_hour_op_stats = OperationStats.get_from_list(current_op_stats_list)
+            last_hour_op_stats = OperationStats.get_from_list(last_hour_op_stats_list)
 
             ip_address = f"{ip1}.{ip2}.{ip3}.{ip4}"
             try:

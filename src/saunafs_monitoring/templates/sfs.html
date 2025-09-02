@@ -440,7 +440,7 @@
 				{% if disks %}
 				<table class="FR sortable" cellspacing="0" caption="Disks">
 					<thead>
-						<tr><th colspan="7">Disks</th></tr>
+						<tr><th colspan="8">Disks</th></tr>
 						<tr>
 							<th>#</th>
 							<th>Path</th>
@@ -449,6 +449,7 @@
 							<th>Chunks</th>
 							<th>Used Space</th>
 							<th>Total Space</th>
+							<th class="PROGBAR">% Used</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -461,6 +462,12 @@
 							<td align="right">{{ disk.chunks }}</td>
 							<td align="right">{{ disk.used_space | humanize_bytes }}</td>
 							<td align="right">{{ disk.total_space | humanize_bytes }}</td>
+							<td>
+								<div class="box">
+									<div class="progress" style="width:{{ (disk.used_space / disk.total_space * 200) if disk.total_space > 0 else 0 }}px;"></div>
+									<div class="value">{{ "%.2f"|format((disk.used_space / disk.total_space * 100) if disk.total_space > 0 else 0) }}</div>
+								</div>
+							</td>
 						</tr>
 						{% endfor %}
 					</tbody>

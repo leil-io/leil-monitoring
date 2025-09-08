@@ -1,19 +1,13 @@
-# use an official python runtime as a parent image
-FROM python:alpine
+FROM python:3.13.7-alpine3.21
 
-# set the working directory in the container
 WORKDIR /app
 
-# install any needed packages specified in requirements.txt
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# copy the entire application code
 COPY src/ src/
 
-# expose the port the app runs on
 EXPOSE 8001
 ENV PYTHONPATH="/app/src"
 
-# run the application
 CMD ["/app/src/saunafs_api/main.py"]

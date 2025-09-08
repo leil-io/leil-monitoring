@@ -7,7 +7,7 @@ from saunafs_client.models import SystemInfo, ChunkHealth, Goal, MetadataServer,
 client = TestClient(app)
 
 # TODO(Urmas): Use environment variables
-MASTER_HOST = "localhost"
+MASTER_HOST = "192.168.50.189"
 MASTER_PORT = "9421"
 
 
@@ -97,7 +97,7 @@ def test_get_mounts():
     """
     Tests the /api/mounts endpoint against a live master server
     """
-    response = client.get("/api/mounts?masterhost=localhost&masterport=9421")
+    response = client.get(f"/api/mounts?masterhost={MASTER_HOST}&masterport={MASTER_PORT}")
 
     assert response.status_code == 200
     # Validate the response against the Pydantic model
@@ -120,7 +120,7 @@ def test_get_chart_csv_right_range():
     responses = [
     ]
     for id in ids:
-        responses.append(client.get(f"/charts?id={id}&host=localhost&port=9421"))
+        responses.append(client.get(f"/charts?id={id}&host={MASTER_HOST}&port={MASTER_PORT}"))
 
     for indx, response in enumerate(responses):
         assert response.status_code == 200

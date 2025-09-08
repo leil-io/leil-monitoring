@@ -6,7 +6,7 @@ from saunafs_client.models import SystemInfo, ChunkHealth, Goal, MetadataServer,
 client = TestClient(app)
 
 # TODO(Urmas): Use environment variables
-MASTER_HOST = "localhost"
+MASTER_HOST = "192.168.50.189"
 MASTER_PORT = "9421"
 
 
@@ -28,7 +28,7 @@ def test_get_sfs_info_html():
     Tests that the main HTML page for the legacy UI renders successfully.
     """
     response = client.get(
-        "/sfs.cgi?masterhost=localhost&masterport=9421&sections=IN|CS|HD|ML|MS|EX|MO|EX|CH|MC"
+        f"/sfs.cgi?masterhost={MASTER_HOST}&masterport={MASTER_PORT}&sections=IN|CS|HD|ML|MS|EX|MO|EX|CH|MC"
     )
 
     assert response.status_code == 200
@@ -55,7 +55,7 @@ def test_get_sfs_info_connection_error():
     Tests how the HTML page responds when it can't connect to the master.
     """
     # Use a port that is unlikely to be open
-    response = client.get("/sfs.cgi?masterhost=localhost&masterport=9999")
+    response = client.get("/sfs.cgi?masterhost=nonexistant&masterport=9421")
 
     assert response.status_code == 200  # The page itself should still render
     assert "Can&#39;t connect to SaunaFS master" in response.text

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, Response, RedirectResponse
 from fastapi.staticfiles import StaticFiles

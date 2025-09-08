@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ src/
 
 # Expose the port the app runs on
-EXPOSE 8000
+ENV PYTHONPATH="/app/src"
 
-# Run the application
-CMD ["uvicorn", "saunafs_monitoring.main:app", "--app-dir", "/app/src", "--host", "0.0.0.0", "--port", "8000"]
+# run the application
+CMD ["/app/src/saunafs_monitoring/main.py"]

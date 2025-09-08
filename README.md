@@ -18,7 +18,7 @@
 
 This directory contains a modern rewrite of the SaunaFS CGI monitoring interface using the FastAPI web framework.
 
-## Setup and Installation
+## Setup and Installation (local)
 
 ### 1. Create a Virtual Environment
 
@@ -43,7 +43,7 @@ With the virtual environment activated, install the required packages from `requ
 pip install -r requirements.txt
 ```
 
-## Running the Application
+## Running the Application (local)
 
 Once the dependencies are installed, you can run the application using `uvicorn`.
 
@@ -53,6 +53,22 @@ uvicorn main:app --reload
 ```
 
 The application will be available at `http://127.0.0.1:8000`.
+
+## Installing and Running the Application (docker)
+
+Make sure docker is installed.
+
+Copy the .env.example to .env and edit as needed. Note that the ports you set
+will be a 1-1 mapping of for both the application and exposed port on host. If
+you need different behaviour for some reason, edit the compose as needed.
+
+```bash
+docker compose build
+docker compose [-d] up # Use -d if you want to detach
+docker compose down # Destroys containers
+```
+
+For developers, you may use run-dev.sh script for quick iteration
 
 ## API
 

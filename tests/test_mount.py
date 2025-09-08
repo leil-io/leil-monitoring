@@ -65,8 +65,8 @@ class TestMountDeserialization(unittest.TestCase):
         # Assert last_hour_op_stats
         self.assertIsInstance(mount.last_hour_op_stats, OperationStats)
         # Note: models.py sets last_hour_op_stats to current_op_stats_list, so we assert against that
-        self.assertEqual(mount.last_hour_op_stats.statfs, current_op_stats_list[0])
-        self.assertEqual(mount.last_hour_op_stats.total, sum(current_op_stats_list))
+        self.assertEqual(mount.last_hour_op_stats.statfs, last_hour_op_stats_list[0])
+        self.assertEqual(mount.last_hour_op_stats.total, sum(last_hour_op_stats_list))
 
         # Ensure the buffer is empty after deserialization
         self.assertEqual(len(buffer_copy), 0)

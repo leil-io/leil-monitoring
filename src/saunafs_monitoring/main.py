@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 import socket
 import traceback
 import logging
+import os
 from typing import List
 from datetime import datetime
 import pathlib
@@ -15,8 +16,14 @@ from saunafs_client.models import (
 )
 
 
+SAUNAFS_MASTER_HOST = os.getenv("SAUNAFS_MASTER_HOST", "sfsmaster")
+SAUNAFS_MASTER_PORT = int(os.getenv("SAUNAFS_MASTER_PORT", 9421))
+SAUNAFS_MONITORING_LOGLEVEL = os.getenv("SAUNAFS_MONITORING_LOGLEVEL", "INFO")
+SAUNAFS_MONITORING_HOST = os.getenv("SAUNAFS_MONITORING_HOST", "0.0.0.0")
+SAUNAFS_MONITORING_PORT = int(os.getenv("SAUNAFS_MONITORING_PORT", 8000))
+
 # Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=SAUNAFS_MONITORING_LOGLEVEL, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = pathlib.Path(__file__).parent.resolve()
@@ -80,8 +87,8 @@ async def read_root():
 
 
 @app.get("/sfs.cgi", response_class=HTMLResponse)
-async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
-                       masterport: int = 9421, mastername: str = "SaunaFS",
+async def get_sfs_info(request: Request, masterhost: str = SAUNAFS_MASTER_HOST,
+                       masterport: int = SAUNAFS_MASTER_PORT, mastername: str = "SaunaFS",
                        sections: str = "IN"):
     try:
         client = get_client(masterhost, masterport)
@@ -142,7 +149,7 @@ async def get_sfs_info(request: Request, masterhost: str = "127.0.0.1",
 
 
 @app.get("/chart.cgi")
-async def get_chart(id: int, host: str = "127.0.0.1", port: int = 9421):
+async def get_chart(id: int, host: str = SAUNAFS_MASTER_HOST, port: int = SAUNAFS_MASTER_PORT):
     client = get_client(host, port)
     try:
         image_data = client.get_chart(host, port, id)
@@ -166,4 +173,4 @@ async def get_chart(id: int, host: str = "127.0.0.1", port: int = 9421):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=SAUNAFS_MONITORING_HOST, port=SAUNAFS_MONITORING_PORT)

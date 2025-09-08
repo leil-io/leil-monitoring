@@ -2,6 +2,12 @@ name: SaunaFS Monitoring
 services:
     saunafs-monitoring:
         ports:
-            - 8000:8000
+            - ${SAUNAFS_MONITORING_PORT:-8000}:8000
         image: saunafs-monitoring:latest
         build: .
+        environment:
+            - SAUNAFS_MASTER_HOST=${SAUNAFS_MASTER_HOST:-sfsmaster}
+            - SAUNAFS_MASTER_PORT=${SAUNAFS_MASTER_PORT:-9421}
+            - SAUNAFS_MONITORING_HOST=${SAUNAFS_MONITORING_HOST:-0.0.0.0}
+            - SAUNAFS_MONITORING_PORT=${SAUNAFS_MONITORING_PORT:-8000}
+            - SAUNAFS_MONITORING_LOGLEVEL=${SAUNAFS_MONITORING_LOGLEVEL:-INFO}

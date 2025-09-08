@@ -6,10 +6,6 @@ from saunafs_client.models import SystemInfo, ChunkHealth, Goal, MetadataServer,
 
 client = TestClient(app)
 
-# TODO(Urmas): Use environment variables
-MASTER_HOST = "localhost"
-MASTER_PORT = "9421"
-
 
 def test_read_root_api_redirects():
     """

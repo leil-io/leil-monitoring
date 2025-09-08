@@ -1,0 +1,7 @@
+name: SaunaFS Monitoring
+services:
+    saunafs-monitoring:
+        ports:
+            - 8000:8000
+        image: saunafs-monitoring:latest
+        build: .

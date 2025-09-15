@@ -1,0 +1,50 @@
+{% if chunk_operations_info and chunk_operations_info.loop_start > 0 %}
+<table class="FR" cellspacing="0" caption="Chunk Operations Info">
+	<thead>
+		<tr><th colspan="8">Chunk Operations Info</th></tr>
+		<tr>
+			<th colspan="2">Loop Time</th>
+			<th colspan="4">Deletions</th>
+			<th colspan="2">Replications</th>
+		</tr>
+		<tr>
+			<th>Start</th>
+			<th>End</th>
+			<th>Invalid</th>
+			<th>Unused</th>
+			<th>Disk Clean</th>
+			<th>Over Goal</th>
+			<th>Under Goal</th>
+			<th>Rebalance</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td align="center">{{ chunk_operations_info.loop_start | format_timestamp }}</td>
+			<td align="center">{{ chunk_operations_info.loop_end | format_timestamp }}</td>
+			<td align="right">
+				{{ chunk_operations_info.delete_invalid }}
+				/{{ chunk_operations_info.delete_invalid + chunk_operations_info.not_delete_invalid }}
+			</td>
+			<td align="right">
+				{{ chunk_operations_info.delete_unused }}
+				/{{ chunk_operations_info.delete_unused + chunk_operations_info.not_delete_unused }}
+			</td>
+			<td align="right">
+				{{ chunk_operations_info.delete_disk_clean }}
+				/{{ chunk_operations_info.delete_disk_clean + chunk_operations_info.not_delete_disk_clean }}
+			</td>
+			<td align="right">
+				{{ chunk_operations_info.delete_over_goal }}
+				/{{ chunk_operations_info.delete_over_goal + chunk_operations_info.not_delete_over_goal }}
+			</td>
+			<td align="right">
+				{{ chunk_operations_info.replicate_under_goal }}
+				/{{ chunk_operations_info.replicate_under_goal + chunk_operations_info.not_replicate_under_goal }}
+			</td>
+			<td align="right">{{ chunk_operations_info.rebalance }}</td>
+		</tr>
+	</tbody>
+</table>
+<br/>
+{% endif %}

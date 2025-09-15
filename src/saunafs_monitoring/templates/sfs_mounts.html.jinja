@@ -1,0 +1,113 @@
+<!-- Mounts Table -->
+{% if mounts %}
+<table class="FR sortable" cellspacing="0" caption="Connected Clients">
+        <thead>
+                <tr><th colspan="15">Connected Clients (Mounts)</th></tr>
+                <tr>
+                        <th>#</th>
+                        <th>Session ID</th>
+                        <th>Host</th>
+                        <th>IP</th>
+                        <th>Version</th>
+                        <th>Mounted Path</th>
+                        <th>Root UID</th>
+                        <th>Root GID</th>
+                        <th>MapAll UID</th>
+                        <th>MapAll GID</th>
+                        <th>Min Goal</th>
+                        <th>Max Goal</th>
+                        <th>Min Trash Time</th>
+                        <th>Max Trash Time</th>
+                        <th>Mount Info</th>
+                </tr>
+        </thead>
+        <tbody>
+                {% for mount in mounts %}
+                <tr class="C{{ loop.index % 2 + 1 }}" onclick="ToggleMountInfo('mount-info-{{ loop.index }}')"
+                        style="cursor: pointer;">
+                        <td align="right">{{ mount.id }}</td>
+                        <td align="right">{{ mount.session_id }}</td>
+                        <td align="left">{{ mount.hostname }}</td>
+                        <td align="center">{{ mount.ip_address }}</td>
+                        <td align="center">{{ mount.version }}</td>
+                        <td align="left">{{ mount.mounted_path }}</td>
+                        <td align="left">{{ mount.root_uid}}</td>
+                        <td align="left">{{ mount.root_gid }}</td>
+                        <td align="left">{{ mount.map_all_uid }}</td>
+                        <td align="left">{{ mount.map_all_gid }}</td>
+                        <td align="left">{{ mount.min_goal }}</td>
+                        <td align="left">{{ mount.max_goal }}</td>
+                        <td align="left">{{ mount.min_trash_time }}</td>
+                        <td align="left">{{ mount.max_trash_time }}</td>
+                        <td align="left">Click to view</td>
+                </tr>
+                <tr id="mount-info-{{ loop.index }}" style="display: none;">
+                        <td colspan="15">
+                                <div style="text-align: left; padding: 10px;">
+                                        <hr>
+                                        <pre style="white-space: pre-wrap; word-wrap: break-word;">{{ mount.mount_info }}</pre>
+                                </div>
+                        </td>
+                </tr>
+                {% endfor %}
+        </tbody>
+</table>
+
+<table class="FR sortable" cellspacing="0" caption="Operations">
+        <thead>
+                <tr><th colspan="{{ 4 + op_names | length }}">Operations (current)</th></tr>
+                <tr>
+                        <th>#</th>
+                        <th>Host</th>
+                        <th>IP</th>
+                        <th>Mounted Path</th>
+                        {% for op_name in op_names %}
+                        <th>{{ op_name }}</th>
+                        {% endfor %}
+                </tr>
+        </thead>
+        <tbody>
+                {% for mount in mounts %}
+                <tr class="C{{ loop.index % 2 + 1 }}">
+                        <td align="right">{{ mount.id }}</td>
+                        <td align="left">{{ mount.hostname }}</td>
+                        <td align="center">{{ mount.ip_address }}</td>
+                        <td align="left">{{ mount.mounted_path }}</td>
+                        {% for op_name in op_names %}
+                        <td align="right">{{ mount.current_op_stats[op_name] }}</td>
+                        {% endfor %}
+                </tr>
+                {% endfor %}
+        </tbody>
+</table>
+
+<!-- Operations Table -->
+<table class="FR sortable" cellspacing="0" caption="Operations">
+        <thead>
+                <tr><th colspan="{{ 4 + op_names | length }}">Operations (last hour)</th></tr>
+                <tr>
+                        <th>#</th>
+                        <th>Host</th>
+                        <th>IP</th>
+                        <th>Mounted Path</th>
+                        {% for op_name in op_names %}
+                        <th>{{ op_name }}</th>
+                        {% endfor %}
+                </tr>
+        </thead>
+        <tbody>
+                {% for mount in mounts %}
+                <tr class="C{{ loop.index % 2 + 1 }}">
+                        <td align="right">{{ mount.id }}</td>
+                        <td align="left">{{ mount.hostname }}</td>
+                        <td align="center">{{ mount.ip_address }}</td>
+                        <td align="left">{{ mount.mounted_path }}</td>
+                        {% for op_name in op_names %}
+                        <td align="right">{{ mount.last_hour_op_stats[op_name] }}</td>
+                        {% endfor %}
+                </tr>
+                {% endfor %}
+        </tbody>
+</table>
+
+{% endif %}

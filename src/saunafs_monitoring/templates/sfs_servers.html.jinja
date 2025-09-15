@@ -1,0 +1,141 @@
+{% if 'CS' in active_sections %}
+
+<table class="FR sortable" cellspacing="0" caption="Metadata Servers">
+        <thead>
+                <tr><th colspan="8">Metadata Servers</th></tr>
+                <tr>
+                        <th>#</th>
+                        <th>Host</th>
+                        <th>IP</th>
+                        <th>Client Port</th>
+                        <th>Version</th>
+                        <th>Personality</th>
+                        <th>State</th>
+                        <th>Metadata Version</th>
+                </tr>
+        </thead>
+        <tbody>
+                {% for server in metadata_servers %}
+                <tr class="C{{ loop.index % 2 + 1 }}">
+                        <td align="right">{{ server.id }}</td>
+                        <td align="left">{{ server.hostname }}</td>
+                        <td align="center">{{ server.ip_address }}</td>
+                        <td align="center">{{ server.port }}</td>
+                        <td align="center">{{ server.version }}</td>
+                        <td align="center">{{ server.personality }}</td>
+                        <td align="center">{{ server.state }}</td>
+                        <td align="right">{{ server.metadata_version }}</td>
+                </tr>
+                {% endfor %}
+        </tbody>
+</table>
+
+<table class="FR sortable" cellspacing="0" caption="Chunk Servers">
+        <thead>
+                <tr><th colspan="14">Chunk Servers</th></tr>
+                <tr>
+                        <th rowspan="2">#</th>
+                        <th rowspan="2">Host</th>
+                        <th rowspan="2">IP</th>
+                        <th rowspan="2">Port</th>
+                        <th rowspan="2">Version</th>
+                        <th rowspan="2">Label</th>
+                        <th colspan="4">'Regular' HDD Space</th>
+                        <th colspan="4">'To Be Empty' HDD Space</th>
+                </tr>
+                <tr>
+                        <th>Chunks</th>
+                        <th>Used</th>
+                        <th>Total</th>
+                        <th class="PROGBAR">% Used</th>
+                        <th>Chunks</th>
+                        <th>Used</th>
+                        <th>Total</th>
+                        <th class="PROGBAR">% Used</th>
+                </tr>
+        </thead>
+        <tbody>
+                {% for server in servers %}
+                <tr class="C{{ loop.index % 2 + 1 }}">
+                        {% if server.is_disconnected %}
+                        <td align="right">
+                                <span class="DISCONNECTED">{{ server.id }}</span>
+                        </td>
+                        <td align="left">
+                                <span class="DISCONNECTED">{{ server.hostname }}</span>
+                        </td>
+                        <td align="center">
+                                <span class="DISCONNECTED">{{ server.ip_address }}</span>
+                        </td>
+                        <td align="center">
+                                <span class="DISCONNECTED">{{ server.port }}</span>
+                        </td>
+                        <td align="left" colspan="9">
+                                <span class="DISCONNECTED">Disconnected</span>
+                        </td>
+                        <td align="center">
+                                <a
+                                 class="DISCONNECTED"
+                                 data-ip="{{ server.ip_address }}"
+                                 data-port="{{ server.port }}"
+                                >
+                                        Remove
+                                </a>
+                        </td>
+                        {% else %}
+                        <td align="right">{{ server.id }}</td>
+                        <td align="left">{{ server.hostname }}</td>
+                        <td align="center">{{ server.ip_address }}</td>
+                        <td align="center">{{ server.port }}</td>
+                        <td align="center">{{ server.version }}</td>
+                        <td class="LEFT">{{ server.label }}</td>
+                        <td align="right">{{ server.chunks }}</td>
+                        <td align="right">{{ server.used_space | humanize_bytes }}</td>
+                        <td align="right">{{ server.total_space | humanize_bytes }}</td>
+                        <td>
+                                <div class="box">
+                                        <div class="progress" style="width:{{ (server.used_space / server.total_space * 200) if server.total_space > 0 else 0 }}px;"></div>
+                                        <div class="value">{{ "%.2f"|format((server.used_space / server.total_space * 100) if server.total_space > 0 else 0) }}</div>
+                                </div>
+                        </td>
+                        <td align="right">{{ server.chunks_tobedeleted }}</td>
+                        <td align="right">{{ server.used_space_tobedeleted | humanize_bytes }}</td>
+                        <td align="right">{{ server.total_space_tobedeleted | humanize_bytes }}</td>
+                        <td>
+                                <div class="box">
+                                        <div class="progress" style="width:{{ (server.used_space_tobedeleted / server.total_space_tobedeleted * 200) if server.total_space_tobedeleted > 0 else 0 }}px;"></div>
+                                        <div class="value">{{ "%.2f"|format((server.used_space_tobedeleted / server.total_space_tobedeleted * 100) if server.total_space_tobedeleted > 0 else 0) }}</div>
+                                </div>
+                        </td>
+                        {% endif %}
+                </tr>
+                {% endfor %}
+        </tbody>
+</table>
+
+<!-- Metaloggers Table -->
+{% if metaloggers %}
+<table class="FR sortable" cellspacing="0" caption="Metadata Backup Loggers">
+        <thead>
+                <tr><th colspan="4">Metadata Backup Loggers</th></tr>
+                <tr>
+                        <th>#</th>
+                        <th>Host</th>
+                        <th>IP</th>
+                        <th>Version</th>
+                </tr>
+        </thead>
+        <tbody>
+                {% for logger in metaloggers %}
+                <tr class="C{{ loop.index % 2 + 1 }}">
+                        <td align="right">{{ logger.id }}</td>
+                        <td align="left">{{ logger.hostname }}</td>
+                        <td align="center">{{ logger.ip_address }}</td>
+                        <td align="center">{{ logger.version }}</td>
+                </tr>
+                {% endfor %}
+        </tbody>
+</table>
+{% endif %}
+
+{% endif %}

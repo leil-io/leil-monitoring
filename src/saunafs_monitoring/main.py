@@ -87,6 +87,19 @@ async def read_root():
     return RedirectResponse(url="/sfs.cgi")
 
 
+@app.post("/remove_chunkserver.cgi", response_class=HTMLResponse, include_in_schema=False)
+async def remove_chunkserver(request: Request, ip: str, port: int, masterhost:
+                             str = SAUNAFS_MASTER_HOST, masterport: int =
+                             SAUNAFS_MASTER_PORT):
+    try:
+        client = get_client(masterhost, masterport)
+        client.remove_chunkserver(ip, port)
+    except Exception as e:
+        logging.error(f"Could not remove chunkserver {ip}:{port}: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="An internal error occurred")
+
+
 @app.get("/sfs.cgi", response_class=HTMLResponse)
 async def get_sfs_info(request: Request, masterhost: str = SAUNAFS_MASTER_HOST,
                        masterport: int = SAUNAFS_MASTER_PORT, mastername: str = "SaunaFS",

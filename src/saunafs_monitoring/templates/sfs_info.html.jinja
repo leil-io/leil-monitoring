@@ -1,0 +1,301 @@
+{% if info %}
+<!-- WIP new HTML code
+<section class="card">
+	<h2>Master Info ({{info.version}})</h2>
+	<dl class="kv">
+		<div>
+			<dt>RAM Used:</dt>
+			<dd class="numeric" title="{{ info.ram_used }}">{{ info.ram_used | humanize_bytes }}</dd>
+		</div>
+		<div>
+			<dt>Total Space:</dt>
+			<dd class="numeric" title="{{ info.total_space }}">{{ info.total_space | humanize_bytes }}</dd>
+		</div>
+		<div>
+			<dt>Avail Space:</dt>
+			<dd class="numeric" title="{{ info.avail_space }}">{{ info.avail_space | humanize_bytes }}</dd>
+		</div>
+		<div>
+			<dt>Trash Space:</dt>
+			<dd class="numeric" title="{{ info.trash_space }}">{{ info.trash_space | humanize_bytes }}</dd>
+		</div>
+		<div>
+			<dt>Trash Files:</dt>
+			<dd class="numeric" title="{{ info.trash_files }}">{{ info.trash_files }}</dd>
+		</div>
+		<div>
+			<dt>Reserved Space:</dt>
+			<dd class="numeric" title="{{ info.reserved_space }}">{{ info.reserved_space | humanize_bytes }}</dd>
+		</div>
+		<div>
+			<dt>Reserved Files:</dt>
+			<dd class="numeric" title="{{ info.reserved_files }}">{{ info.reserved_files }}</dd>
+		</div>
+		<div>
+			<dt>Total Objects:</dt>
+			<dd class="numeric" title="{{ info.total_objects }}">{{ info.total_objects }}</dd>
+		</div>
+		<div>
+			<dt>Directories:</dt>
+			<dd class="numeric" title="{{ info.directories }}">{{ info.directories }}</dd>
+		</div>
+		<div>
+			<dt>Files:</dt>
+			<dd class="numeric" title="{{ info.files }}">{{ info.files }}</dd>
+		</div>
+		<div>
+			<dt>Symlinks:</dt>
+			<dd class="numeric" title="{{ info.symlinks }}">{{ info.symlinks }}</dd>
+		</div>
+		<div>
+			<dt>Chunks:</dt>
+			<dd class="numeric" title="{{ info.chunks }}">{{ info.chunks }}</dd>
+		</div>
+		<div>
+			<dt>All Copies:</dt>
+			<dd class="numeric" title="{{ info.all_copies }}">{{ info.all_copies }}</dd>
+		</div>
+		<div>
+			<dt>Regular Copies:</dt>
+			<dd class="numeric" title="{{ info.regular_copies }}">{{ info.regular_copies }}</dd>
+		</div>
+	</dl>
+</section>
+-->
+<table class="FR" cellspacing="0" caption="Info table">
+	<thead>
+		<tr>
+			<th colspan="15">Info</th>
+		</tr>
+		<tr>
+			<th>Version</th>
+			<th>RAM Used</th>
+			<th>Total Space</th>
+			<th>Avail Space</th>
+			<th>Trash Space</th>
+			<th>Trash Files</th>
+			<th>Reserved Space</th>
+			<th>Reserved Files</th>
+			<th>Total Objects</th>
+			<th>Directories</th>
+			<th>Files</th>
+			<th>Symlinks</th>
+			<th>Chunks</th>
+			<th>All Copies</th>
+			<th>Regular Copies</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td align="center">{{ info.version }}</td>
+			<td align="right">{{ info.ram_used | humanize_bytes }}</td>
+			<td align="right">{{ info.total_space | humanize_bytes }}</td>
+			<td align="right">{{ info.avail_space | humanize_bytes }}</td>
+			<td align="right">{{ info.trash_space | humanize_bytes }}</td>
+			<td align="right">{{ info.trash_files }}</td>
+			<td align="right">{{ info.reserved_space | humanize_bytes }}</td>
+			<td align="right">{{ info.reserved_files }}</td>
+			<td align="right">{{ info.total_objects }}</td>
+			<td align="right">{{ info.directories }}</td>
+			<td align="right">{{ info.files }}</td>
+			<td align="right">{{ info.symlinks }}</td>
+			<td align="right">{{ info.chunks }}</td>
+			<td align="right">{{ info.all_copies }}</td>
+			<td align="right">{{ info.regular_copies }}</td>
+		</tr>
+	</tbody>
+</table>
+<br/>
+{% endif %}
+
+{% if chunk_operations_info and chunk_operations_info.loop_start > 0 %}
+<table class="FR" cellspacing="0" caption="Chunk Operations Info">
+	<thead>
+		<tr><th colspan="8">Chunk Operations Info</th></tr>
+		<tr>
+			<th colspan="2">Loop Time</th>
+			<th colspan="4">Deletions</th>
+			<th colspan="2">Replications</th>
+		</tr>
+		<tr>
+			<th>Start</th>
+			<th>End</th>
+			<th>Invalid</th>
+			<th>Unused</th>
+			<th>Disk Clean</th>
+			<th>Over Goal</th>
+			<th>Under Goal</th>
+			<th>Rebalance</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td align="center">{{ chunk_operations_info.loop_start | format_timestamp }}</td>
+			<td align="center">{{ chunk_operations_info.loop_end | format_timestamp }}</td>
+			<td align="right">
+				{{ chunk_operations_info.delete_invalid }}/
+				{{ chunk_operations_info.delete_invalid + chunk_operations_info.not_delete_invalid }}
+			</td>
+			<td align="right">
+				{{ chunk_operations_info.delete_unused }}/
+				{{ chunk_operations_info.delete_unused + chunk_operations_info.not_delete_unused }}
+			</td>
+			<td align="right">
+				{{ chunk_operations_info.delete_disk_clean }}/
+				{{ chunk_operations_info.delete_disk_clean + chunk_operations_info.not_delete_disk_clean }}
+			</td>
+			<td align="right">
+				{{ chunk_operations_info.delete_over_goal }}/
+				{{ chunk_operations_info.delete_over_goal + chunk_operations_info.not_delete_over_goal }}
+			</td>
+			<td align="right">
+				{{ chunk_operations_info.replicate_under_goal }}/
+				{{ chunk_operations_info.replicate_under_goal + chunk_operations_info.not_replicate_under_goal }}
+			</td>
+			<td align="right">{{ chunk_operations_info.rebalance }}</td>
+		</tr>
+	</tbody>
+</table>
+<br/>
+<!-- WIP new HTML code
+<section class="card">
+	<h2>Chunk Operations (
+		{{ chunk_operations_info.loop_start | format_timestamp }} - {{ chunk_operations_info.loop_end | format_timestamp }}
+		)
+	</h2>
+	<dl class="kv">
+		<div>
+			<dt>Delete Invalid</dt>
+			<dd class="numeric"
+				title="{{ chunk_operations_info.delete_invalid }} of
+				{{ chunk_operations_info.delete_invalid + chunk_operations_info.not_delete_invalid }}">
+				{{ chunk_operations_info.delete_invalid }}
+				/{{ chunk_operations_info.delete_invalid + chunk_operations_info.not_delete_invalid }}
+			</dd>
+		</div>
+		<div>
+			<dt>Delete Unused</dt>
+			<dd class="numeric" title="{{ chunk_operations_info.delete_unused }} of
+				{{ chunk_operations_info.delete_unused + chunk_operations_info.not_delete_unused }}">
+				{{ chunk_operations_info.delete_unused }}
+				/{{ chunk_operations_info.delete_unused + chunk_operations_info.not_delete_unused }}
+			</dd>
+		</div>
+		<div>
+			<dt>Delete Disk Clean</dt>
+			<dd class="numeric"
+				title="{{ chunk_operations_info.delete_disk_clean }} of
+				{{ chunk_operations_info.delete_disk_clean + chunk_operations_info.not_delete_disk_clean }}">
+				{{ chunk_operations_info.delete_disk_clean }}
+				/{{ chunk_operations_info.delete_disk_clean + chunk_operations_info.not_delete_disk_clean }}
+			</dd>
+		</div>
+		<div>
+			<dt>Delete Over Goal</dt>
+			<dd class="numeric" title="{{ chunk_operations_info.delete_over_goal }} of
+				{{ chunk_operations_info.delete_over_goal + chunk_operations_info.not_delete_over_goal }}">
+				{{ chunk_operations_info.delete_over_goal }}
+				/{{ chunk_operations_info.delete_over_goal + chunk_operations_info.not_delete_over_goal }}
+			</dd>
+		</div>
+
+		<div>
+			<dt>Replicate Under Goal</dt>
+			<dd class="numeric" title="{{ chunk_operations_info.replicate_under_goal }} of
+				{{ chunk_operations_info.replicate_under_goal + chunk_operations_info.not_replicate_under_goal }}">
+				{{ chunk_operations_info.replicate_under_goal }}
+				/{{ chunk_operations_info.replicate_under_goal + chunk_operations_info.not_replicate_under_goal }}
+			</dd>
+		</div>
+		<div>
+			<dt>Rebalance</dt>
+			<dd class="numeric">{{ chunk_operations_info.rebalance }}</dd>
+		</div>
+	</dl>
+</section>
+-->
+{% endif %}
+
+{% if chunk_matrix %}
+<table class="FR" cellspacing="0" caption="Chunks state matrix">
+	<tr><th colspan="13">All chunks state matrix </th></tr>
+	<tr>
+		<th rowspan="2" class="PERC4">needed<br/>copies</th>
+		<th colspan="12" class="PERC96">valid copies (non-XOR chunks only)</th>
+	</tr>
+	<tr>
+	{% for i in range(11) %}
+		<th class="PERC8">{{ i if i < 10 else "10+" }}</th>
+	{% endfor %}
+		<th class="PERC8">all</th>
+	</tr>
+	{% for i in range(11) %}
+	<tr>
+		<td align="center">{{ i if i < 10 else "10+" }}</td>
+		{% for j in range(11) %}
+			{% set value = chunk_matrix.matrix[i][j] %}
+			{% if i == 0 %}
+				{% if j == 0 %}
+				{% set class = "DELETEREADY" %}
+				{% else %}
+				{% set class = "DELETEPENDING" %}
+				{% endif %}
+			{% elif j == 0 %}
+				{% set class = "MISSING" %}
+			{% elif j > i %}
+				{% set class = "OVERGOAL" %}
+			{% elif j < i %}
+				{% if j == 1 %}
+					{% set class = "ENDANGERED" %}
+				{% else %}
+					{% set class = "UNDERGOAL" %}
+				{% endif %}
+			{% else %}
+				{% set class = "NORMAL" %}
+			{% endif %}
+			<td align="right">
+				<span class="{{ class }}">
+					{{ value if value > 0 else "-" }}
+				</span>
+			</td>
+		{% endfor %}
+		<td align="right">{{ chunk_matrix.matrix[i] | sum }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% endif %}
+
+{% if fs_check_info and fs_check_info.loop_start > 0 %}
+<table class="FR" cellspacing="0" caption="Filesystem Check Info">
+	<tr><th colspan="8">Filesystem Check Info</th></tr>
+	<tr>
+		<th>Check Loop Start Time</th>
+		<th>Check Loop End Time</th>
+		<th>Files</th>
+		<th>Under-Goal Files</th>
+		<th>Missing Files</th>
+		<th>Chunks</th>
+		<th>Under-Goal Chunks</th>
+		<th>Missing Chunks</th>
+	</tr>
+	<tr>
+		<td align="center">{{ fs_check_info.loop_start | format_timestamp }}</td>
+		<td align="center">{{ fs_check_info.loop_end | format_timestamp }}</td>
+		<td align="right">{{ fs_check_info.files }}</td>
+		<td align="right">{{ fs_check_info.under_goal_files }}</td>
+		<td align="right">{{ fs_check_info.missing_files }}</td>
+		<td align="right">{{ fs_check_info.chunks }}</td>
+		<td align="right">{{ fs_check_info.under_goal_chunks }}</td>
+		<td align="right">{{ fs_check_info.missing_chunks }}</td>
+	</tr>
+	{% if fs_check_info.message %}
+	<tr>
+		<th colspan="8">Important Messages</th>
+	</tr>
+	<tr>
+		<td colspan="8" align="left"><pre>{{ fs_check_info.message }}</pre></td>
+	</tr>
+	{% endif %}
+</table>
+<br/>
+{% endif %}

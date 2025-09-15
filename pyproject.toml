@@ -28,3 +28,8 @@ Homepage = "https://leil.io"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.jinja-lsp]
+hide_undefined = false
+templates = "./src/saunafs_monitoring/templates"
+backend = ["./src"]

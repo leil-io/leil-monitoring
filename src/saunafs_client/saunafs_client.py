@@ -91,6 +91,10 @@ SAU_CLTOMA_HOSTNAME = 1551
 SAU_MATOCL_HOSTNAME = 1552
 METADATA_HOSTNAME = (SAU_CLTOMA_HOSTNAME, SAU_MATOCL_HOSTNAME)
 
+CLTOMA_CSSERV_REMOVESERV = (PROTO_BASE + 524)
+MATOCL_CSSERV_REMOVESERV = (PROTO_BASE + 525)
+CSSERV_REMOVESERV = (CLTOMA_CSSERV_REMOVESERV, MATOCL_CSSERV_REMOVESERV)
+
 
 class SaunaFSClient:
     def __init__(self, master_host: str, master_port: int):
@@ -252,9 +256,19 @@ class SaunaFSClient:
         return ChunkHealth.from_buffer(buffer)
 
     def get_hostname(self, host, port) -> str:
-        # I cannot believe this is a actual protocol message...
+        # I cannot believe this is an actual protocol message...
         buffer = self.send_and_receive(METADATA_HOSTNAME, host=host, port=port)
         return unpack_string(buffer)
+
+    def remove_chunkserver(self, ip: str, port: int) -> str:
+        ip_parts = list(map(int, ip.split(".")))
+        if len(ip_parts) != 4:
+            raise RuntimeError(f"Invalid ip: {ip}")
+
+        payload = struct.pack(">BBBBH", *ip_parts, port)
+        buffer = self.send_and_receive(CSSERV_REMOVESERV, payload)
+        if len(buffer) != 0:
+            raise RuntimeError("Buffer not empty for CSSERV_REMOVESERV!")
 
     def get_metadata_servers(self) -> List[Goal]:
         servers = []

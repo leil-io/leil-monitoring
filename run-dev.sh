@@ -1,4 +1,4 @@
 #!/bin/sh
-docker compose build
-docker compose up
-docker compose down
+docker compose -f ./compose-dev.yaml build
+docker compose -f ./compose-dev.yaml up
+docker compose -f ./compose-dev.yaml down

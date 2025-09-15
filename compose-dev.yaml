@@ -1,0 +1,37 @@
+name: SaunaFS Monitoring
+services:
+    saunafs-monitoring:
+        ports:
+            - ${SAUNAFS_MONITORING_PORT:-8000}:${SAUNAFS_MONITORING_PORT:-8000}
+        image: saunafs-monitoring:latest
+        build: .
+        environment:
+            - SAUNAFS_MASTER_HOST=${SAUNAFS_MASTER_HOST:-sfsmaster}
+            - SAUNAFS_MASTER_PORT=${SAUNAFS_MASTER_PORT:-9421}
+            - SAUNAFS_MONITORING_HOST=${SAUNAFS_MONITORING_HOST:-0.0.0.0}
+            - SAUNAFS_MONITORING_PORT=${SAUNAFS_MONITORING_PORT:-8000}
+            - SAUNAFS_MONITORING_LOGLEVEL=${SAUNAFS_MONITORING_LOGLEVEL:-DEBUG}
+            - UVICORN_HOST=${SAUNAFS_MONITORING_HOST:-0.0.0.0}
+            - UVICORN_PORT=${SAUNAFS_MONITORING_PORT:-8000}
+        volumes:
+            - ./src:/app/src
+        working_dir: "/app"
+        command: ["uvicorn", "--host", "0.0.0.0", "--reload", "--app-dir", "src", "saunafs_monitoring.main:app"]
+
+    saunafs-api:
+        ports:
+            - ${SAUNAFS_API_PORT:-8001}:${SAUNAFS_API_PORT:-8001}
+        image: saunafs-api:latest
+        build:
+            context: .
+            dockerfile: Dockerfile.api
+        working_dir: "/app"
+        command: ["uvicorn", "--host", "0.0.0.0", "--reload", "--app-dir", "src", "saunafs_api.main:app"]
+        environment:
+            - SAUNAFS_MASTER_HOST=${SAUNAFS_MASTER_HOST:-sfsmaster}
+            - SAUNAFS_MASTER_PORT=${SAUNAFS_MASTER_PORT:-9421}
+            - SAUNAFS_API_HOST=${SAUNAFS_API_HOST:-0.0.0.0}
+            - SAUNAFS_API_PORT=${SAUNAFS_API_PORT:-8001}
+            - UVICORN_HOST=${SAUNAFS_API_HOST:-0.0.0.0}
+            - UVICORN_PORT=${SAUNAFS_API_PORT:-8001}
+            - SAUNAFS_API_LOGLEVEL=${SAUNAFS_API_LOGLEVEL:-DEBUG}

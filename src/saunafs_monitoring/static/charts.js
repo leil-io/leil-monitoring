@@ -232,6 +232,12 @@ let chunkServerCharts = [
 		rate: false,
 	},
 	{
+		name: "memory",
+		id: 90300,
+		labels: ["Memory used"],
+		unit: dataUnit.BYTE,
+	},
+	{
 		name: "bytesReceivedClient",
 		id: 91010,
 		labels: ["Client/Chunkserver bytes received (per second)"],
@@ -336,12 +342,6 @@ let chunkServerCharts = [
 		unit: dataUnit.NONE,
 		rate: false,
 	},
-	// {
-	// 	name: "memory",
-	// 	id: 90300,
-	// 	labels: ["Memory used"],
-	// 	unit: dataUnit.BYTE,
-	// },
 ]
 
 function secondPowerOf(num) {
@@ -563,14 +563,14 @@ async function setupChartInfo(chart, host, port, range = timeRange.SHORT.id) {
 		}
 
 		case dataUnit.NONE: {
-			const values = mapCellValues(rows, (cell, rng) => [cell], chart.rate);
+			const values = mapCellValues(rows, (cell, range) => [cell], chart.rate);
 			const yLabels = withSuffix(chart.labels);
 			setupLineChart(chart.name, yLabels, labels, values);
 			return;
 		}
 
 		case dataUnit.CPUTIME: {
-			const values = mapCellValues(rows, (cell, rng) => parseCPUtime(cell, rng), chart.rate);
+			const values = mapCellValues(rows, (cell, range) => parseCPUtime(cell, range), chart.rate);
 			const yLabels = withSuffix(chart.labels);
 			setupLineChart(chart.name, yLabels, labels, values);
 			return;

@@ -399,9 +399,9 @@ function setupLineChart(id, label, labels, data) {
 				datasets.push({
 					label: label[i],
 					data: [],
-					borderWidth: 2,
+					borderWidth: 5,
 					fill: true,
-					tension: 0.1
+					tension: 0.1,
 				})
 			}
 			datasets[i].data.push(col)

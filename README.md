@@ -11,7 +11,7 @@
 - [x] Add CI pipeline
 - [x] Add chunkserver removal
 - [x] Add disk scanning progress
-- [ ] Add legend to matrix table
+- [x] Add legend to matrix table
 - [ ] Add missing stats for disks (Average block size etc.)
 - [ ] Add CD pipeline
 - [ ] Do some more styling (arrows on chart etc.)

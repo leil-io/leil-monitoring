@@ -221,7 +221,7 @@
 	<tr><th colspan="13">All chunks state matrix </th></tr>
 	<tr>
 		<th rowspan="2" class="PERC4">needed<br/>copies</th>
-		<th colspan="12" class="PERC96">valid copies (non-XOR chunks only)</th>
+		<th colspan="12" class="PERC96">Valid copies (standard goal chunks only)</th>
 	</tr>
 	<tr>
 	{% for i in range(11) %}
@@ -262,6 +262,47 @@
 		<td align="right">{{ chunk_matrix.matrix[i] | sum }}</td>
 	</tr>
 	{% endfor %}
+	<tr>
+		<td colspan="13">
+			<ul class="status-summary" aria-label="Record status summary">
+				<li>
+					<span class="status-dot status-missing" aria-hidden="true"></span>
+					<span class="status-label">Missing</span>
+					<span class="status-count" data-status="missing">0</span>
+				</li>
+				<li>
+					<span class="status-dot status-endangered" aria-hidden="true"></span>
+					<span class="status-label">Endangered</span>
+					<span class="status-count" data-status="endangered">0</span>
+				</li>
+				<li>
+					<span class="status-dot status-undergoal" aria-hidden="true"></span>
+					<span class="status-label">Undergoal</span>
+					<span class="status-count" data-status="undergoal">0</span>
+				</li>
+				<li>
+					<span class="status-dot status-stable" aria-hidden="true"></span>
+					<span class="status-label">Stable</span>
+					<span class="status-count" data-status="stable">217630</span>
+				</li>
+				<li>
+					<span class="status-dot status-overgoal" aria-hidden="true"></span>
+					<span class="status-label">Overgoal</span>
+					<span class="status-count" data-status="overgoal">0</span>
+				</li>
+				<li>
+					<span class="status-dot status-pending-delete" aria-hidden="true"></span>
+					<span class="status-label">Pending deletion</span>
+					<span class="status-count" data-status="pending-delete">0</span>
+				</li>
+				<li>
+					<span class="status-dot status-ready-remove" aria-hidden="true"></span>
+					<span class="status-label">Ready to be removed</span>
+					<span class="status-count" data-status="ready-remove">8</span>
+				</li>
+			</ul>
+		</td>
+	</tr>
 </table>
 {% endif %}
 

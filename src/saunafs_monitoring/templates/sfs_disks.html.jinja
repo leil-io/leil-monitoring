@@ -19,22 +19,52 @@
                 <tr class="C{{ loop.index % 2 + 1 }}">
                         <td align="right">{{ loop.index }}</td>
                         <td align="left">{{ disk.path }}</td>
-                        <td align="right">{{ disk.status }}</td>
-                        <td align="right">{{ disk.last_error }}</td>
+                        {% if "damaged" in disk.status.lower() or "error" in disk.status.lower() %}
+                        <td align="right" class="MISSING">
+                                {{ disk.status }}
+                        {% elif "scanning" in disk.status.lower() %}
+                        <td align="right" class="ENDANGERED">
+                                {{ disk.status }}
+                        {% else %}
+                        <td align="right" class="NORMAL">
+                                {{ disk.status }}
+                        {% endif %}
+                        </td>
+                        {% if "no errors" in disk.last_error.lower() %}
+                               <td align="right" class="NORMAL">
+                                {{ disk.last_error }}
+                        {% else %}
+                        <td align="right" class="MISSING">
+                                {{ disk.last_error }}
+                        {% endif %}
+                        </td>
                         <td align="right">{{ disk.chunks }}</td>
+                        {% if disk.used_space > disk.total_space %}
+                                <td colspan=3>
+                                        <div class="box">
+                                                <div class="progress"
+                                                     style="width:{{disk.used_space}}%;">
+                                                </div>
+                                                <div class="value">
+                                                        {{ "%.0f%%" | format(disk.used_space) }}
+                                                </div>
+                                        </div>
+                                </td>
+                        {% else %}
                         <td align="right">{{ disk.used_space | humanize_bytes }}</td>
                         <td align="right">{{ disk.total_space | humanize_bytes }}</td>
                         <td>
                                 <div class="box">
                                         <div class="progress"
                                                 style="width:
-                                        {{ (disk.used_space / disk.total_space * 200) if disk.total_space > 0 else 0 }}px;">
+                                        {{ (disk.used_space / disk.total_space * 100) if disk.total_space > 0 else 0 }}%;">
                                         </div>
                                         <div class="value">
                                         {{ "%.2f"|format((disk.used_space / disk.total_space * 100) if disk.total_space > 0 else 0) }}
                                         </div>
                                 </div>
                         </td>
+                        {% endif %}
                 </tr>
                 {% endfor %}
         </tbody>

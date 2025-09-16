@@ -138,17 +138,24 @@ class Disk(BaseModel):
                 "BQLQQL", entry_buffer
             )
 
-            status = "ok"
-            if flags == 1:
-                status = 'marked for removal'
-            elif flags == 2:
-                status = 'damaged'
-            elif flags == 3:
-                status = 'damaged, marked for removal'
+            status = "OK"
+            if flags & 0x1:
+                status = 'Marked for removal'
+            elif flags & 0x2:
+                status = 'Damaged'
+            elif flags & 0x3:
+                status = 'Damaged, marked for removal'
+            elif flags & 0x6 or flags & 0x4:
+                status = "Scanning"
+            elif flags & 0x7 or flags & 0x5:
+                status = "Scanning, marked for removal"
 
-            last_error = "no errors"
+            last_error = "No errors"
             if err_time > 0:
                 last_error = f"{err_time} on chunk: {err_chunk_id}"
+                status = "Errors reported"
+            elif flags & 0x2:
+                last_error = "Read/Write error"
 
             return cls(
                 path=path,

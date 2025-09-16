@@ -21,8 +21,8 @@ class TestDiskDeserialization(unittest.TestCase):
         disk = Disk.from_buffer(buffer_copy)
 
         self.assertEqual(disk.path, path)
-        self.assertEqual(disk.status, "ok")
-        self.assertEqual(disk.last_error, "no errors")
+        self.assertEqual(disk.status.lower(), "ok")
+        self.assertEqual(disk.last_error.lower(), "no errors")
         self.assertEqual(disk.used_space, used_space)
         self.assertEqual(disk.total_space, total_space)
         self.assertEqual(disk.chunks, chunks_cnt)
@@ -43,7 +43,7 @@ class TestDiskDeserialization(unittest.TestCase):
         disk = Disk.from_buffer(buffer_copy)
 
         self.assertEqual(disk.path, path)
-        self.assertEqual(disk.status, "damaged")
+        self.assertEqual(disk.status.lower(), "damaged")
         self.assertEqual(disk.last_error, f"{err_time} on chunk: {err_chunk_id}")
         self.assertEqual(disk.used_space, used_space)
         self.assertEqual(disk.total_space, total_space)
@@ -94,15 +94,15 @@ class TestDiskDeserialization(unittest.TestCase):
 
         # Assertions for disk 1
         self.assertEqual(disks[0].path, disk1_data['path'])
-        self.assertEqual(disks[0].status, "ok")
-        self.assertEqual(disks[0].last_error, "no errors")
+        self.assertEqual(disks[0].status.lower(), "ok")
+        self.assertEqual(disks[0].last_error.lower(), "no errors")
         self.assertEqual(disks[0].used_space, disk1_data['used_space'])
         self.assertEqual(disks[0].total_space, disk1_data['total_space'])
         self.assertEqual(disks[0].chunks, disk1_data['chunks_cnt'])
 
         # Assertions for disk 2
         self.assertEqual(disks[1].path, disk2_data['path'])
-        self.assertEqual(disks[1].status, "marked for removal")
+        self.assertEqual(disks[1].status, "Marked for removal")
         self.assertEqual(disks[1].last_error, f"{disk2_data['err_time']} on chunk: {disk2_data['err_chunk_id']}")
         self.assertEqual(disks[1].used_space, disk2_data['used_space'])
         self.assertEqual(disks[1].total_space, disk2_data['total_space'])

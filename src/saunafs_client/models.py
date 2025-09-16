@@ -138,7 +138,8 @@ class Disk(BaseModel):
                 "BQLQQL", entry_buffer
             )
 
-            status = "OK"
+            DEFAULT_STATUS = "OK"
+            status = DEFAULT_STATUS
             if flags & 0x1:
                 status = 'Marked for removal'
             elif flags & 0x2:
@@ -153,7 +154,8 @@ class Disk(BaseModel):
             last_error = "No errors"
             if err_time > 0:
                 last_error = f"{err_time} on chunk: {err_chunk_id}"
-                status = "Errors reported"
+                if status == DEFAULT_STATUS:
+                    status = "Errors reported"
             elif flags & 0x2:
                 last_error = "Read/Write error"
 

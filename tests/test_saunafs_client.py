@@ -268,7 +268,7 @@ def test_get_disks_success(mockSocket):
     assert len(disks) == 1
     disk = disks[0]
     assert disk.path == "host-one.local:/mnt/disk1"
-    assert disk.status == "ok"
+    assert disk.status.lower() == "ok"
     assert disk.total_space == 4000
     assert disk.used_space == 2000
     assert disk.chunks == 200

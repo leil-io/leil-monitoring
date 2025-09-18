@@ -13,72 +13,74 @@
 	</head>
 	<body>
 		<header id="header">
-		<div class="logo">
-			<a href="sfs.cgi?sections=IN">
-				<img src="/static/logomini.svg" alt="logo" width="110" height="38" />
-			</a>
-		</div>
+			<div class="logo">
+				<a href="sfs.cgi?sections=IN">
+					<img src="/static/logomini.svg" alt="logo" width="110" height="38" />
+				</a>
+			</div>
 
-		<nav class="menu">
-			<a class="button" href="sfs.cgi?sections=IN">Info</a>
-			<a class="button" href="sfs.cgi?sections=CH">Chunks</a>
-			<a class="button" href="sfs.cgi?sections=CS">Servers</a>
-			<a class="button" href="sfs.cgi?sections=HD">Disks</a>
-			<a class="button" href="sfs.cgi?sections=EX">Config</a>
-			<a class="button" href="sfs.cgi?sections=MS">Mounts</a>
-			<a class="button" href="sfs.cgi?sections=MC">Master Charts</a>
-			<a class="button" href="sfs.cgi?sections=CC">Server Charts</a>
-		</nav>
+			<nav class="menu">
+				<a class="button" href="sfs.cgi?sections=IN">Info</a>
+				<a class="button" href="sfs.cgi?sections=CH">Chunks</a>
+				<a class="button" href="sfs.cgi?sections=CS">Servers</a>
+				<a class="button" href="sfs.cgi?sections=HD">Disks</a>
+				<a class="button" href="sfs.cgi?sections=EX">Config</a>
+				<a class="button" href="sfs.cgi?sections=MS">Mounts</a>
+				<a class="button" href="sfs.cgi?sections=MC">Master Charts</a>
+				<a class="button" href="sfs.cgi?sections=CC">Server Charts</a>
+			</nav>
 
-		<div class="filler"></div>
-	</header>
+			<div class="filler"></div>
+		</header>
 		</div>
 		<div id="container">
 			{% if error_message %}
-				<h1 align="center">{{ error_message }}</h1>
-				<h2 align="center">Please enter alternative master address:
-					<input type="text" id="masterhost" value="sfsmaster" size="32" />
-					<input type="number" id="masterport" size="6" value="9421" />
-					<input type="button"
+			<h1 align="center">{{ error_message }}</h1>
+			<h2 align="center">Please enter alternative master address:
+				<input type="text" id="masterhost" value="sfsmaster" size="32" />
+				<input type="number" id="masterport" size="6" value="9421" />
+				<input type="button"
 					value="Go"
 					onclick="window.location='/sfs.cgi?masterhost='
 						+ document.getElementById('masterhost').value + '&masterport='
 						+ document.getElementById('masterport').value"
 				/>
-				</h2>
+			</h2>
 			{% else %}
-				{% include "sfs_info.html.jinja" %}
-				{% include "sfs_chunks.html.jinja" %}
-				{% include "sfs_servers.html.jinja" %}
-				{% include "sfs_disks.html.jinja" %}
-				{% include "sfs_config.html.jinja" %}
-				{% include "sfs_mounts.html.jinja" %}
-				{% if 'MC' in active_sections %}
-				<div class="chart-containers masterCharts" data-host="{{masterhost}}" data-port="{{masterport}}">
-					<div class="chart-header">
-								Master ({{masterhost}}:{{masterport}}) charts
-						<div class="arrow-down"></div>
-					</div>
-					<div class="chart-content">
-					</div>
+			{% include "sfs_info.html.jinja" %}
+			{% include "sfs_chunks.html.jinja" %}
+			{% include "sfs_servers.html.jinja" %}
+			{% include "sfs_disks.html.jinja" %}
+			{% include "sfs_config.html.jinja" %}
+			{% include "sfs_mounts.html.jinja" %}
+			{% if 'MC' in active_sections %}
+			<div class="chart-containers masterCharts" data-host="{{masterhost}}" data-port="{{masterport}}">
+				<div class="chart-header">
+					Master ({{masterhost}}:{{masterport}}) charts
+					<div class="arrow-down"></div>
 				</div>
-				{% endif %}
-				{% if 'CC' in active_sections %}
-					{% for server in servers %}
-					<div class="chart-containers chunkServerCharts"
-						 data-host="{{server.ip_address}}" data-port="{{server.port}}">
-						<div class="chart-header">
-							Chunkserver {{server.hostname}}
-							({{server.ip_address}}:{{server.port}}) charts
-							<div class="arrow-down"></div>
-						</div>
-						<div class="chart-content">
-						</div>
-					</div>
-					{% endfor %}
-				{% endif %}
+				<div class="chart-content">
+				</div>
+			</div>
+			{% endif %}
+			{% if 'CC' in active_sections %}
+			{% for server in servers %}
+			<div class="chart-containers chunkServerCharts"
+				data-host="{{server.ip_address}}" data-port="{{server.port}}">
+				<div class="chart-header">
+					Chunkserver {{server.hostname}}
+					({{server.ip_address}}:{{server.port}}) charts
+					<div class="arrow-down"></div>
+				</div>
+				<div class="chart-content">
+				</div>
+			</div>
+			{% endfor %}
+			{% endif %}
 			{% endif %}
 		</div>
 		<script src="/static/sfs-sort.js"></script>
 		<script src="/static/charts.js" type="module"></script>
 		<script src="/static/links.js"></script>
+	</body>
+</html>

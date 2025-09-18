@@ -11,36 +11,48 @@ function ToggleMountInfo(rowId) {
 
 function getCellValue(tr, idx) {
 	const cell = tr.children[idx];
-	if (!cell) {
-		return ''; // Return empty string if cell is undefined
-	}
-	// Handle humanized bytes (e.g., 1.23 MiB) by converting to a comparable number
-	const humanizedBytesRegex = /^([\d\.]+) (B|KiB|MiB|GiB|TiB|PiB)$/;
-	const text = cell.innerText || cell.textContent;
-	const match = text.match(humanizedBytesRegex);
+	if (!cell) return '';
 
-	if (match) {
-		const value = parseFloat(match[1]);
-		const unit = match[2];
-		switch (unit) {
-			case 'B': return value;
-			case 'KiB': return value * 1024;
-			case 'MiB': return value * 1024 * 1024;
-			case 'GiB': return value * 1024 * 1024 * 1024;
-			case 'TiB': return value * 1024 * 1024 * 1024 * 1024;
-			case 'PiB': return value * 1024 * 1024 * 1024 * 1024 * 1024;
-		}
+	const raw = (cell.innerText || cell.textContent || '').trim();
+
+	// normalize weird spaces and thousands separators
+	const text = raw.replace(/\u00A0/g, ' ').replace(/,/g, '').trim();
+
+	// bytes (binary or decimal) with optional "/s"
+	// examples it will handle: "652.3 MB/s", "17.7 MiB/s", "512 KiB", "123 B"
+	const bytesRe = /^([\d.]+)\s*([KMGTPE]?)(i?)B(?:\/s)?$/i;
+
+	// plain number with optional "/s" (e.g. "0.0/s")
+	const rateRe = /^([\d.]+)\s*(?:\/s)?$/i;
+
+	let m = text.match(bytesRe);
+	if (m) {
+		const value = parseFloat(m[1]);
+		const unitLetter = m[2].toUpperCase(); // '', K, M, G, T, P, E
+		const isBinary = !!m[3];               // 'i' present => KiB, MiB, ...
+			const order = ['', 'K', 'M', 'G', 'T', 'P', 'E'].indexOf(unitLetter);
+		const base = isBinary ? 1024 : 1000;
+		const factor = order > 0 ? Math.pow(base, order) : 1;
+		return value * factor; // always a number of bytes (or bytes/sec if original had "/s")
 	}
 
-	// Try to parse as number, otherwise return as string
-	return isNaN(Number(text)) ? text : Number(text);
+	m = text.match(rateRe);
+	if (m) {
+		return parseFloat(m[1]); // treat bare numbers like numbers
+	}
+
+	// last resort: string
+	return text;
 }
 
 function comparer(idx, asc) {
 	return function(a, b) {
 		const v1 = getCellValue(asc ? a : b, idx);
 		const v2 = getCellValue(asc ? b : a, idx);
-		return v1 !== '' && v2 !== '' && !isNaN(v1) && !isNaN(v2) ? v1 - v2 : v1.toString().localeCompare(v2);
+		const n1 = typeof v1 === 'number' && !isNaN(v1);
+		const n2 = typeof v2 === 'number' && !isNaN(v2);
+		if (n1 && n2) return v1 - v2;
+		return String(v1).localeCompare(String(v2), undefined, { numeric: true, sensitivity: 'base' });
 	};
 }
 

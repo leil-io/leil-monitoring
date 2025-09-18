@@ -41,11 +41,16 @@ def _create_server_payload(
 def _create_disk_payload(
     flags, err_chunk_id, err_time, used, total, chunks_cnt, disk_path
 ):
-    """Helper to create a single disk payload."""
+    """Helper to create a single disk payload.
+    Pads stats for each period with 0's
+    """
     disk_payload_data = struct.pack(
         ">BQLQQL",
         flags, err_chunk_id, err_time, used, total, chunks_cnt,
     )
+    for _ in range(0, 3):
+        disk_payload_data += struct.pack(">QQQQQLLLLLL",
+                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,)
     return struct.pack(
         ">HB", len(disk_payload_data) + len(disk_path) + 1, len(disk_path)
     ) + disk_path + disk_payload_data

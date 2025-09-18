@@ -22,45 +22,49 @@
                         {% if "damaged" in disk.status.lower() or "error" in disk.status.lower() %}
                         <td align="right" class="MISSING">
                                 {{ disk.status }}
+                        </td>
                         {% elif "scanning" in disk.status.lower() %}
                         <td align="right" class="ENDANGERED">
                                 {{ disk.status }}
+                        </td>
                         {% else %}
                         <td align="right" class="NORMAL">
                                 {{ disk.status }}
-                        {% endif %}
                         </td>
+                        {% endif %}
                         {% if "no errors" in disk.last_error.lower() %}
-                               <td align="right" class="NORMAL">
+                        <td align="right" class="NORMAL">
                                 {{ disk.last_error }}
+                        </td>
                         {% else %}
                         <td align="right" class="MISSING">
                                 {{ disk.last_error }}
+                        </td>
                         {% endif %}
                         </td>
                         <td align="right">{{ disk.chunks }}</td>
                         {% if disk.used_space > disk.total_space %}
-                                <td colspan=3>
-                                        <div class="box">
-                                                <div class="progress"
-                                                     style="width:{{disk.used_space}}%;">
-                                                </div>
-                                                <div class="value">
-                                                        {{ "%.0f%%" | format(disk.used_space) }}
-                                                </div>
+                        <td colspan=3>
+                                <div class="box">
+                                        <div class="progress"
+                                             style="width:{{disk.used_space}}%;">
                                         </div>
-                                </td>
+                                        <div class="value">
+                                                {{ "%.0f%%" | format(disk.used_space) }}
+                                        </div>
+                                </div>
+                        </td>
                         {% else %}
                         <td align="right">{{ disk.used_space | humanize_bytes }}</td>
                         <td align="right">{{ disk.total_space | humanize_bytes }}</td>
                         <td>
                                 <div class="box">
                                         <div class="progress"
-                                                style="width:
-                                        {{ (disk.used_space / disk.total_space * 100) if disk.total_space > 0 else 0 }}%;">
+                                             style="width:
+                                                    {{ (disk.used_space / disk.total_space * 100) if disk.total_space > 0 else 0 }}%;">
                                         </div>
                                         <div class="value">
-                                        {{ "%.2f"|format((disk.used_space / disk.total_space * 100) if disk.total_space > 0 else 0) }}
+                                                {{ "%.2f"|format((disk.used_space / disk.total_space * 100) if disk.total_space > 0 else 0) }}
                                         </div>
                                 </div>
                         </td>
@@ -69,5 +73,10 @@
                 {% endfor %}
         </tbody>
 </table>
-{% endif %}
 
+{% import "disks_stats.html.jinja" as disk_utils %}
+{{ disk_utils.disk_table(disks, "minute") }}
+{{ disk_utils.disk_table(disks, "hour") }}
+{{ disk_utils.disk_table(disks, "day") }}
+
+{% endif %}

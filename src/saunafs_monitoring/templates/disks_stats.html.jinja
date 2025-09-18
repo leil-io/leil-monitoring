@@ -1,0 +1,72 @@
+{% macro disk_table(disks, range) %}
+
+<table class="FR sortable" cellspacing="0">
+	<thead>
+		<tr>
+			<th colspan="12">Disk stats ({{ range }} stats)</th>
+		</tr>
+		<tr>
+			<th>Path</th>
+			<th>Read</th>
+			<th>Write</th>
+			<th>Read time (avg)</th>
+			<th>Read time (max)</th>
+			<th>Write time (avg)</th>
+			<th>Write time (max)</th>
+			<th>Fsync time (avg)</th>
+			<th>Fsync time (max)</th>
+			<th>Read ops</th>
+			<th>Write ops</th>
+			<th>Fsync ops</th>
+		</tr>
+	</thead>
+
+	{% for disk in disks %}
+	{% set stats = disk[range + "_stats"] %}
+	<tr class="C{{ loop.index % 2 + 1 }}">
+		<td align="left">{{ disk.path }}</td>
+
+		<td align="right"
+			title="{{ (stats.read_bytes_persecond|int)|string }} B/s">
+			{{ stats.read_bytes_persecond|humanize_bytes }}/s
+		</td>
+
+		<td align="right"
+			title="{{ (stats.written_bytes_persecond|int)|string }} B/s">
+			{{ stats.written_bytes_persecond|humanize_bytes }}/s
+		</td>
+
+		<td align="right" title="{{ stats.read_usec }} μs total">
+			{{ (stats.read_usec_avg / 1000)|round(1) }} ms
+		</td>
+		<td align="right" title="{{ stats.read_usec_max }} μs max">
+			{{ (stats.read_usec_max / 1000)|round(1) }} ms
+		</td>
+
+		<td align="right" title="{{ stats.written_usec }} μs total">
+			{{ (stats.written_usec_avg / 1000)|round(1) }} ms
+		</td>
+		<td align="right" title="{{ stats.written_usec_max }} μs max">
+			{{ (stats.written_usec_max / 1000)|round(1) }} ms
+		</td>
+
+		<td align="right" title="{{ stats.fsync_usec }} μs total">
+			{{ (stats.written_usec_avg / 1000)|round(1) }} ms
+		</td>
+		<td align="right" title="{{ stats.fsync_usec_max }} μs max">
+			{{ (stats.written_usec_max / 1000)|round(1) }} ms
+
+		<td align="right" title="Average {{ stats.read_block_size_avg|int }} bytes/op">
+			{{ stats.read_ops }}
+		</td>
+		<td align="right" title="Average {{ stats.written_block_size_avg|int }} bytes/op">
+			{{ stats.write_ops }}
+		</td>
+		<td align="right">
+			{{ stats.fsync_ops }}
+		</td>
+	</tr>
+	{% endfor %}
+</table>
+
+{% endmacro %}

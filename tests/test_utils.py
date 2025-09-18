@@ -255,6 +255,9 @@ def serialize_disk(
                               used_space,
                               total_space,
                               chunks_cnt)
+    for _ in range(0, 3):
+        inner_entry += struct.pack(">QQQQQLLLLLL",
+                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,)
 
     entry_size = 1 + path_len + len(inner_entry)
 

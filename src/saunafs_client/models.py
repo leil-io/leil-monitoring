@@ -103,6 +103,86 @@ class Server(BaseModel):
             raise DeserializationError(f"Failed to deserialize Server: {e}")
 
 
+class DiskStats(BaseModel):
+    read_bytes: int
+    read_bytes_persecond: float
+    read_ops: int
+    read_usec: int
+    read_usec_avg: float
+    read_usec_max: int
+    read_block_size_avg: float
+
+    written_bytes: int
+    written_bytes_persecond: float
+    write_ops: int
+    written_usec: int
+    written_usec_avg: float
+    written_usec_max: int
+    written_block_size_avg: float
+
+    fsync_ops: int
+    fsync_usec: int
+    fsync_usec_avg: float
+    fsync_usec_max: int
+
+    # TODO(Urmas): Write a test for this
+    @classmethod
+    def from_buffer(cls, buffer: bytearray) -> Disk:
+        try:
+            rbytes, wbytes, usecreadsum, usecwritesum, usecfsyncsum, = unpack_primitive("QQQQQ", buffer)
+            rops, wops, fsyncops, usecreadmax, usecwritemax, usecfsyncmax, = unpack_primitive("LLLLLL", buffer)
+
+            if usecreadsum > 0:
+                bytes_read_persecond = rbytes * 1_000_000 / usecreadsum
+            else:
+                bytes_read_persecond = 0
+            if usecwritesum + usecfsyncsum > 0:
+                bytes_written_persecond = wbytes * 1_000_000 / (usecwritesum + usecfsyncsum)
+            else:
+                bytes_written_persecond = 0
+
+            if rops > 0:
+                read_usec_avg = usecreadsum / rops
+                read_block_size = rbytes / rops
+            else:
+                read_usec_avg = 0
+                read_block_size = 0
+            if wops > 0:
+                written_usec_avg = usecwritesum / wops
+                write_block_size = wbytes / wops
+            else:
+                written_usec_avg = 0
+                write_block_size = 0
+
+            if fsyncops > 0:
+                fsync_usec_avg = usecfsyncsum / fsyncops
+            else:
+                fsync_usec_avg = 0
+
+            return cls(
+                read_bytes=rbytes,
+                read_bytes_persecond=bytes_read_persecond,
+                read_ops=rops,
+                read_usec=usecreadsum,
+                read_usec_avg=read_usec_avg,
+                read_usec_max=usecreadmax,
+                read_block_size_avg=read_block_size,
+                written_bytes=wbytes,
+                written_bytes_persecond=bytes_written_persecond,
+                write_ops=wops,
+                written_usec=usecwritesum,
+                written_usec_avg=written_usec_avg,
+                written_usec_max=usecwritemax,
+                written_block_size_avg=write_block_size,
+                fsync_ops=fsyncops,
+                fsync_usec=usecfsyncsum,
+                fsync_usec_avg=fsync_usec_avg,
+                fsync_usec_max=usecfsyncmax,
+            )
+        except Exception as e:
+            raise DeserializationError(f"Failed to deserialize DiskStats: {e}")
+
+
 class Disk(BaseModel):
     path: str
     status: str
@@ -110,6 +190,9 @@ class Disk(BaseModel):
     total_space: int
     used_space: int
     chunks: int
+    minute_stats: DiskStats
+    hour_stats: DiskStats
+    day_stats: DiskStats
 
     @staticmethod
     def get_list(buffer) -> List[Disk]:
@@ -159,13 +242,26 @@ class Disk(BaseModel):
             elif flags & 0x2:
                 last_error = "Read/Write error"
 
+            # TODO(Urmas): Update SFSCommunication.h because it's completely wrong
+            # Most importantly, there are 60-bit offsets to these for minute, hour and days
+            print(len(entry_buffer))
+            minute_stats = DiskStats.from_buffer(entry_buffer)
+            print(len(entry_buffer))
+            hour_stats = DiskStats.from_buffer(entry_buffer)
+            print(len(entry_buffer))
+            day_stats = DiskStats.from_buffer(entry_buffer)
+            print(len(entry_buffer))
+
             return cls(
                 path=path,
                 status=status,
                 last_error=last_error,
                 total_space=total,
                 used_space=used,
-                chunks=chunks_cnt
+                chunks=chunks_cnt,
+                minute_stats=minute_stats,
+                hour_stats=hour_stats,
+                day_stats=day_stats,
             )
         except Exception as e:
             raise DeserializationError(f"Failed to deserialize Disk: {e}")

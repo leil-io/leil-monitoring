@@ -76,5 +76,29 @@ pipeline {
         '''
       }
     }
+    stage('Push Docker Images') {
+      when {
+        branch "dev"
+      }
+      steps {
+        script {
+          sh '''
+            docker tag saunafs-monitoring:latest registry.saunafs.com/library/saunafs-monitoring:latest
+            docker tag saunafs-api:latest registry.saunafs.com/library/saunafs-api:latest
+            '''
+          docker.withRegistry('https://registry.saunafs.com', 'harbor') {
+            docker.image('registry.saunafs.com/library/saunafs-monitoring:latest').push()
+            docker.image('registry.saunafs.com/library/saunafs-api:latest').push()
+          }
+        }
+      }
+      post {
+        always {
+          sh '''
+            docker logout registry.saunafs.com
+            '''
+        }
+      }
+    }
   }
 }

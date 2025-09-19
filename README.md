@@ -12,8 +12,8 @@
 - [x] Add chunkserver removal
 - [x] Add disk scanning progress
 - [x] Add legend to matrix table
-- [ ] Add missing stats for disks (Average block size etc.)
-- [ ] Add CD pipeline
+- [x] Add missing stats for disks (Average block size etc.)
+- [x] Add CD pipeline
 - [ ] Do some more styling (arrows on chart etc.)
 - [ ] Add switch between old and new theme (optional)
 - [ ] Add deb packaging (Absolutely optional)

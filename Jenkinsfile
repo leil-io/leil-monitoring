@@ -89,10 +89,10 @@ pipeline {
               docker tag saunafs-api:latest registry.saunafs.com/library/saunafs-api:${GIT_COMMIT}
               docker tag saunafs-api:latest registry.saunafs.com/library/saunafs-api:${GIT_COMMIT}
               """
-            docker.image('registry.saunafs.com/library/saunafs-monitoring:latest').push()
-            docker.image('registry.saunafs.com/library/saunafs-monitoring:${GIT_COMMIT}').push()
-            docker.image('registry.saunafs.com/library/saunafs-api:latest').push()
-            docker.image('registry.saunafs.com/library/saunafs-api:${GIT_COMMIT}').push()
+            docker.image("registry.saunafs.com/library/saunafs-monitoring:latest").push()
+            docker.image("registry.saunafs.com/library/saunafs-monitoring:${GIT_COMMIT}").push()
+            docker.image("registry.saunafs.com/library/saunafs-api:latest").push()
+            docker.image("registry.saunafs.com/library/saunafs-api:${GIT_COMMIT}").push()
           }
         }
       }

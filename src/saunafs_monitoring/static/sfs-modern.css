@@ -94,7 +94,7 @@ a:hover {
 /* Table Styles */
 table.FR {
     width: 100%;
-    max-width: 1200px;
+    max-width: 60%;
     margin: 0 auto 20px auto;
     border-collapse: collapse;
     background-color: var(--table-bg);
@@ -332,7 +332,7 @@ td.MENU {
 
 .card {
     width: 100%;
-    max-width: 1200px;
+    max-width: 75%;
     margin: 0 auto 20px auto;
     background-color: var(--table-bg);
     border-radius: 8px;

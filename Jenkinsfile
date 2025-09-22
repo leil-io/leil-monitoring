@@ -85,9 +85,9 @@ pipeline {
           docker.withRegistry('https://registry.saunafs.com', 'harbor') {
             sh """
               docker tag saunafs-monitoring:latest registry.saunafs.com/library/saunafs-monitoring:${GIT_COMMIT}
-              docker tag saunafs-monitoring:latest registry.saunafs.com/library/saunafs-monitoring:${GIT_COMMIT}
+              docker tag saunafs-monitoring:latest registry.saunafs.com/library/saunafs-monitoring:latest
               docker tag saunafs-api:latest registry.saunafs.com/library/saunafs-api:${GIT_COMMIT}
-              docker tag saunafs-api:latest registry.saunafs.com/library/saunafs-api:${GIT_COMMIT}
+              docker tag saunafs-api:latest registry.saunafs.com/library/saunafs-api:latest
               """
             docker.image("registry.saunafs.com/library/saunafs-monitoring:latest").push()
             docker.image("registry.saunafs.com/library/saunafs-monitoring:${GIT_COMMIT}").push()

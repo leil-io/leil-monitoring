@@ -79,7 +79,7 @@ async def api_get_chunk_health(masterhost: str = SAUNAFS_MASTER_HOST, masterport
     return client.get_chunk_health()
 
 
-@app.get("/api/servers", response_model=List[Server])
+@app.get("/api/chunkservers", response_model=List[Server])
 async def api_get_servers(masterhost: str = SAUNAFS_MASTER_HOST, masterport: int = SAUNAFS_MASTER_PORT):
     client = get_client(masterhost, masterport)
     return client.get_servers()
@@ -127,8 +127,23 @@ async def api_get_chunk_matrix(masterhost: str = SAUNAFS_MASTER_HOST, masterport
     return client.get_chunk_matrix()
 
 
-@app.get("/charts")
+@app.get("/api/cgicharts")
 async def get_chart(id: int, host: str = SAUNAFS_MASTER_HOST, port: int = SAUNAFS_MASTER_PORT):
+    """
+
+    There are two different types of charts available:
+
+    1. PNG
+    2. CSV
+
+    These are mapped to id's, which are hard coded int values. For the CSV,
+    please check the monitoring JS source code for a map of these (under
+    /static/charts.js).
+
+    The host may be a master or chunkserver
+
+    The PNG may be removed in the future, do not rely on it.
+    """
     client = get_client(host, port)
     try:
         image_data = client.get_chart(host, port, id)
@@ -147,8 +162,7 @@ async def get_chart(id: int, host: str = SAUNAFS_MASTER_HOST, port: int = SAUNAF
     except Exception as e:
         logging.error(f"Could not get charts {e}")
         traceback.print_exc()
-        with open("static/err.gif", "rb") as f:
-            return Response(content=f.read(), media_type="image/gif")
+        raise HTTPException(status_code=500, detail=f"Could not get charts: {e}")
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)

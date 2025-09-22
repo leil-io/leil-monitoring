@@ -178,40 +178,4 @@ table.BOTMENU {width: 1000px; margin-left:auto; margin-right:auto;}
 .box .progress {background:#0F0; float:left; height:14px;}
 .box .value {width:100%; position:absolute; left:0; top:0; text-align:center;}
 
-.status-summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .75rem 1rem;
-  padding: .25rem 0;
-  margin: 0;
-  list-style: none;
-  align-items: center;
-}
 
-.status-summary li {
-  display: inline-flex;
-  align-items: center;
-  gap: .4rem;
-  white-space: nowrap;
-  font: 500 0.95rem/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-}
-
-.status-dot {
-  width: .65rem;
-  height: .65rem;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 20%, transparent);
-}
-
-/* pick whatever colors fit your theme */
-.status-missing         { color: #9b1c31; background: currentColor; }
-.status-endangered      { color: #c55000; background: currentColor; }
-.status-undergoal       { color: #c6a700; background: currentColor; }
-.status-stable          { color: #2e7d32; background: currentColor; }
-.status-overgoal        { color: #1976d2; background: currentColor; }
-.status-pending-delete  { color: #6d4c41; background: currentColor; }
-.status-ready-remove    { color: #455a64; background: currentColor; }
-
-.status-label { text-transform: none; }
-.status-count { font-variant-numeric: tabular-nums; }

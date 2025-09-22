@@ -120,7 +120,7 @@ def test_get_chart_csv_right_range():
     responses = [
     ]
     for id in ids:
-        responses.append(client.get(f"/charts?id={id}&host={MASTER_HOST}&port={MASTER_PORT}"))
+        responses.append(client.get(f"/api/cgicharts?id={id}&host={MASTER_HOST}&port={MASTER_PORT}"))
 
     for indx, response in enumerate(responses):
         assert response.status_code == 200

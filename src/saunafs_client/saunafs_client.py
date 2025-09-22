@@ -3,6 +3,7 @@ import struct
 import select
 import logging
 from typing import List, Tuple
+from operator import attrgetter
 from .models import (Mount,
                      Export,
                      MetadataServer,
@@ -194,7 +195,9 @@ class SaunaFSClient:
             payload,
             version=0
         )
-        return Server.get_list(buffer)
+        servers = Server.get_list(buffer)
+        servers.sort(key=attrgetter('hostname'))
+        return servers
 
     def get_disks(self) -> List[Disk]:
         allDisks = []
@@ -214,7 +217,7 @@ class SaunaFSClient:
 
     def get_metaloggers(self) -> List[Metalogger]:
         buffer = self.send_and_receive(MLOG_LIST)
-        return Metalogger.get_list(buffer)
+        return sorted(Metalogger.get_list(buffer), key=attrgetter('hostname'))
 
     def get_mounts(self) -> List[Mount]:
         extra_mount_info_buffer = self.send_and_receive(MOUNT_INFO_LIST)
@@ -312,4 +315,4 @@ class SaunaFSClient:
             server.status_from_buffer(buffer)
             server.hostname = self.get_hostname(server.ip_address, server.port)
 
-        return servers
+        return sorted(servers, key=attrgetter("hostname"))

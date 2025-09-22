@@ -244,13 +244,9 @@ class Disk(BaseModel):
 
             # TODO(Urmas): Update SFSCommunication.h because it's completely wrong
             # Most importantly, there are 60-bit offsets to these for minute, hour and days
-            print(len(entry_buffer))
             minute_stats = DiskStats.from_buffer(entry_buffer)
-            print(len(entry_buffer))
             hour_stats = DiskStats.from_buffer(entry_buffer)
-            print(len(entry_buffer))
             day_stats = DiskStats.from_buffer(entry_buffer)
-            print(len(entry_buffer))
 
             return cls(
                 path=path,

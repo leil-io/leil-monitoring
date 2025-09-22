@@ -22,6 +22,8 @@ function getCellValue(tr, idx) {
 	// examples it will handle: "652.3 MB/s", "17.7 MiB/s", "512 KiB", "123 B"
 	const bytesRe = /^([\d.]+)\s*([KMGTPE]?)(i?)B(?:\/s)?$/i;
 
+	const ipRe = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/i
+
 	// plain number with optional "/s" (e.g. "0.0/s")
 	const rateRe = /^([\d.]+)\s*(?:\/s)?$/i;
 
@@ -34,6 +36,11 @@ function getCellValue(tr, idx) {
 		const base = isBinary ? 1024 : 1000;
 		const factor = order > 0 ? Math.pow(base, order) : 1;
 		return value * factor; // always a number of bytes (or bytes/sec if original had "/s")
+	}
+
+	if (text.match(ipRe)) {
+		// TODO(Urmas): Sort by IP address ranges
+		return text;
 	}
 
 	m = text.match(rateRe);

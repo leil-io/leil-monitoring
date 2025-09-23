@@ -217,20 +217,13 @@ td.MENU {
 
 .chart-containers {
     width: 100%;
-    max-width: 1200px;
+    max-width: 90%;
     margin: 0 auto 20px auto;
     border-collapse: collapse;
     background-color: var(--table-bg);
     border-radius: 8px;
     overflow: auto;
     box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-}
-
-.chart-container {
-    position: relative;
-    width:80vw;
-    max-width: 900px;
-    margin: 0 auto 20px auto;
 }
 
 .chart-options {
@@ -294,6 +287,8 @@ td.MENU {
     opacity: 0;
     overflow: hidden;
     transition: max-height 0.4s ease, opacity 0.4s ease;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(56em, 1fr));
 }
 
 .chart-content.transition {
@@ -380,7 +375,7 @@ td.MENU {
     margin: 0;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 50em) {
     .kv { grid-template-columns: 1fr; }
     .kv > div { grid-template-columns: 1fr; }
     .kv dd { text-align: left; }

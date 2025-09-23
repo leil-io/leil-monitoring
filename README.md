@@ -24,12 +24,9 @@ This directory contains a modern rewrite of the SaunaFS CGI monitoring interface
 
 ### 1. Create a Virtual Environment
 
-It is highly recommended to run this application in a Python virtual environment.
+It is highly recommended to run this application in a Python virtual environment. From the root folder of the repository, run the following commands:
 
 ```bash
-# Navigate to this directory
-cd cgi-rewrite
-
 # Create the virtual environment
 python3 -m venv venv
 
@@ -47,11 +44,11 @@ pip install -r requirements.txt
 
 ## Running the Application (local)
 
-Once the dependencies are installed, you can run the application using `uvicorn`.
+After installing the dependencies, you can run either the `saunafs_api` or `saunafs_monitoring` application using `uvicorn`. For example, to start the monitoring tool (the process is similar for the API tool):
 
 ```bash
 # The --reload flag will automatically restart the server when you make code changes.
-uvicorn main:app --reload
+uvicorn --host 0.0.0.0 --reload --app-dir src saunafs_monitoring.main:app
 ```
 
 The application will be available at `http://127.0.0.1:8000`.

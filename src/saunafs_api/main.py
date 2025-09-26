@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+# saunafs_api: REST API to interact with SaunaFS
+# Copyright (C) 2025  Leil Storage OÜ
+##
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+##
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+##
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, Response, RedirectResponse
 import socket
@@ -21,7 +36,8 @@ SAUNAFS_API_HOST = os.getenv("SAUNAFS_API_HOST", "0.0.0.0")
 SAUNAFS_API_PORT = int(os.getenv("SAUNAFS_API_PORT", 8001))
 
 # Configure logging
-logging.basicConfig(level=SAUNAFS_API_LOGLEVEL, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=SAUNAFS_API_LOGLEVEL,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = FastAPI()
 
@@ -49,7 +65,8 @@ def get_client(masterhost: str, masterport: int) -> SaunaFSClient:
         if masterhost == "sfsmaster":
             masterhost = socket.gethostbyname(masterhost)
     except socket.gaierror:
-        raise HTTPException(status_code=404, detail=f"Master host not found: {masterhost}")
+        raise HTTPException(
+            status_code=404, detail=f"Master host not found: {masterhost}")
     return SaunaFSClient(master_host=masterhost, master_port=masterport)
 
 
@@ -162,7 +179,8 @@ async def get_chart(id: int, host: str = SAUNAFS_MASTER_HOST, port: int = SAUNAF
     except Exception as e:
         logging.error(f"Could not get charts {e}")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Could not get charts: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Could not get charts: {e}")
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
@@ -172,5 +190,6 @@ async def read_root():
 
 if __name__ == "__main__":
     import uvicorn
-    logging.log(logging.DEBUG, f"api host={SAUNAFS_API_HOST}, port={SAUNAFS_API_PORT}")
+    logging.log(logging.DEBUG,
+                f"api host={SAUNAFS_API_HOST}, port={SAUNAFS_API_PORT}")
     uvicorn.run(app, host=SAUNAFS_API_HOST, port=SAUNAFS_API_PORT)

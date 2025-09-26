@@ -1,3 +1,18 @@
+# saunafs_client: Python module to interact with SaunaFS
+# Copyright (C) 2025  Leil Storage OÜ
+##
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+##
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+##
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import struct
 from typing import TypeVar, Type, List
 
@@ -12,7 +27,8 @@ def unpack_from(format: str, buffer: bytearray) -> tuple:
     """Unpacks data from the buffer and removes it."""
     size = struct.calcsize(f">{format}")
     if len(buffer) < size:
-        raise DeserializationError(f"Buffer too short. Need {size} bytes, have {len(buffer)} for format '{format}'.")
+        raise DeserializationError(
+            f"Buffer too short. Need {size} bytes, have {len(buffer)} for format '{format}'.")
 
     value = struct.unpack_from(f">{format}", buffer)
     del buffer[:size]
@@ -33,7 +49,8 @@ def unpack_string(buffer: bytearray, legacy: bool = False) -> str:
     try:
         length = unpack_primitive("L", buffer)[0]
         if len(buffer) < length:
-            raise DeserializationError(f"Buffer too short for string. Need {length} bytes, have {len(buffer)}.")
+            raise DeserializationError(
+                f"Buffer too short for string. Need {length} bytes, have {len(buffer)}.")
         if legacy:
             # Legacy strings are not null-terminated
             value = buffer[:length].decode('utf-8')
@@ -56,7 +73,8 @@ def unpack_list(buffer: bytearray, model_class: Type[T]) -> List[T]:
     count, = unpack_primitive("L", buffer)
     for _ in range(count):
         if not hasattr(model_class, 'from_buffer'):
-            raise NotImplementedError(f"The class {model_class.__name__} must have a 'from_buffer' class method.")
+            raise NotImplementedError(
+                f"The class {model_class.__name__} must have a 'from_buffer' class method.")
         item = model_class.from_buffer(buffer)
         items.append(item)
     return items

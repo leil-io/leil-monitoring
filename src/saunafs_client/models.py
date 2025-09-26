@@ -1,3 +1,18 @@
+# saunafs_client: Python module to interact with SaunaFS
+# Copyright (C) 2025  Leil Storage OÜ
+##
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+##
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+##
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from __future__ import annotations
 from pydantic import BaseModel
 from typing import List, Optional, Dict
@@ -37,7 +52,8 @@ class SystemInfo(BaseModel):
                 all_copies=allcopies, regular_copies=tdcopies,
             )
         except Exception as e:
-            raise DeserializationError(f"Failed to deserialize SystemInfo: {e}")
+            raise DeserializationError(
+                f"Failed to deserialize SystemInfo: {e}")
 
 
 class Server(BaseModel):
@@ -73,7 +89,8 @@ class Server(BaseModel):
 
             # Unpack the label string
             if len(buffer) < label_length:
-                raise DeserializationError(f"Buffer too short for server label. Need {label_length}, have {len(buffer)}.")
+                raise DeserializationError(
+                    f"Buffer too short for server label. Need {label_length}, have {len(buffer)}.")
             label = buffer[:label_length - 1].decode('utf-8', errors='replace')
             del buffer[:label_length]
 
@@ -129,15 +146,18 @@ class DiskStats(BaseModel):
     @classmethod
     def from_buffer(cls, buffer: bytearray) -> Disk:
         try:
-            rbytes, wbytes, usecreadsum, usecwritesum, usecfsyncsum, = unpack_primitive("QQQQQ", buffer)
-            rops, wops, fsyncops, usecreadmax, usecwritemax, usecfsyncmax, = unpack_primitive("LLLLLL", buffer)
+            rbytes, wbytes, usecreadsum, usecwritesum, usecfsyncsum, = unpack_primitive(
+                "QQQQQ", buffer)
+            rops, wops, fsyncops, usecreadmax, usecwritemax, usecfsyncmax, = unpack_primitive(
+                "LLLLLL", buffer)
 
             if usecreadsum > 0:
                 bytes_read_persecond = rbytes * 1_000_000 / usecreadsum
             else:
                 bytes_read_persecond = 0
             if usecwritesum + usecfsyncsum > 0:
-                bytes_written_persecond = wbytes * 1_000_000 / (usecwritesum + usecfsyncsum)
+                bytes_written_persecond = wbytes * \
+                    1_000_000 / (usecwritesum + usecfsyncsum)
             else:
                 bytes_written_persecond = 0
 
@@ -207,7 +227,8 @@ class Disk(BaseModel):
             entry_size, = unpack_primitive("H", buffer[:2])
             del buffer[:2]
             if len(buffer) < entry_size:
-                raise DeserializationError(f"Buffer too short for disk entry. Need {entry_size}, have {len(buffer)}.")
+                raise DeserializationError(
+                    f"Buffer too short for disk entry. Need {entry_size}, have {len(buffer)}.")
 
             entry_buffer = bytearray(buffer[:entry_size])
             del buffer[:entry_size]
@@ -295,7 +316,8 @@ class Metalogger(BaseModel):
                 version=version,
             )
         except DeserializationError as e:
-            raise DeserializationError(f"Failed to deserialize Metalogger: {e}")
+            raise DeserializationError(
+                f"Failed to deserialize Metalogger: {e}")
 
 
 class OperationStats(BaseModel):
@@ -396,29 +418,34 @@ class Mount(BaseModel):
     @classmethod
     def from_buffer(cls, buffer: bytearray, stats_count: int) -> Mount:
         try:
-            session_id, ip1, ip2, ip3, ip4, v1, v2, v3 = unpack_from("LBBBBHBB", buffer)
+            session_id, ip1, ip2, ip3, ip4, v1, v2, v3 = unpack_from(
+                "LBBBBHBB", buffer)
 
             root_path = unpack_string(buffer, legacy=True)
             mounted_path = unpack_string(buffer, legacy=True)
 
-            sesflags, rootuid, rootgid, mapalluid, mapallgid = unpack_from("BLLLL", buffer)
+            sesflags, rootuid, rootgid, mapalluid, mapallgid = unpack_from(
+                "BLLLL", buffer)
 
             # The vmode we sent means these fields should be present
-            mingoal, maxgoal, mintrashtime, maxtrashtime = unpack_from("BBLL", buffer)
+            mingoal, maxgoal, mintrashtime, maxtrashtime = unpack_from(
+                "BBLL", buffer)
 
             current_op_stats_list = []
             for _ in range(stats_count):
                 stat, = unpack_from("L", buffer)
                 current_op_stats_list.append(stat)
 
-            current_op_stats = OperationStats.get_from_list(current_op_stats_list)
+            current_op_stats = OperationStats.get_from_list(
+                current_op_stats_list)
 
             last_hour_op_stats_list = []
             for _ in range(stats_count):
                 stat, = unpack_from("L", buffer)
                 last_hour_op_stats_list.append(stat)
 
-            last_hour_op_stats = OperationStats.get_from_list(last_hour_op_stats_list)
+            last_hour_op_stats = OperationStats.get_from_list(
+                last_hour_op_stats_list)
 
             ip_address = f"{ip1}.{ip2}.{ip3}.{ip4}"
             try:
@@ -486,14 +513,16 @@ class Export(BaseModel):
     @classmethod
     def from_buffer(cls, buffer: bytearray) -> Export:
         try:
-            fip1, fip2, fip3, fip4, tip1, tip2, tip3, tip4 = unpack_from("BBBBBBBB", buffer)
+            fip1, fip2, fip3, fip4, tip1, tip2, tip3, tip4 = unpack_from(
+                "BBBBBBBB", buffer)
 
             path = unpack_string(buffer, True)
 
             # This part of the protocol seems to have many versions.
             # This is a simplified parser for a common version.
             if len(buffer) >= 22:
-                v1, v2, v3, exportflags, sesflags, rootuid, rootgid, mapalluid, mapallgid = unpack_from("HBBBBLLLL", buffer)
+                v1, v2, v3, exportflags, sesflags, rootuid, rootgid, mapalluid, mapallgid = unpack_from(
+                    "HBBBBLLLL", buffer)
             else:
                 raise DeserializationError("Unsupported master version")
 
@@ -568,10 +597,12 @@ class MetadataServer(BaseModel):
 
             )
         except DeserializationError as e:
-            raise DeserializationError(f"Failed to deserialize MetadataServer: {e}")
+            raise DeserializationError(
+                f"Failed to deserialize MetadataServer: {e}")
 
     def status_from_buffer(self, buffer: bytearray):
-        _, status, self.metadata_version = struct.unpack(">LBQ", buffer)  # First is msgid (useless)
+        _, status, self.metadata_version = struct.unpack(
+            ">LBQ", buffer)  # First is msgid (useless)
         logging.debug(f"server {self.hostname} status: {status}")
         if status == 1:
             self.personality = "master"
@@ -601,7 +632,8 @@ class FsCheckInfo(BaseModel):
     @classmethod
     def from_buffer(cls, buffer: bytearray) -> FsCheckInfo:
         try:
-            loop_start, loop_end, files, ug_files, m_files, chunks, ug_chunks, m_chunks = unpack_from("LLLLLLLL", buffer)
+            loop_start, loop_end, files, ug_files, m_files, chunks, ug_chunks, m_chunks = unpack_from(
+                "LLLLLLLL", buffer)
             message = unpack_string(buffer, True)
             return cls(
                 loop_start=loop_start,
@@ -615,7 +647,8 @@ class FsCheckInfo(BaseModel):
                 message=message
             )
         except DeserializationError as e:
-            raise DeserializationError(f"Failed to deserialize FsCheckInfo: {e}")
+            raise DeserializationError(
+                f"Failed to deserialize FsCheckInfo: {e}")
 
 
 class ChunkOperationsInfo(BaseModel):
@@ -636,7 +669,8 @@ class ChunkOperationsInfo(BaseModel):
     @classmethod
     def from_buffer(cls, buffer: bytearray) -> ChunkOperationsInfo:
         try:
-            loop_start, loop_end, del_invalid, n_del_invalid, del_unused, n_del_unused, del_dclean, n_del_dclean, del_ogoal, n_del_ogoal, rep_ugoal, n_rep_ugoal, rebalance = struct.unpack(">LLLLLLLLLLLLL", buffer[:52])
+            loop_start, loop_end, del_invalid, n_del_invalid, del_unused, n_del_unused, del_dclean, n_del_dclean, del_ogoal, n_del_ogoal, rep_ugoal, n_rep_ugoal, rebalance = struct.unpack(
+                ">LLLLLLLLLLLLL", buffer[:52])
 
             return cls(
                 loop_start=loop_start,
@@ -654,7 +688,8 @@ class ChunkOperationsInfo(BaseModel):
                 rebalance=rebalance
             )
         except DeserializationError as e:
-            raise DeserializationError(f"Failed to deserialize ChunkOperationsInfo: {e}")
+            raise DeserializationError(
+                f"Failed to deserialize ChunkOperationsInfo: {e}")
 
 
 class Goal(BaseModel):
@@ -741,7 +776,8 @@ class ChunkHealth(BaseModel):
             )
 
         except DeserializationError as e:
-            raise DeserializationError(f"Failed to deserialize ChunkOperationsInfo: {e}")
+            raise DeserializationError(
+                f"Failed to deserialize ChunkOperationsInfo: {e}")
 
 
 class ChunkMatrix(BaseModel):

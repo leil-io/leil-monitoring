@@ -1,3 +1,18 @@
+# saunafs_client: Python module to interact with SaunaFS
+# Copyright (C) 2025  Leil Storage OÜ
+##
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+##
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+##
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import socket
 import struct
 import select
@@ -49,11 +64,13 @@ SAU_CSERV_LIST = (SAU_CLTOMA_CSERV_LIST, SAU_MATOCL_CSERV_LIST)
 
 SAU_CLTOMA_METADATASERVERS_LIST = 1522
 SAU_MATOCL_METADATASERVERS_LIST = 1523
-METADATASERVERS_LIST = (SAU_CLTOMA_METADATASERVERS_LIST, SAU_MATOCL_METADATASERVERS_LIST)
+METADATASERVERS_LIST = (SAU_CLTOMA_METADATASERVERS_LIST,
+                        SAU_MATOCL_METADATASERVERS_LIST)
 
 SAU_CLTOMA_METADATASERVER_STATUS = 1545
 SAU_MATOCL_METADATASERVER_STATUS = 1546
-METADATASERVER_STATUS = (SAU_CLTOMA_METADATASERVER_STATUS, SAU_MATOCL_METADATASERVER_STATUS)
+METADATASERVER_STATUS = (SAU_CLTOMA_METADATASERVER_STATUS,
+                         SAU_MATOCL_METADATASERVER_STATUS)
 
 CLTOCS_HDD_LIST_V2 = (PROTO_BASE + 600)
 MATOCL_HDD_LIST_V2 = (PROTO_BASE + 601)
@@ -137,11 +154,13 @@ class SaunaFSClient:
         if isV2:
             length = 4 + len(payload)
             request = struct.pack(">LLL", cmd, length, version) + payload
-            logging.debug(f"Sending V2 request: cmd={cmd}, length={length}, version={version}, payload={payload}")
+            logging.debug(
+                f"Sending V2 request: cmd={cmd}, length={length}, version={version}, payload={payload}")
         else:
             length = len(payload)
             request = struct.pack(">LL", cmd, length) + payload
-            logging.debug(f"Sending V1 request: cmd={cmd}, length={length}, payload={payload}")
+            logging.debug(
+                f"Sending V1 request: cmd={cmd}, length={length}, payload={payload}")
 
         with socket.socket() as s:
             s.settimeout(5)
@@ -152,15 +171,18 @@ class SaunaFSClient:
             header = self._my_recv(s, 8)
 
             respCmd, respLength = struct.unpack(">LL", header)
-            logging.debug(f"Header received: cmd={respCmd}, length={respLength}")
+            logging.debug(
+                f"Header received: cmd={respCmd}, length={respLength}")
 
             if respCmd != expected:
-                raise RuntimeError(f"Received wrong response command: {respCmd}, expected {expected}")
+                raise RuntimeError(
+                    f"Received wrong response command: {respCmd}, expected {expected}")
 
             respPayload = self._my_recv(s, respLength)
             if isV2:
                 if len(respPayload) < 4:
-                    raise ValueError("V2 response payload is too short for version field")
+                    raise ValueError(
+                        "V2 response payload is too short for version field")
                 respVersion = struct.unpack(">L", respPayload[:4])[0]
                 logging.debug(f"V2 response version: {respVersion}")
                 return bytearray(respPayload[4:])
@@ -311,7 +333,8 @@ class SaunaFSClient:
                 host=server.ip_address,
                 port=server.port,
             )
-            logging.debug(f"metadata server status: server {server.hostname}, buffer {buffer}")
+            logging.debug(
+                f"metadata server status: server {server.hostname}, buffer {buffer}")
             server.status_from_buffer(buffer)
             server.hostname = self.get_hostname(server.ip_address, server.port)
 

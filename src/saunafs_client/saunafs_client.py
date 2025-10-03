@@ -125,7 +125,7 @@ class SaunaFSClient:
             msg += chunk
         return msg
 
-    def send_and_receive(self, msg: Tuple[int, int], payload: bytes = b'', version: int = 0, host: str = "", port: str = "") -> bytearray:
+    def send_and_receive(self, msg: Tuple[int, int], payload: bytes = b'', version: int = 0, host: str = "", port: int = 9421) -> bytearray:
         if not host:
             host = self.master_host
         if not port:
@@ -258,12 +258,12 @@ class SaunaFSClient:
         buffer = self.send_and_receive(CHUNKS_HEALTH, b'\x00')
         return ChunkHealth.from_buffer(buffer)
 
-    def get_hostname(self, host, port) -> str:
+    def get_hostname(self, host: str, port: int) -> str:
         # I cannot believe this is an actual protocol message...
         buffer = self.send_and_receive(METADATA_HOSTNAME, host=host, port=port)
         return unpack_string(buffer)
 
-    def remove_chunkserver(self, ip: str, port: int) -> str:
+    def remove_chunkserver(self, ip: str, port: int) -> None:
         ip_parts = list(map(int, ip.split(".")))
         if len(ip_parts) != 4:
             raise RuntimeError(f"Invalid ip: {ip}")
@@ -273,8 +273,8 @@ class SaunaFSClient:
         if len(buffer) != 0:
             raise RuntimeError("Buffer not empty for CSSERV_REMOVESERV!")
 
-    def get_metadata_servers(self) -> List[Goal]:
-        servers = []
+    def get_metadata_servers(self) -> list[MetadataServer]:
+        servers: list[MetadataServer] = []
         master_host = self.master_host
         master_ip = socket.gethostbyname(self.master_host)
         master_host = self.get_hostname(self.master_host, self.master_port)
@@ -303,7 +303,7 @@ class SaunaFSClient:
         )
         servers.extend(MetadataServer.get_list(buffer))
 
-        for i, server in enumerate(servers):
+        for _, server in enumerate(servers, 0):
             payload = struct.pack(">L", 0)
             buffer = self.send_and_receive(
                 METADATASERVER_STATUS,
@@ -315,4 +315,4 @@ class SaunaFSClient:
             server.status_from_buffer(buffer)
             server.hostname = self.get_hostname(server.ip_address, server.port)
 
-        return sorted(servers, key=attrgetter("hostname"))
+        return [servers[0]] + sorted(servers[1:], key=attrgetter("hostname"))

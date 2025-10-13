@@ -1,3 +1,3 @@
-from .saunafs_client import SaunaFSClient
+from .saunafs_client import SaunaFSClient, SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT
 
-__all__ = ["SaunaFSClient"]
+__all__ = ["SaunaFSClient", "SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT"]

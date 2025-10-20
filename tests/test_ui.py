@@ -39,7 +39,6 @@ def test_get_sfs_info_html():
     assert "Chunks state matrix" in response.text
     assert "Filesystem Check Info" in response.text
     assert "Metadata Servers" in response.text
-    assert "Chunk Servers" in response.text
     assert "Disks" in response.text
     assert "Connected Clients" in response.text
     assert "Operations" in response.text

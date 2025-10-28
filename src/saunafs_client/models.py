@@ -297,6 +297,41 @@ class Metalogger(BaseModel):
         except DeserializationError as e:
             raise DeserializationError(f"Failed to deserialize Metalogger: {e}")
 
+class INotifier(BaseModel):
+    id: int
+    hostname: str
+    ip_address: str
+    version: str
+
+    @staticmethod
+    def get_list(buffer: bytearray) -> List[INotifier]:
+        all_inotifiers = []
+        count, = unpack_from("L", buffer)
+        while count > 0:
+            all_inotifiers.append(INotifier.from_buffer(buffer))
+            all_inotifiers[-1].id = len(all_inotifiers)
+            count -= 1
+        return all_inotifiers
+
+    @classmethod
+    def from_buffer(cls, buffer: bytearray) -> INotifier:
+        try:
+            ip1, ip2, ip3, ip4, v1, v2, v3 = unpack_from("BBBBHBB", buffer)
+            ip_address = f"{ip1}.{ip2}.{ip3}.{ip4}"
+            version = f"{v1}.{v2}.{v3}"
+            try:
+                hostname = socket.gethostbyaddr(ip_address)[0]
+            except socket.herror:
+                hostname = "(unresolved)"
+
+            return cls(
+                id=0,  # Caller sets this
+                hostname=hostname,
+                ip_address=ip_address,
+                version=version,
+            )
+        except DeserializationError as e:
+            raise DeserializationError(f"Failed to deserialize INotifier: {e}")
 
 class OperationStats(BaseModel):
     statfs: int

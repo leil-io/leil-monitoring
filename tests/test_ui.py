@@ -1,7 +1,8 @@
 from fastapi.testclient import TestClient
 import pytest
-from saunafs_monitoring.main import app
+from saunafs_monitoring.main import app, get_client
 from saunafs_client.models import SystemInfo, ChunkHealth, Goal, MetadataServer, Mount
+from saunafs_client import SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT
 
 client = TestClient(app)
 
@@ -9,6 +10,7 @@ client = TestClient(app)
 MASTER_HOST = "192.168.50.189"
 MASTER_PORT = "9421"
 
+master_version = get_client(MASTER_HOST, MASTER_PORT).master_version
 
 def test_read_root_redirects():
     """
@@ -39,6 +41,8 @@ def test_get_sfs_info_html():
     assert "Chunks state matrix" in response.text
     assert "Filesystem Check Info" in response.text
     assert "Metadata Servers" in response.text
+    if master_version >= SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT:
+        assert "INotifier Loggers" in response.text
     assert "Disks" in response.text
     assert "Connected Clients" in response.text
     assert "Operations" in response.text

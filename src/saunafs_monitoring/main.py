@@ -10,7 +10,7 @@ import os
 from typing import List
 from datetime import datetime
 import pathlib
-from saunafs_client import SaunaFSClient
+from saunafs_client import SaunaFSClient, SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT
 from saunafs_client.models import (
     OperationStats,
     ChunkMappedHealth
@@ -116,6 +116,7 @@ async def get_sfs_info(request: Request, masterhost: str = SAUNAFS_MASTER_HOST,
         serversData = client.get_servers() if "CS" in activeSections or "CC" in activeSections else None
         disksData = client.get_disks() if "HD" in activeSections else None
         metaloggersData = client.get_metaloggers() if "CS" in activeSections else None
+        inotifiersData = client.get_inotifiers() if "CS" in activeSections and client.master_version >= SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT else None
         mountsData = client.get_mounts() if "MS" in activeSections else None
         exportsData = client.get_exports() if "EX" in activeSections else None
         metadataServersData = client.get_metadata_servers() if "CS" in activeSections else None
@@ -141,7 +142,9 @@ async def get_sfs_info(request: Request, masterhost: str = SAUNAFS_MASTER_HOST,
             "request": request, "mastername": mastername, "masterhost": masterhost,
             "masterport": masterport, "sections": activeSections,
             "info": infoData, "servers": serversData, "disks": disksData,
-            "metaloggers": metaloggersData, "mounts": mountsData, "exports": exportsData,
+            "metaloggers": metaloggersData,
+            "inotifiers": inotifiersData, "masterVersion": client.master_version,
+            "mounts": mountsData, "exports": exportsData,
             "metadata_servers": metadataServersData,
             "fs_check_info": fsCheckInfoData,
             "chunk_operations_info": chunkOperationsInfoData,

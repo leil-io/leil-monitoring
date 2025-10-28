@@ -11,6 +11,7 @@ from .models import (Mount,
                      ChunkOperationsInfo,
                      ChunkMatrix,
                      Metalogger,
+                     INotifier,
                      Server,
                      Disk,
                      SystemInfo,
@@ -50,6 +51,10 @@ SAU_CSERV_LIST = (SAU_CLTOMA_CSERV_LIST, SAU_MATOCL_CSERV_LIST)
 SAU_CLTOMA_METADATASERVERS_LIST = 1522
 SAU_MATOCL_METADATASERVERS_LIST = 1523
 METADATASERVERS_LIST = (SAU_CLTOMA_METADATASERVERS_LIST, SAU_MATOCL_METADATASERVERS_LIST)
+
+SAU_CLTOMA_INOTIFIER_LIST = 1524
+SAU_MATOCL_INOTIFIER_LIST = 1525
+INOTIFIERS_LIST = (SAU_CLTOMA_INOTIFIER_LIST, SAU_MATOCL_INOTIFIER_LIST)
 
 SAU_CLTOMA_METADATASERVER_STATUS = 1545
 SAU_MATOCL_METADATASERVER_STATUS = 1546
@@ -95,6 +100,7 @@ METADATA_HOSTNAME = (SAU_CLTOMA_HOSTNAME, SAU_MATOCL_HOSTNAME)
 CLTOMA_CSSERV_REMOVESERV = (PROTO_BASE + 524)
 MATOCL_CSSERV_REMOVESERV = (PROTO_BASE + 525)
 CSSERV_REMOVESERV = (CLTOMA_CSSERV_REMOVESERV, MATOCL_CSSERV_REMOVESERV)
+SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT = (5, 4, 0)
 
 
 class SaunaFSClient:
@@ -218,6 +224,12 @@ class SaunaFSClient:
     def get_metaloggers(self) -> List[Metalogger]:
         buffer = self.send_and_receive(MLOG_LIST)
         return sorted(Metalogger.get_list(buffer), key=attrgetter('hostname'))
+
+    def get_inotifiers(self) -> List[INotifier]:
+        if self.master_version < SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT:
+            raise RuntimeError("INotifiers are not supported in SaunaFS versions below {}".join(map(str, SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT)))
+        buffer = self.send_and_receive(INOTIFIERS_LIST)
+        return sorted(INotifier.get_list(buffer), key=attrgetter('hostname'))
 
     def get_mounts(self) -> List[Mount]:
         extra_mount_info_buffer = self.send_and_receive(MOUNT_INFO_LIST)

@@ -11,7 +11,7 @@ from saunafs_client import SaunaFSClient
 from saunafs_client.models import (
     SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo,
     ChunkOperationsInfo, ChunkMatrix, Goal, ChunkHealth,
-    ChunkMappedHealth
+    ChunkMappedHealth, INotifier
 )
 
 SAUNAFS_MASTER_HOST = os.getenv("SAUNAFS_MASTER_HOST", "sfsmaster")
@@ -102,6 +102,10 @@ async def api_get_metadata_servers(masterhost: str = SAUNAFS_MASTER_HOST, master
     client = get_client(masterhost, masterport)
     return client.get_metadata_servers()
 
+@app.get("/api/inotifiers", response_model=List[INotifier])
+async def api_get_inotifiers(masterhost: str = SAUNAFS_MASTER_HOST, masterport: int = SAUNAFS_MASTER_PORT):
+    client = get_client(masterhost, masterport)
+    return client.get_inotifiers()
 
 @app.get("/api/fscheckinfo", response_model=FsCheckInfo)
 async def api_get_fs_check_info(masterhost: str = SAUNAFS_MASTER_HOST, masterport: int = SAUNAFS_MASTER_PORT):

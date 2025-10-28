@@ -138,4 +138,29 @@
 </table>
 {% endif %}
 
+<!-- INotifiers Table -->
+{% if inotifiers %}
+<table class="FR sortable" cellspacing="0" caption="INotifier Loggers">
+        <thead>
+                <tr><th colspan="4">INotifier Loggers</th></tr>
+                <tr>
+                        <th>#</th>
+                        <th>Host</th>
+                        <th>IP</th>
+                        <th>Version</th>
+                </tr>
+        </thead>
+        <tbody>
+                {% for logger in inotifiers %}
+                <tr class="C{{ loop.index % 2 + 1 }}">
+                        <td align="right">{{ logger.id }}</td>
+                        <td align="left">{{ logger.hostname }}</td>
+                        <td align="center">{{ logger.ip_address }}</td>
+                        <td align="center">{{ logger.version }}</td>
+                </tr>
+                {% endfor %}
+        </tbody>
+</table>
+{% endif %}
+
 {% endif %}

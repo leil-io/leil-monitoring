@@ -2,15 +2,14 @@
 remove-all-unused-imports = true
 
 [build-system]
-requires = ["hatchling >= 1.26"]
-build-backend = "hatchling.build"
-# packages = ["src/saunafs-monitoring"]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "saunafs-monitoring"
 version = "1.0.0"
 authors = [
-  { name="SaunaFS team", email="support@saunafs.com" },
+    { name="SaunaFS team", email="support@saunafs.com" },
 ]
 description = "Monitoring web application for SaunaFS"
 readme = "README.md"
@@ -19,15 +18,42 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
-license = "MIT" # Placeholder, not actual license
+license = "GPL-3.0-only" # Placeholder, not actual license
 license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "jinja2",
+    "httpx",
+]
 
+[project.optional-dependencies]
+dev = [
+    "black",
+    "flake8",
+    "mypy"
+]
+test = [
+    "pytest",
+    "pytest-cov",
+    "requests-mock",
+]
 
 [project.urls]
-Homepage = "https://leil.io"
+Homepage = "https://saunafs.com"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["saunafs_*"]
+
+[tool.setuptools.package-data]
+saunafs_monitoring = [
+    "static/*",
+    "templates/*",
+    "*.html",
+    "*.css",
+    "*.js",
+]
 
 [tool.jinja-lsp]
 hide_undefined = false

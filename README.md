@@ -101,10 +101,10 @@ docker rm temp
 
 ```shell
 # from .deb
-sudo dpkg -i ./dist/saunafs-monitoring_1.0.0-python3.13_all.deb
+sudo dpkg -i ./dist/saunafs-monitoring_*.deb
 
 # from .whl
-pip install ./dist/saunafs_monitoring-1.0.0-py3-none-any.whl
+pip install ./dist/saunafs_monitoring-*.whl
 ```
 
 ### Run image with package deployed
@@ -125,7 +125,7 @@ docker run --name saunafs-monitoring saunafs-monitoring:runtime
 ```shell
 # For deb-based image (Ubuntu base)
 docker build \
-    -t saunafs-monitoring:runtime  \
+    -t saunafs-monitoring:runtime-deb  \
     --target runtime-deb \
     --file Dockerfile.build \
     .
@@ -142,7 +142,7 @@ docker run -it saunafs-monitoring:runtime \
     /usr/local/bin/python3 -m saunafs_api.main
 
 # For runtime-deb target (Ubuntu base)
-docker run -it saunafs-monitoring:runtime \
+docker run -it saunafs-monitoring:runtime-deb \
     /usr/bin/python3 -m saunafs_api.main
 ```
 

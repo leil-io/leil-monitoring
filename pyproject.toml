@@ -50,9 +50,6 @@ include = ["saunafs_*"]
 saunafs_monitoring = [
     "static/*",
     "templates/*",
-    "*.html",
-    "*.css",
-    "*.js",
 ]
 
 [tool.jinja-lsp]

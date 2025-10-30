@@ -8,19 +8,24 @@ ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH=/opt/venv/bin:${PATH}
 
-RUN set -e; \
+# Cache mounts only used in stages with apt operations to optimize build performance
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -e; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         software-properties-common; \
     add-apt-repository ppa:deadsnakes/ppa; \
-    apt-get update; \
+    apt-get update
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -e; \
     apt-get install -y --no-install-recommends \
         python${PYTHON_VERSION} \
         python${PYTHON_VERSION}-venv \
-    ;\
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/*; \
+    ; \
     python${PYTHON_VERSION} -m venv /opt/venv
 
 FROM base AS builder-wheel
@@ -28,20 +33,18 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV VIRTUAL_ENV=/opt/venv
 ENV PATH=/opt/venv/bin:${PATH}
-RUN set -e; \
-    apt-get update; \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -e; \
     apt-get install -y --no-install-recommends \
         build-essential \
     ; \
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/*; \
     python${PYTHON_VERSION} -m pip install --no-cache-dir \
         build \
         setuptools \
         tomli \
         wheel \
-    ; \
-    rm -rf /tmp/* /var/tmp/*
+    ;
 
 WORKDIR /workspace
 
@@ -58,15 +61,14 @@ RUN set -e; \
 FROM builder-wheel AS builder-deb
 
 COPY ./utils/extract_pyproject.py ./utils/extract_pyproject.py
-RUN set -e; \
-    apt-get update; \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -e; \
     apt-get install -y --no-install-recommends \
         ruby \
         ruby-dev \
     ; \
     gem install fpm; \
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/*; \
     # Install wheel with no dependencies for fpm
     pip install --prefix /tmp/install --no-cache-dir --no-deps /packages/*.whl; \
     ls -hAlF /tmp/install/lib/python${PYTHON_VERSION}; \
@@ -91,11 +93,10 @@ RUN set -e; \
 FROM base AS runtime-deb
 COPY --from=builder-deb /packages /packages
 WORKDIR /app
-RUN set -e; \
-    apt-get update; \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    set -e; \
     dpkg -i /packages/*.deb || apt-get -y install -f; \
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/*
 CMD ["/usr/bin/python3", "-m", "saunafs_monitoring.main"]
 
 FROM python:${PYTHON_VERSION}-slim AS runtime

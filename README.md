@@ -77,7 +77,7 @@ In addition to the legacy UI, this application also exposes a modern REST API. T
 
 ## Package Distribution
 
-This project now supports package distribution via:
+This project supports package distribution via:
 
 ### Building Packages
 
@@ -87,10 +87,26 @@ docker build \
     --target runtime-deb \
     --file Dockerfile.build \
     .
+# Generic way, once you have the image
 docker create --name temp saunafs-monitoring:runtime-deb
 docker cp temp:/packages ./dist/
 docker rm temp
 ```
+
+#### Alternative: Direct Artifact Extraction
+
+For simpler use cases where you only need the built packages/files without a runnable container, use the `packages` target:
+
+```shell
+docker build \
+    --tag saunafs-monitoring:packages \
+    --target packages \
+    --output ./dist \
+    --file Dockerfile.build \
+    .
+```
+
+The packages will be available in the `dist` folder.
 
 ### Available formats:
 

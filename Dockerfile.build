@@ -90,6 +90,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     /tmp/install/lib/python${PYTHON_VERSION}/site-packages/=/usr/lib/python3/dist-packages/; \
     mv *.deb /packages/
 
+FROM scratch AS packages
+COPY --from=builder-deb /packages/*.deb /
+COPY --from=builder-wheel /packages/*.whl /
+
 FROM base AS runtime-deb
 COPY --from=builder-deb /packages /packages
 WORKDIR /app

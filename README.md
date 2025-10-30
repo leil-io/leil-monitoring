@@ -16,7 +16,9 @@
 - [x] Add CD pipeline
 - [ ] Do some more styling (arrows on chart etc.)
 - [ ] Add switch between old and new theme (optional)
-- [ ] Add deb packaging (Absolutely optional)
+- [x] Add deb packaging (Absolutely optional)
+- [x] Add wheel packaging (Absolutely optional)
+- [ ] Add package delivery (Absolutely optional)
 
 This directory contains a modern rewrite of the SaunaFS CGI monitoring interface using the FastAPI web framework.
 
@@ -72,3 +74,96 @@ For developers, you may use run-dev.sh script for quick iteration
 ## API
 
 In addition to the legacy UI, this application also exposes a modern REST API. The interactive API documentation (provided by Swagger UI) is available at `http://127.0.0.1:8000/docs`.
+
+## Package Distribution
+
+This project supports package distribution via:
+
+### Building Packages
+
+```shell
+docker build \
+    -t saunafs-monitoring:runtime-deb  \
+    --target runtime-deb \
+    --file Dockerfile.build \
+    .
+# Generic way, once you have the image
+docker create --name temp saunafs-monitoring:runtime-deb
+docker cp temp:/packages ./dist/
+docker rm temp
+```
+
+#### Alternative: Direct Artifact Extraction
+
+For simpler use cases where you only need the built packages/files without a runnable container, use the `packages` target:
+
+```shell
+docker build \
+    --tag saunafs-monitoring:packages \
+    --target packages \
+    --output ./dist \
+    --file Dockerfile.build \
+    .
+```
+
+The packages will be available in the `dist` folder.
+
+### Available formats:
+
+- `.deb` - System package (Ubuntu/Debian)
+- `.whl` - Python wheel
+
+### Installation from packages
+
+```shell
+# from .deb
+sudo dpkg -i ./dist/saunafs-monitoring_*.deb
+
+# from .whl
+pip install ./dist/saunafs_monitoring-*.whl
+```
+
+### Run image with package deployed
+
+You might build with `--target runtime` for a **python** image with the `wheel` package installed.  
+If you prefer to use the **ubuntu** image with `deb` package, use `--target runtime-deb`.
+
+```shell
+# For wheel-based image (Python base)
+docker build \
+    -t saunafs-monitoring:runtime  \
+    --target runtime \
+    --file Dockerfile.build \
+    .
+docker run --name saunafs-monitoring saunafs-monitoring:runtime
+```
+
+```shell
+# For deb-based image (Ubuntu base)
+docker build \
+    -t saunafs-monitoring:runtime-deb  \
+    --target runtime-deb \
+    --file Dockerfile.build \
+    .
+docker run --name saunafs-monitoring saunafs-monitoring:runtime
+```
+
+### Image customization
+
+You might want to customize the image to run a different module (e.g. `saunafs_api` instead of `saunafs_monitoring`). You can do this by passing a different command at runtime:
+
+```shell
+#For runtime target (Python base)
+docker run -it saunafs-monitoring:runtime \
+    /usr/local/bin/python3 -m saunafs_api.main
+
+# For runtime-deb target (Ubuntu base)
+docker run -it saunafs-monitoring:runtime-deb \
+    /usr/bin/python3 -m saunafs_api.main
+```
+
+The default command is `/usr/local/bin/python3 -m saunafs_monitoring.main` for the `runtime` target.
+
+The default command is `/usr/bin/python3 -m saunafs_monitoring.main` for the `runtime-deb` target.
+
+Notice that the python path is different between the two targets.

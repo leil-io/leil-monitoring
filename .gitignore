@@ -1,6 +1,17 @@
 __pycache__
-venv/*
-.pdbrc
-build/*
-*.deb
+## Local Environment
 .env
+venv/*
+
+## Packages/build cache
+.pdbrc
+*.deb
+*.whl
+*.egg-info/
+/build/*
+/dist/*
+/output/*
+
+## IDE
+/.idea/*
+/.vscode/*

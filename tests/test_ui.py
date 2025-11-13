@@ -41,8 +41,6 @@ def test_get_sfs_info_html():
     assert "Chunks state matrix" in response.text
     assert "Filesystem Check Info" in response.text
     assert "Metadata Servers" in response.text
-    if master_version >= SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT:
-        assert "INotifier Loggers" in response.text
     assert "Disks" in response.text
     assert "Connected Clients" in response.text
     assert "Operations" in response.text

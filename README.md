@@ -1,28 +1,6 @@
-# SaunaFS CGI Rewrite (WIP)
+# SaunaFS Monitoring
 
-## TODO:
-
-- [x] Get goal definitions
-- [x] Get chunk information
-- [x] Get charts for master
-- [x] Add tabs
-- [x] Get charts for chunkservers
-- [x] Add metalogger list
-- [x] Add CI pipeline
-- [x] Add chunkserver removal
-- [x] Add disk scanning progress
-- [x] Add legend to matrix table
-- [x] Add missing stats for disks (Average block size etc.)
-- [x] Add CD pipeline
-- [ ] Do some more styling (arrows on chart etc.)
-- [ ] Add switch between old and new theme (optional)
-- [x] Add deb packaging (Absolutely optional)
-- [x] Add wheel packaging (Absolutely optional)
-- [ ] Add package delivery (Absolutely optional)
-
-This directory contains a modern rewrite of the SaunaFS CGI monitoring interface using the FastAPI web framework.
-
-## Setup and Installation (local)
+## Setup and Installation (local/venv)
 
 ### 1. Create a Virtual Environment
 

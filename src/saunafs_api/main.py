@@ -23,7 +23,7 @@ from typing import List
 from datetime import datetime
 from saunafs_client import SaunaFSClient
 from saunafs_client.models import (
-    SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo,
+    Metalogger, SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo,
     ChunkOperationsInfo, ChunkMatrix, Goal, ChunkHealth,
     ChunkMappedHealth, INotifier
 )
@@ -143,6 +143,11 @@ async def api_get_goals(masterhost: str = SAUNAFS_MASTER_HOST, masterport: int =
 async def api_get_chunk_matrix(masterhost: str = SAUNAFS_MASTER_HOST, masterport: int = SAUNAFS_MASTER_PORT):
     client = get_client(masterhost, masterport)
     return client.get_chunk_matrix()
+
+@app.get("/api/metaloggers", response_model=List[Metalogger])
+async def api_get_metaloggers(masterhost: str = SAUNAFS_MASTER_HOST, masterport: int = SAUNAFS_MASTER_PORT):
+    client = get_client(masterhost, masterport)
+    return client.get_metaloggers()
 
 
 @app.get("/api/cgicharts")

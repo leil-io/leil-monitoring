@@ -19,7 +19,7 @@ from fastapi.testclient import TestClient
 import pytest
 import csv
 from saunafs_api.main import app
-from saunafs_client.models import SystemInfo, ChunkHealth, Goal, MetadataServer, Mount
+from saunafs_client.models import Metalogger, SystemInfo, ChunkHealth, Goal, MetadataServer, Mount
 
 client = TestClient(app)
 
@@ -120,6 +120,20 @@ def test_get_mounts():
     # Validate the response against the Pydantic model
     mounts = [Mount.model_validate(mount) for mount in response.json()]
     assert all(isinstance(mount, Mount) for mount in mounts)
+
+@pytest.mark.integration
+def test_get_metaloggers():
+    """
+    Tests the /api/metaloggers endpoint against a live master server
+    """
+    response = client.get(f"/api/metaloggers?masterhost={MASTER_HOST}&masterport={MASTER_PORT}")
+
+    if response.status_code == 404:
+        pytest.skip("metaloggers api endpoint not found")
+    assert response.status_code == 200
+    # Validate the response against the Pydantic model
+    metaloggers = [Metalogger.model_validate(meta) for meta in response.json()]
+    assert all(isinstance(meta, Metalogger) for meta in metaloggers)
 
 
 @pytest.mark.integration

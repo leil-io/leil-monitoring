@@ -18,8 +18,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 import socket
 import struct
 import select
+import ssl
 import logging
-from typing import List, Tuple
+from typing import List, Optional, Tuple, Union
 from operator import attrgetter
 from .models import (Mount,
                      Export,
@@ -119,12 +120,71 @@ MATOCL_CSSERV_REMOVESERV = (PROTO_BASE + 525)
 CSSERV_REMOVESERV = (CLTOMA_CSSERV_REMOVESERV, MATOCL_CSSERV_REMOVESERV)
 SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT = (5, 4, 0)
 
+SAU_CLTOMA_STARTTLS = 1800
 
 class SaunaFSClient:
-    def __init__(self, master_host: str, master_port: int):
-        self.master_host = master_host
-        self.master_port = master_port
-        self.master_version = self._get_master_version()
+    def __init__(self, master_host: str, master_port: int,
+                 tls_config_file: str | None = None):
+        self.master_host: str = master_host
+        self.master_port: int = master_port
+        self.use_tls: bool = False
+        self.tls_client_cert: Optional[str] = None
+        self.tls_client_key: Optional[str] = None
+        self.tls_ca_cert: Optional[str] = None
+        self.tls_check_hostname: bool = True
+        self.tls_expected_hostname: Optional[str] = None
+        self._ssl_context: Optional[ssl.SSLContext] = None
+
+        if tls_config_file:
+            self._load_tls_config(tls_config_file)
+            if self.use_tls:
+                self._ssl_context = self._create_ssl_context()
+
+        self.master_version: Tuple[int, int, int] = self._get_master_version()
+
+    def _load_tls_config(self, path: str) -> None:
+        mapping: dict[str, str | None] = {
+            'tlscertfile': 'tls_client_cert',
+            'tlskeyfile': 'tls_client_key',
+            'tlsservercacertfile': 'tls_ca_cert',
+            'tlsexpectedhostname': 'tls_expected_hostname',
+            'tlsisserver': None,
+        }
+        try:
+            with open(path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    if '=' not in line:
+                        continue
+                    key, val = line.split('=', 1)
+                    key = key.strip()
+                    val = val.strip()
+                    attr_name = mapping.get(key)
+                    if attr_name:
+                        setattr(self, attr_name, val)
+                    elif key == 'tlsisserver':
+                        logging.debug(f"Ignoring server mode in TLS config (client only): {val}")
+            if self.tls_client_cert and self.tls_client_key and self.tls_ca_cert:
+                self.use_tls = True
+            else:
+                logging.warning("TLS config provided but missing cert/key/CA; TLS disabled")
+            if self.tls_expected_hostname:
+                self.tls_check_hostname = True
+        except Exception as e:
+            logging.error(f"Failed to load TLS config from {path}: {e}")
+            raise
+
+    def _create_ssl_context(self) -> ssl.SSLContext:
+        ctx = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+        if self.tls_ca_cert:
+            ctx.load_verify_locations(self.tls_ca_cert)
+        ctx.verify_mode = ssl.CERT_REQUIRED
+        ctx.check_hostname = self.tls_check_hostname
+        if self.tls_client_cert:
+            ctx.load_cert_chain(certfile=self.tls_client_cert, keyfile=self.tls_client_key)
+        return ctx
 
     def _my_send(self, sock: socket.socket, msg: bytes):
         totalsent = 0
@@ -148,11 +208,36 @@ class SaunaFSClient:
             msg += chunk
         return msg
 
+    def _starttls_and_handshake(self, base_sock: socket.socket, server_hostname: Optional[str]) -> ssl.SSLSocket:
+        """
+        Send STARTTLS frame over plain TCP, then wrap and perform explicit TLS handshake.
+        """
+        if not self._ssl_context:
+            raise RuntimeError("TLS requested but SSL context is not initialized")
+
+        start_tls_request = struct.pack(">LL", SAU_CLTOMA_STARTTLS, 0)
+        self._my_send(base_sock, start_tls_request)
+
+        tls_sock = self._ssl_context.wrap_socket(
+            base_sock,
+            server_hostname=server_hostname,
+            do_handshake_on_connect=False,
+        )
+
+        logging.info("Initiating TLS handshake with SFS master")
+        tls_sock.do_handshake()
+        logging.info("TLS handshake with SFS master completed successfully")
+
+        return tls_sock
+
+
     def send_and_receive(self, msg: Tuple[int, int], payload: bytes = b'', version: int = 0, host: str = "", port: int = 9421) -> bytearray:
         if not host:
             host = self.master_host
         if not port:
             port = self.master_port
+
+        server_hostname = (self.tls_expected_hostname or host) if self.tls_check_hostname else None
 
         cmd, expected = msg
         isV2 = cmd > 1000
@@ -166,29 +251,42 @@ class SaunaFSClient:
             request = struct.pack(">LL", cmd, length) + payload
             logging.debug(f"Sending V1 request: cmd={cmd}, length={length}, payload={payload}")
 
-        with socket.socket() as s:
-            s.settimeout(5)
-            logging.debug(f"Connecting to {host}:{port}")
-            s.connect((host, port))
+        try:
+            with socket.socket() as s:
+                s.settimeout(5)
+                logging.debug(f"Connecting to {host}:{port}")
+                s.connect((host, port))
 
-            self._my_send(s, request)
-            header = self._my_recv(s, 8)
+                # If TLS is enabled, upgrade the plain socket
+                if self.use_tls and self._ssl_context is not None:
+                    logging.debug("Starting STARTTLS negotiation")
+                    sock = self._starttls_and_handshake(s, server_hostname)
+                else:
+                    sock = s
 
-            respCmd, respLength = struct.unpack(">LL", header)
-            logging.debug(f"Header received: cmd={respCmd}, length={respLength}")
+                logging.debug(f"Sending request: {request}")
+                self._my_send(sock, request)
 
-            if respCmd != expected:
-                raise RuntimeError(f"Received wrong response command: {respCmd}, expected {expected}")
+                header = self._my_recv(sock, 8)
+                respCmd, respLength = struct.unpack(">LL", header)
+                logging.debug(f"Header received: cmd={respCmd}, length={respLength}")
 
-            respPayload = self._my_recv(s, respLength)
-            if isV2:
-                if len(respPayload) < 4:
-                    raise ValueError("V2 response payload is too short for version field")
-                respVersion = struct.unpack(">L", respPayload[:4])[0]
-                logging.debug(f"V2 response version: {respVersion}")
-                return bytearray(respPayload[4:])
-            else:
-                return bytearray(respPayload)
+                if respCmd != expected:
+                    raise RuntimeError(f"Received wrong response command: {respCmd}, expected {expected}")
+
+                respPayload = self._my_recv(sock, respLength)
+
+                if isV2:
+                    if len(respPayload) < 4:
+                        raise ValueError("V2 response payload is too short for version field")
+                    respVersion = struct.unpack(">L", respPayload[:4])[0]
+                    logging.debug(f"V2 response version: {respVersion}")
+                    return bytearray(respPayload[4:])
+                else:
+                    return bytearray(respPayload)
+        except Exception as e:
+            logging.error(f"Error during send_and_receive: {e}")
+            raise
 
     def _deserialize_string(self, buffer: bytearray, legacy: bool = False) -> str:
         return unpack_string(buffer, legacy)

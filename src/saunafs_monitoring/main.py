@@ -36,6 +36,7 @@ SAUNAFS_MASTER_PORT = int(os.getenv("SAUNAFS_MASTER_PORT", 9421))
 SAUNAFS_MONITORING_LOGLEVEL = os.getenv("SAUNAFS_MONITORING_LOGLEVEL", "INFO")
 SAUNAFS_MONITORING_HOST = os.getenv("SAUNAFS_MONITORING_HOST", "0.0.0.0")
 SAUNAFS_MONITORING_PORT = int(os.getenv("SAUNAFS_MONITORING_PORT", 8000))
+TLS_CONFIG_FILE = os.getenv("TLS_CONFIG_FILE", "")
 
 # Configure logging
 logging.basicConfig(level=SAUNAFS_MONITORING_LOGLEVEL, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -80,7 +81,7 @@ def get_client(masterhost: str, masterport: int) -> SaunaFSClient:
             masterhost = socket.gethostbyname(masterhost)
     except socket.gaierror:
         raise HTTPException(status_code=404, detail=f"Master host not found: {masterhost}")
-    return SaunaFSClient(master_host=masterhost, master_port=masterport)
+    return SaunaFSClient(master_host=masterhost, master_port=masterport, tls_config_file=TLS_CONFIG_FILE)
 
 
 def get_goal_chunk_sums(goals: List[ChunkMappedHealth], attribute: str) -> List[int]:

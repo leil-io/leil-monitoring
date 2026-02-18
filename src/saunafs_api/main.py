@@ -33,6 +33,7 @@ SAUNAFS_MASTER_PORT = int(os.getenv("SAUNAFS_MASTER_PORT", 9421))
 SAUNAFS_API_LOGLEVEL = os.getenv("SAUNAFS_API_LOGLEVEL", "INFO")
 SAUNAFS_API_HOST = os.getenv("SAUNAFS_API_HOST", "0.0.0.0")
 SAUNAFS_API_PORT = int(os.getenv("SAUNAFS_API_PORT", 8001))
+TLS_CONFIG_FILE = os.getenv("TLS_CONFIG_FILE", "")
 
 # Configure logging
 logging.basicConfig(level=SAUNAFS_API_LOGLEVEL, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -64,7 +65,7 @@ def get_client(masterhost: str, masterport: int) -> SaunaFSClient:
             masterhost = socket.gethostbyname(masterhost)
     except socket.gaierror:
         raise HTTPException(status_code=404, detail=f"Master host not found: {masterhost}")
-    return SaunaFSClient(master_host=masterhost, master_port=masterport)
+    return SaunaFSClient(master_host=masterhost, master_port=masterport, tls_config_file=TLS_CONFIG_FILE)
 
 
 def get_goal_chunk_sums(goals: List[ChunkMappedHealth], attribute: str) -> List[int]:
@@ -149,6 +150,22 @@ async def api_get_metaloggers(masterhost: str = SAUNAFS_MASTER_HOST, masterport:
     client = get_client(masterhost, masterport)
     return client.get_metaloggers()
 
+@app.get("/api/tlsstatus")
+async def tls_status(masterhost: str = SAUNAFS_MASTER_HOST, masterport: int = SAUNAFS_MASTER_PORT):
+    try:
+        client = get_client(masterhost, masterport)
+        tls_active = getattr(client, "use_tls", False)
+        ssl_ctx = getattr(client, "_ssl_context", None)
+        tls_ok = tls_active and ssl_ctx is not None
+        return {
+            "tls_enabled": tls_ok,
+            "details": "TLS active and SSL context loaded" if tls_ok else "TLS not active or config invalid"
+        }
+    except Exception:
+        return {
+            "tls_enabled": False,
+            "details": "TLS not enabled or config invalid"
+        }
 
 @app.get("/api/cgicharts")
 async def get_chart(id: int, host: str = SAUNAFS_MASTER_HOST, port: int = SAUNAFS_MASTER_PORT):

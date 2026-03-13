@@ -342,6 +342,13 @@ let chunkServerCharts = [
 		unit: dataUnit.NONE,
 		rate: false,
 	},
+	{
+		name: "chunkGCPurges",
+		id: 90310,
+		labels: ["Chunk purges (.dat, .met) by GC per minute"],
+		unit: dataUnit.NONE,
+		rate: false,
+	},
 ]
 
 function secondPowerOf(num) {

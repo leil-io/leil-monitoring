@@ -1,4 +1,4 @@
-# SaunaFS Monitoring
+# LeilFS Monitoring
 
 ## Setup and Installation (local/venv)
 

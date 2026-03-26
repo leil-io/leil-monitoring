@@ -26,6 +26,8 @@ pipeline {
     PIP_DISABLE_PIP_VERSION_CHECK = '1'
     PYTHONDONTWRITEBYTECODE = '1'
     VENV = '.venv'
+    SAUNAFS_MASTER_HOST = '127.0.0.1'
+    SAUNAFS_MASTER_PORT = '9421'
   }
 
   stages {
@@ -54,7 +56,7 @@ pipeline {
           . "$VENV/bin/activate"
           mkdir -p reports
           # Skip integration tests that require a live SaunaFS master
-          pytest -m "not integration" -q --junitxml=reports/junit.xml
+          pytest tests -m "not integration" -q --junitxml=reports/junit.xml
         '''
       }
       post {
@@ -64,18 +66,89 @@ pipeline {
       }
     }
 
-    stage('Integration tests (192.168.50.189)') {
+    stage('Integration tests (Compose cluster)') {
       steps {
+        script {
+          env.SAUNAFS_VERSION = sh(
+            script: '''
+              . "$VENV/bin/activate"
+              python utils/get_latest_saunafs_version.py
+            ''',
+            returnStdout: true,
+          ).trim()
+
+          if (!env.SAUNAFS_VERSION) {
+            error('Failed to resolve SaunaFS version from debian-package tags')
+          }
+        }
         sh '''
           . "$VENV/bin/activate"
           mkdir -p reports
-          # Skip integration tests that require a live SaunaFS master
-          pytest -m "integration" -q --junitxml=reports/junit.xml
+
+          echo "Using SaunaFS version: $SAUNAFS_VERSION"
+
+          if docker compose version >/dev/null 2>&1; then
+            COMPOSE="docker compose"
+          else
+            COMPOSE="docker-compose"
+          fi
+
+          $COMPOSE -f docker-compose.ci.yaml pull
+          $COMPOSE -f docker-compose.ci.yaml up -d master metalogger cgi chunkserver01
+
+          ready=0
+          for _ in $(seq 1 30); do
+            if bash -c '</dev/tcp/127.0.0.1/9421' >/dev/null 2>&1; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+
+          if [ "$ready" -ne 1 ]; then
+            $COMPOSE -f docker-compose.ci.yaml logs || true
+            echo "SaunaFS master did not become reachable on 127.0.0.1:9421"
+            exit 1
+          fi
+
+          $COMPOSE -f docker-compose.ci.yaml up -d client
+
+          # Copy and run the hello writer shell script inside the client container
+          wrote=0
+          for _ in $(seq 1 30); do
+            if docker inspect -f '{{.State.Running}}' saunafs-client 2>/dev/null | grep -q true; then
+              docker cp utils/write_hello.sh saunafs-client:/tmp/write_hello.sh >/dev/null 2>&1 || true
+              if docker exec saunafs-client sh /tmp/write_hello.sh >/dev/null 2>&1; then
+                wrote=1
+                break
+              fi
+            fi
+            sleep 2
+          done
+
+          if [ "$wrote" -ne 1 ]; then
+            $COMPOSE -f docker-compose.ci.yaml logs || true
+            echo "Failed to write to /mnt/saunafs from saunafs-client"
+            exit 1
+          fi
+
+          pytest tests -m "integration" -q --junitxml=reports/junit.xml
         '''
       }
       post {
         always {
           junit allowEmptyResults: true, testResults: 'reports/junit.xml'
+          sh '''
+            if docker compose version >/dev/null 2>&1; then
+              COMPOSE="docker compose"
+            else
+              COMPOSE="docker-compose"
+            fi
+
+            $COMPOSE -f docker-compose.ci.yaml logs || true
+            $COMPOSE -f docker-compose.ci.yaml down -v || true
+            sudo rm -rf ./volumes || true
+          '''
         }
       }
     }

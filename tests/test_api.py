@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 
 from fastapi.testclient import TestClient
+import os
 import pytest
 import csv
 from saunafs_api.main import app
@@ -23,9 +24,8 @@ from saunafs_client.models import Metalogger, SystemInfo, ChunkHealth, Goal, Met
 
 client = TestClient(app)
 
-# TODO(Urmas): Use environment variables
-MASTER_HOST = "192.168.50.189"
-MASTER_PORT = "9421"
+MASTER_HOST = os.getenv("SAUNAFS_MASTER_HOST", "127.0.0.1")
+MASTER_PORT = os.getenv("SAUNAFS_MASTER_PORT", "9421")
 
 
 def test_read_root_api_redirects():

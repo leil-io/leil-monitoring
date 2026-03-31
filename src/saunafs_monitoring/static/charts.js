@@ -349,6 +349,20 @@ let chunkServerCharts = [
 		unit: dataUnit.NONE,
 		rate: false,
 	},
+	{
+		name: "spaceGrowth",
+		id: 90320,
+		labels: ["Storage Growth Rate (per second)"],
+		unit: dataUnit.BYTE,
+		rate: true,
+	},
+	{
+		name: "spaceReclamation",
+		id: 90330,
+		labels: ["Storage Reclamation Rate (per second)"],
+		unit: dataUnit.BYTE,
+		rate: true,
+	},
 ]
 
 function secondPowerOf(num) {

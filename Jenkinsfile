@@ -55,7 +55,7 @@ pipeline {
         sh '''
           . "$VENV/bin/activate"
           mkdir -p reports
-          # Skip integration tests that require a live SaunaFS master
+          # Skip integration tests that require a live LeilFS master
           pytest tests -m "not integration" -q --junitxml=reports/junit.xml
         '''
       }
@@ -170,23 +170,23 @@ pipeline {
       steps {
         script {
           sh """
-            docker tag saunafs-monitoring:latest registry.saunafs.com/library/saunafs-monitoring:${GIT_COMMIT}
-            docker tag saunafs-monitoring:latest registry.saunafs.com/library/saunafs-monitoring:latest
-            docker tag saunafs-api:latest registry.saunafs.com/library/saunafs-api:${GIT_COMMIT}
-            docker tag saunafs-api:latest registry.saunafs.com/library/saunafs-api:latest
+            docker tag saunafs-monitoring:latest registry.leil.io/library/saunafs-monitoring:${GIT_COMMIT}
+            docker tag saunafs-monitoring:latest registry.leil.io/library/saunafs-monitoring:latest
+            docker tag saunafs-api:latest registry.leil.io/library/saunafs-api:${GIT_COMMIT}
+            docker tag saunafs-api:latest registry.leil.io/library/saunafs-api:latest
             """
-          docker.withRegistry('https://registry.saunafs.com', 'harbor') {
-            docker.image("registry.saunafs.com/library/saunafs-monitoring:${GIT_COMMIT}").push()
-            docker.image("registry.saunafs.com/library/saunafs-monitoring:latest").push()
-            docker.image("registry.saunafs.com/library/saunafs-api:${GIT_COMMIT}").push()
-            docker.image("registry.saunafs.com/library/saunafs-api:latest").push()
+          docker.withRegistry('https://registry.leil.io', 'harbor') {
+            docker.image("registry.leil.io/library/saunafs-monitoring:${GIT_COMMIT}").push()
+            docker.image("registry.leil.io/library/saunafs-monitoring:latest").push()
+            docker.image("registry.leil.io/library/saunafs-api:${GIT_COMMIT}").push()
+            docker.image("registry.leil.io/library/saunafs-api:latest").push()
           }
         }
       }
       post {
         always {
           sh '''
-            docker logout registry.saunafs.com
+            docker logout registry.leil.io
             '''
         }
       }

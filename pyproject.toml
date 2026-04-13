@@ -9,9 +9,9 @@ build-backend = "setuptools.build_meta"
 name = "saunafs-monitoring"
 version = "1.0.0"
 authors = [
-    { name="SaunaFS team", email="support@saunafs.com" },
+    { name="LeilFS team", email="support@leil.io" },
 ]
-description = "Monitoring web application for SaunaFS"
+description = "Monitoring web application for LeilFS"
 readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [
@@ -40,7 +40,7 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://saunafs.com"
+Homepage = "https://leil.io"
 
 [tool.setuptools.packages.find]
 where = ["src"]

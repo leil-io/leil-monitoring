@@ -36,6 +36,7 @@ const timeRange = Object.freeze({
 const dataUnit = Object.freeze({
 	NONE: 0,
 	BYTE: 1,
+	BIT: 2,
 	CPUTIME: 3,
 	TIME: 4,
 });
@@ -388,17 +389,17 @@ function secondPowerOf(num) {
 
 function bytePowerOf(num, unitType) {
 	if (typeof num !== "number" || isNaN(num)) {
-		return "N/A";
+		return ["N/A", 0];
 	}
 
-	const units = ["", "K", "M", "G", "T", "P", "E", "Z"];
+	const units = ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"];
 	let powerOf = 0
 	for (let unit of units) {
 		if (Math.abs(num) < 1024.0) {
 			let suffix = "N/A"
 			if (unitType === dataUnit.BIT) {
 				suffix = "b"
-			} else if (unitType == dataUnit.BYTE) {
+			} else if (unitType === dataUnit.BYTE) {
 				suffix = "B"
 			}
 			return [`${unit}${suffix}`, powerOf];
@@ -406,7 +407,7 @@ function bytePowerOf(num, unitType) {
 		num /= 1024.0;
 		powerOf++;
 	}
-	return `N/A`;
+	return ["N/A", 0];
 }
 
 function setupLineChart(id, label, labels, data) {

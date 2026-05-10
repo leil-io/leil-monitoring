@@ -55,11 +55,11 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 def humanize_bytes(num, suffix="B"):
     if not isinstance(num, (int, float)):
         return "N/A"
-    for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
+    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
         if abs(num) < 1024.0:
             return f"{num:3.1f} {unit}{suffix}"
         num /= 1024.0
-    return f"{num:.1f} Y{suffix}"
+    return f"{num:.1f} Yi{suffix}"
 
 
 templates.env.filters["humanize_bytes"] = humanize_bytes

@@ -48,8 +48,9 @@ const dataUnit = Object.freeze({
  * @property {string} name - Name of the chart
  * @property {number} id - ID of the chart for SFS backend
  * @property {string[]} labels - Label to use for chart
- * @property {UnitType} unit - Unit type of data
+ * @property {number} unit - Unit type of data
  * @property {boolean} rate - Whether the value is rate
+ * @property {boolean} [sumSeries] - Whether to accumulate series from right to left
  */
 
 /** @type {ChartInfo[]} */
@@ -57,9 +58,10 @@ let masterCharts = [
 	{
 		name: "cpu",
 		id: 91000,
-		labels: ["Userspace CPU %", "Kernelspace CPU %"],
+		labels: ["Total CPU usage %", "Kernelspace CPU usage %"],
 		unit: dataUnit.CPUTIME,
 		rate: false,
+		sumSeries: true,
 	},
 	{
 		name: "memory",
@@ -211,14 +213,14 @@ let masterCharts = [
 	{
 		name: "bytesReceived",
 		id: 90230,
-		labels: ["Bits received (per second)"],
+		labels: ["Bytes received (per second)"],
 		unit: dataUnit.BYTE,
 		rate: true,
 	},
 	{
 		name: "bytesSent",
 		id: 90240,
-		labels: ["Bits sent (per second)"],
+		labels: ["Bytes sent (per second)"],
 		unit: dataUnit.BYTE,
 		rate: true,
 	},
@@ -228,9 +230,10 @@ let chunkServerCharts = [
 	{
 		name: "cpu",
 		id: 91000,
-		labels: ["Userspace CPU %", "Kernelspace CPU %"],
+		labels: ["Total CPU usage %", "Kernelspace CPU usage %"],
 		unit: dataUnit.CPUTIME,
 		rate: false,
+		sumSeries: true,
 	},
 	{
 		name: "memory",
@@ -244,6 +247,7 @@ let chunkServerCharts = [
 		labels: ["Client/Chunkserver bytes received (per second)"],
 		unit: dataUnit.BYTE,
 		rate: true,
+		sumSeries: true,
 	},
 	{
 		name: "bytesSentClient",
@@ -251,6 +255,7 @@ let chunkServerCharts = [
 		labels: ["Client/Chunkserver bytes sent (per second)"],
 		unit: dataUnit.BYTE,
 		rate: true,
+		sumSeries: true,
 	},
 	{
 		name: "bytesReadOverhead",
@@ -300,6 +305,7 @@ let chunkServerCharts = [
 		labels: ["High-level write operations total"],
 		unit: dataUnit.NONE,
 		rate: false,
+		sumSeries: true,
 	},
 	{
 		name: "dataReadTime",
@@ -392,7 +398,7 @@ function bytePowerOf(num, unitType) {
 		return ["N/A", 0];
 	}
 
-	const units = ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"];
+	const units = ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"];
 	let powerOf = 0
 	for (let unit of units) {
 		if (Math.abs(num) < 1024.0) {
@@ -407,7 +413,13 @@ function bytePowerOf(num, unitType) {
 		num /= 1024.0;
 		powerOf++;
 	}
-	return ["N/A", 0];
+	let suffix = "N/A"
+	if (unitType === dataUnit.BIT) {
+		suffix = "b"
+	} else if (unitType === dataUnit.BYTE) {
+		suffix = "B"
+	}
+	return [`Yi${suffix}`, powerOf];
 }
 
 function setupLineChart(id, label, labels, data) {
@@ -453,8 +465,24 @@ function setupLineChart(id, label, labels, data) {
 					y: {
 						beginAtZero: true
 					},
-				}
+				},
+				plugins: {
+					tooltip: {
+						callbacks: {
+							label: function (context) {
+								const label = context.dataset.label || '';
+								const value = context.parsed.y;
 
+								const formatted =
+									Number.isInteger(value)
+										? value.toString()
+										: Number(value).toFixed(2);
+
+								return `${label}: ${formatted}`;
+							}
+						}
+					}
+				}
 			}
 		});
 	}
@@ -501,7 +529,33 @@ function getIntervalSecs(range) {
  */
 function parseCPUtime(time, range) {
 	let intervalSeconds = getIntervalSecs(range);
-	return ((time / (intervalSeconds * 1_000_000)) * 100).toFixed(2)
+	return ((time / (intervalSeconds * 1_000_000)) * 100)
+}
+
+/**
+ * Converts each data row into cumulative values from right to left, preserving
+ * the timestamp in the first column.
+ *
+ * For example:
+ *
+ * [timestamp, value1, value2, value3] ->
+ * [timestamp, value1 + value2 + value3, value2 + value3, value3]
+ *
+ * @param {Array<Array<number|string>>} rows - Parsed CSV rows. The first column is a timestamp.
+ * @returns {Array<Array<number>>} Rows with cumulative values and the original timestamp.
+ */
+function accumulateRows(rows) {
+	return rows.map(row => {
+		const accumulated = [row[0]];
+		let running = 0;
+
+		for (let i = row.length - 1; i >= 1; i--) {
+			running += Number(row[i] || 0);
+			accumulated[i] = running;
+		}
+
+		return accumulated;
+	});
 }
 
 /**
@@ -520,13 +574,12 @@ async function getData(chart, host, port, timePeriod) {
  * @param {ChartInfo} chart - Chart to setup
  * @param {number} [range=timeRange.SHORT.id] - What time range to use
  */
-/**
- * @param {ChartInfo} chart - Chart to setup
- * @param {number} [range=timeRange.SHORT.id] - What time range to use
- */
 async function setupChartInfo(chart, host, port, range = timeRange.SHORT.id) {
 	const csvData = await getData(chart, host, port, range);
-	const rows = parseData(csvData);
+
+	const rawRows = parseData(csvData);
+	const rows = chart.sumSeries ? accumulateRows(rawRows) : rawRows;
+
 	const intervalSecs = getIntervalFromData(rows)
 
 	// X-axis labels (timestamps -> Date)
@@ -539,7 +592,8 @@ async function setupChartInfo(chart, host, port, range = timeRange.SHORT.id) {
 			const out = [];
 			for (let i = 1; i < row.length; i += 1) {
 				const cell = row[i];
-				let v = cell === 0 ? 0 : transform(cell, range);
+				const cellValue = Number(row[i] || 0);
+				let v = cellValue === 0 ? 0 : transform(cellValue, range);
 				if (v !== 0 && rate) {
 					v = v / intervalSecs
 				}
@@ -556,12 +610,12 @@ async function setupChartInfo(chart, host, port, range = timeRange.SHORT.id) {
 	// Helper: Find peak magnitude across all non-zero cells
 	const peakMagnitude = (rows) => {
 		return rows.reduce((max, row) => {
-				let rowMax = 0;
-				for (let i = 1; i < row.length; i += 1) {
-					rowMax = Math.max(rowMax, row[i] || 0);
-				}
-				return Math.max(max, rowMax);
-			}, 0);
+			let rowMax = 0;
+			for (let i = 1; i < row.length; i += 1) {
+				rowMax = Math.max(rowMax, Number(row[i] || 0));
+			}
+			return Math.max(max, rowMax);
+		}, 0);
 	}
 
 	// Branch by unit
@@ -576,8 +630,8 @@ async function setupChartInfo(chart, host, port, range = timeRange.SHORT.id) {
 			const [labelSize, power] = bytePowerOf(maxVal, chart.unit);
 
 			const values = mapCellValues(rows, cell =>
-				parseInt(cell, 10) / Math.pow(1024, power)
-			, chart.rate);
+				cell / Math.pow(1024, power)
+				, chart.rate);
 
 			const yLabels = withSuffix(chart.labels, `(${labelSize})`);
 			setupLineChart(chart.name, yLabels, labels, values);
@@ -608,8 +662,8 @@ async function setupChartInfo(chart, host, port, range = timeRange.SHORT.id) {
 			const [labelSize, power] = secondPowerOf(maxVal);
 
 			const values = mapCellValues(rows, cell =>
-				parseInt(cell, 10) / Math.pow(1000, power)
-			, chart.rate);
+				cell / Math.pow(1000, power)
+				, chart.rate);
 
 			const yLabels = withSuffix(chart.labels, `(${labelSize})`);
 			setupLineChart(chart.name, yLabels, labels, values);

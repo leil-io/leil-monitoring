@@ -114,7 +114,6 @@
 </table>
 
 <!-- Metaloggers Table -->
-{% if metaloggers %}
 <table class="FR sortable" cellspacing="0" caption="Metadata Backup Loggers">
         <thead>
                 <tr><th colspan="4">Metadata Backup Loggers</th></tr>
@@ -136,10 +135,8 @@
                 {% endfor %}
         </tbody>
 </table>
-{% endif %}
 
 <!-- INotifiers Table -->
-{% if inotifiers %}
 <table class="FR sortable" cellspacing="0" caption="INotifier Loggers">
         <thead>
                 <tr><th colspan="4">INotifier Loggers</th></tr>
@@ -161,6 +158,5 @@
                 {% endfor %}
         </tbody>
 </table>
-{% endif %}
 
 {% endif %}

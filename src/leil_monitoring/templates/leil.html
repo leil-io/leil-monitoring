@@ -2,10 +2,10 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
-		<title>SaunaFS Info ({{ mastername }})</title>
+		<title>LeilFS Info ({{ mastername }})</title>
 		<link href="/static/favicon.ico" rel="icon" sizes="any" />
 		<link href="/static/favicon.svg" rel="icon" type="image/svg+xml" />
-		<link rel="stylesheet" href="/static/sfs-modern.css" type="text/css" />
+		<link rel="stylesheet" href="/static/leil-modern.css" type="text/css" />
 		<script src="/static/papaparse.min.js"></script>
 		<script src="/static/chart.umd.js"></script>
 		<script src="/static/date-fns.min.js"></script>
@@ -14,20 +14,20 @@
 	<body>
 		<header id="header">
 			<div class="logo">
-				<a href="sfs.cgi?sections=IN">
+				<a href="leil.cgi?sections=IN">
 					<img src="/static/logomini.svg" alt="logo" width="110" height="38" />
 				</a>
 			</div>
 
 			<nav class="menu">
-				<a class="button" href="sfs.cgi?sections=IN">Info</a>
-				<a class="button" href="sfs.cgi?sections=CH">Chunks</a>
-				<a class="button" href="sfs.cgi?sections=CS">Servers</a>
-				<a class="button" href="sfs.cgi?sections=HD">Disks</a>
-				<a class="button" href="sfs.cgi?sections=EX">Config</a>
-				<a class="button" href="sfs.cgi?sections=MS">Mounts</a>
-				<a class="button" href="sfs.cgi?sections=MC">Master Charts</a>
-				<a class="button" href="sfs.cgi?sections=CC">Server Charts</a>
+				<a class="button" href="leil.cgi?sections=IN">Info</a>
+				<a class="button" href="leil.cgi?sections=CH">Chunks</a>
+				<a class="button" href="leil.cgi?sections=CS">Servers</a>
+				<a class="button" href="leil.cgi?sections=HD">Disks</a>
+				<a class="button" href="leil.cgi?sections=EX">Config</a>
+				<a class="button" href="leil.cgi?sections=MS">Mounts</a>
+				<a class="button" href="leil.cgi?sections=MC">Master Charts</a>
+				<a class="button" href="leil.cgi?sections=CC">Server Charts</a>
 			</nav>
 
 			<div class="filler"></div>
@@ -41,18 +41,18 @@
 				<input type="number" id="masterport" size="6" value="9421" />
 				<input type="button"
 					value="Go"
-					onclick="window.location='/sfs.cgi?masterhost='
+					onclick="window.location='/leil.cgi?masterhost='
 						+ document.getElementById('masterhost').value + '&masterport='
 						+ document.getElementById('masterport').value"
 				/>
 			</h2>
 			{% else %}
-			{% include "sfs_info.html.jinja" %}
-			{% include "sfs_chunks.html.jinja" %}
-			{% include "sfs_servers.html.jinja" %}
-			{% include "sfs_disks.html.jinja" %}
-			{% include "sfs_config.html.jinja" %}
-			{% include "sfs_mounts.html.jinja" %}
+			{% include "leil_info.html.jinja" %}
+			{% include "leil_chunks.html.jinja" %}
+			{% include "leil_servers.html.jinja" %}
+			{% include "leil_disks.html.jinja" %}
+			{% include "leil_config.html.jinja" %}
+			{% include "leil_mounts.html.jinja" %}
 			{% if 'MC' in active_sections %}
 			<div class="chart-containers masterCharts" data-host="{{masterhost}}" data-port="{{masterport}}">
 				<div class="chart-header">
@@ -79,7 +79,7 @@
 			{% endif %}
 			{% endif %}
 		</div>
-		<script src="/static/sfs-sort.js"></script>
+		<script src="/static/leil-sort.js"></script>
 		<script src="/static/charts.js" type="module"></script>
 		<script src="/static/links.js"></script>
 	</body>

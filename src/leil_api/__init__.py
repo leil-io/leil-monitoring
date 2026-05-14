@@ -1,5 +1,5 @@
 """
-This file is part of saunafs-monitoring.
+This file is part of leil-monitoring.
 Copyright (C) 2025 Leil Storage OÜ
 
 This program is free software: you can redistribute it and/or modify
@@ -14,7 +14,3 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
-
-from .saunafs_client import SaunaFSClient, SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT
-
-__all__ = ["SaunaFSClient", "SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT"]

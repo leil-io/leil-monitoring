@@ -1,4 +1,4 @@
-// This file is part of saunafs-monitoring.
+// This file is part of leil-monitoring.
 // Copyright (C) 2025 Leil Storage OÜ
 //
 // This program is free software: you can redistribute it and/or modify
@@ -72,20 +72,20 @@ pipeline {
           env.SAUNAFS_VERSION = sh(
             script: '''
               . "$VENV/bin/activate"
-              python utils/get_latest_saunafs_version.py
+              python utils/get_latest_leil_version.py
             ''',
             returnStdout: true,
           ).trim()
 
           if (!env.SAUNAFS_VERSION) {
-            error('Failed to resolve SaunaFS version from debian-package tags')
+            error('Failed to resolve LeilFS version from debian-package tags')
           }
         }
         sh '''
           . "$VENV/bin/activate"
           mkdir -p reports
 
-          echo "Using SaunaFS version: $SAUNAFS_VERSION"
+          echo "Using LeilFS version: $SAUNAFS_VERSION"
 
           if docker compose version >/dev/null 2>&1; then
             COMPOSE="docker compose"
@@ -107,7 +107,7 @@ pipeline {
 
           if [ "$ready" -ne 1 ]; then
             $COMPOSE -f docker-compose.ci.yaml logs || true
-            echo "SaunaFS master did not become reachable on 127.0.0.1:9421"
+            echo "LeilFS master did not become reachable on 127.0.0.1:9421"
             exit 1
           fi
 
@@ -128,7 +128,7 @@ pipeline {
 
           if [ "$wrote" -ne 1 ]; then
             $COMPOSE -f docker-compose.ci.yaml logs || true
-            echo "Failed to write to /mnt/saunafs from saunafs-client"
+            echo "Failed to write to /mnt/leil from saunafs-client"
             exit 1
           fi
 
@@ -157,9 +157,9 @@ pipeline {
       steps {
         sh '''
           # Build UI/monitoring service image
-          docker build -t saunafs-monitoring:latest -f Dockerfile .
+          docker build -t leil-monitoring:latest -f Dockerfile .
           # Build API service image
-          docker build -t saunafs-api:latest -f Dockerfile.api .
+          docker build -t leil-api:latest -f Dockerfile.api .
         '''
       }
     }
@@ -170,16 +170,16 @@ pipeline {
       steps {
         script {
           sh """
-            docker tag saunafs-monitoring:latest registry.leil.io/library/saunafs-monitoring:${GIT_COMMIT}
-            docker tag saunafs-monitoring:latest registry.leil.io/library/saunafs-monitoring:latest
-            docker tag saunafs-api:latest registry.leil.io/library/saunafs-api:${GIT_COMMIT}
-            docker tag saunafs-api:latest registry.leil.io/library/saunafs-api:latest
+            docker tag leil-monitoring:latest registry.leil.io/library/leil-monitoring:${GIT_COMMIT}
+            docker tag leil-monitoring:latest registry.leil.io/library/leil-monitoring:latest
+            docker tag leil-api:latest registry.leil.io/library/leil-api:${GIT_COMMIT}
+            docker tag leil-api:latest registry.leil.io/library/leil-api:latest
             """
           docker.withRegistry('https://registry.leil.io', 'harbor') {
-            docker.image("registry.leil.io/library/saunafs-monitoring:${GIT_COMMIT}").push()
-            docker.image("registry.leil.io/library/saunafs-monitoring:latest").push()
-            docker.image("registry.leil.io/library/saunafs-api:${GIT_COMMIT}").push()
-            docker.image("registry.leil.io/library/saunafs-api:latest").push()
+            docker.image("registry.leil.io/library/leil-monitoring:${GIT_COMMIT}").push()
+            docker.image("registry.leil.io/library/leil-monitoring:latest").push()
+            docker.image("registry.leil.io/library/leil-api:${GIT_COMMIT}").push()
+            docker.image("registry.leil.io/library/leil-api:latest").push()
           }
         }
       }

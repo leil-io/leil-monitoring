@@ -1,5 +1,5 @@
 """
-This file is part of saunafs-monitoring.
+This file is part of leil-monitoring.
 Copyright (C) 2025 Leil Storage OÜ
 
 This program is free software: you can redistribute it and/or modify
@@ -251,7 +251,7 @@ class SaunaFSClient:
 
     def get_inotifiers(self) -> List[INotifier]:
         if self.master_version < SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT:
-            raise RuntimeError("INotifiers are not supported in SaunaFS versions below {}".join(map(str, SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT)))
+            raise RuntimeError(f"INotifiers are not supported in LeilFS versions below {'.'.join(map(str, SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT))}")
         buffer = self.send_and_receive(INOTIFIERS_LIST)
         return sorted(INotifier.get_list(buffer), key=attrgetter('hostname'))
 

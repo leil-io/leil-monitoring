@@ -1,5 +1,5 @@
 """
-This file is part of saunafs-monitoring.
+This file is part of leil-monitoring.
 Copyright (C) 2025 Leil Storage OÜ
 
 This program is free software: you can redistribute it and/or modify
@@ -21,12 +21,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from saunafs_client.saunafs_client import (
+from leil_client.leil_client import (
     SaunaFSClient, MATOCL_INFO, ANTOCU_CHART, SAU_MATOCL_CSERV_LIST,
     MATOCL_HDD_LIST_V2
 )
 
-from saunafs_client.models import (
+from leil_client.models import (
     SystemInfo
 )
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# This file is part of saunafs-monitoring.
+# This file is part of leil-monitoring.
 # Copyright (C) 2025 Leil Storage OÜ
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,8 +21,8 @@ import logging
 import os
 from typing import List
 from datetime import datetime
-from saunafs_client import SaunaFSClient
-from saunafs_client.models import (
+from leil_client import SaunaFSClient
+from leil_client.models import (
     Metalogger, SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo,
     ChunkOperationsInfo, ChunkMatrix, Goal, ChunkHealth,
     ChunkMappedHealth, INotifier

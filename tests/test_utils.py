@@ -1,5 +1,5 @@
 """
-This file is part of saunafs-monitoring.
+This file is part of leil-monitoring.
 Copyright (C) 2025 Leil Storage OÜ
 
 This program is free software: you can redistribute it and/or modify
@@ -299,7 +299,7 @@ def serialize_fscheck_info(
 ) -> bytes:
     """
     Serializes FsCheckInfo data into a bytearray buffer for testing.
-    Mirrors the get_fs_check_info logic in saunafs_client.py.
+    Mirrors the get_fs_check_info logic in leil_client.py.
     """
     buffer = bytearray()
 

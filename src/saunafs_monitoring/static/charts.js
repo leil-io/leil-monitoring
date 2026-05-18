@@ -375,11 +375,11 @@ let chunkServerCharts = [
 
 function secondPowerOf(num) {
 	if (typeof num !== "number" || isNaN(num)) {
-		return "N/A";
+		return ["N/A", 0];
 	}
 	const suffix = "s"
 
-	const units = ["μ", "m"];
+	const units = ["μ", "m", ""];
 	let powerOf = 0
 	for (let unit of units) {
 		if (unit == units[units.length - 1]) {
@@ -391,7 +391,6 @@ function secondPowerOf(num) {
 		num /= 1000;
 		powerOf++;
 	}
-	return `N/A`;
 }
 
 function bytePowerOf(num, unitType) {
@@ -646,7 +645,7 @@ async function setupChartInfo(chart, host, port, range = timeRange.SHORT.id) {
 		}
 
 		case dataUnit.NONE: {
-			const values = mapCellValues(rows, (cell, range) => [cell], chart.rate);
+			const values = mapCellValues(rows, cell => cell, chart.rate);
 			const yLabels = withSuffix(chart.labels);
 			setupLineChart(chart.name, yLabels, labels, values);
 			return;

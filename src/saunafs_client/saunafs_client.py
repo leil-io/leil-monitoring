@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 """
 
+import ipaddress
 import socket
 import struct
 import select
@@ -219,7 +220,13 @@ class SaunaFSClient:
             version=0
         )
         servers = Server.get_list(buffer)
-        servers.sort(key=attrgetter('hostname'))
+        servers.sort(
+            key=lambda s: (
+                s.hostname,
+                ipaddress.ip_address(s.ip_address),
+                s.port,
+            )
+        )
         return servers
 
     def get_disks(self) -> List[Disk]:

@@ -1,26 +1,26 @@
 /**
- * @typedef SFSRange
+ * @typedef LeilRange
  * @type {object}
- * @property {number} id - SaunaFS id for range
- * @property {number} name - Human readable name
+ * @property {number} id - LeilFS id for range
+ * @property {string} name - Human readable name
  */
 
 /**
- * @typedef SFSRanges
+ * @typedef LeilRanges
  * @type {object}
- * @property {Range} SHORT - 1 minute interval
- * @property {Range} MEDIUM - 6 minute interval
- * @property {Range} LONG - 30 minute interval
- * @property {Range} VERYLONG - 1 day interval
+ * @property {LeilRange} SHORT - 1 minute interval
+ * @property {LeilRange} MEDIUM - 6 minute interval
+ * @property {LeilRange} LONG - 30 minute interval
+ * @property {LeilRange} VERYLONG - 1 day interval
  */
 
 
-/** @type {SFSRanges} */
+/** @type {LeilRanges} */
 const timeRange = Object.freeze({
-	SHORT: {id: 0, name: "Short"}, // 1 minute interval
-	MEDIUM: {id: 1, name: "Medium"}, // 6 minute interval
-	LONG: {id: 2, name: "Long"}, // 30 minute interval
-	VERYLONG: {id: 3, name: "Very Long"}, // 1 day interval
+	SHORT: { id: 0, name: "Short" }, // 1 minute interval
+	MEDIUM: { id: 1, name: "Medium" }, // 6 minute interval
+	LONG: { id: 2, name: "Long" }, // 30 minute interval
+	VERYLONG: { id: 3, name: "Very Long" }, // 1 day interval
 });
 
 /**
@@ -30,6 +30,7 @@ const timeRange = Object.freeze({
  * @property {number} BYTE - Byte count
  * @property {number} BIT - Bit count
  * @property {number} CPUTIME - CPU time (in microseconds)
+ * @property {number} TIME - Time duration
  */
 
 /** @type {UnitType} */
@@ -46,7 +47,7 @@ const dataUnit = Object.freeze({
  * @typedef ChartInfo
  * @type {object}
  * @property {string} name - Name of the chart
- * @property {number} id - ID of the chart for SFS backend
+ * @property {number} id - ID of the chart for LeilFS backend
  * @property {string[]} labels - Label to use for chart
  * @property {number} unit - Unit type of data
  * @property {boolean} rate - Whether the value is rate
@@ -504,7 +505,7 @@ function parseData(csvData) {
 }
 
 /**
- * @param {number} Range enum id
+ * @param {number} range - LeilRange enum id
  * @returns {number} Seconds in interval
  */
 function getIntervalSecs(range) {
@@ -524,7 +525,7 @@ function getIntervalSecs(range) {
 
 /**
  * @param {number} time - CPU time (microseconds)
- * @param {number} range - Range enum id
+ * @param {number} range - LeilRange enum id
  * @returns {number} Percentage of usage
  */
 function parseCPUtime(time, range) {
@@ -560,7 +561,9 @@ function accumulateRows(rows) {
 
 /**
  * @param {ChartInfo} chart
- * @param {object} timePeriod - What time range to use
+ * @param {string} host
+ * @param {string|number} port
+ * @param {number|string} timePeriod - What time range to use
  */
 async function getData(chart, host, port, timePeriod) {
 	const url = new URL("/chart.cgi", location.origin);
@@ -587,7 +590,7 @@ async function setupChartInfo(chart, host, port, range = timeRange.SHORT.id) {
 
 	// Helper: iterate cells (skip timestamp), allowing per-cell transform to return
 	// either a scalar or an array of scalars (we flatten).
-	const mapCellValues = (rows, transform, rate=false) =>
+	const mapCellValues = (rows, transform, rate = false) =>
 		rows.map(row => {
 			const out = [];
 			for (let i = 1; i < row.length; i += 1) {
@@ -597,8 +600,12 @@ async function setupChartInfo(chart, host, port, range = timeRange.SHORT.id) {
 				if (v !== 0 && rate) {
 					v = v / intervalSecs
 				}
-				if (Array.isArray(v)) out.push(...v);
-					else out.push(v);
+
+				if (Array.isArray(v)) {
+					out.push(...v);
+				} else {
+					out.push(v);
+				}
 			}
 			return out;
 		});
@@ -738,30 +745,28 @@ setupCharts(".masterCharts > .chart-content", masterCharts);
 setupCharts(".chunkServerCharts > .chart-content", chunkServerCharts);
 
 document.querySelectorAll('.chart-options div').forEach(button => {
-	button.addEventListener('click', function() {
+	button.addEventListener('click', function () {
 		const chart = JSON.parse(button.parentElement.parentElement.dataset.chartinfo);
 		const host = button.closest(".chart-containers").dataset.host;
 		const port = button.closest(".chart-containers").dataset.port;
-		const range =  this.dataset.timeRange
-		chart.name = chart.name
+		const range = this.dataset.timeRange
 		setupChartInfo(chart, host, port, range);
 	});
 });
 
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.chart-header').forEach(header => {
-        header.addEventListener('click', function() {
-            const content = this.nextElementSibling;
+document.addEventListener('DOMContentLoaded', function () {
+	document.querySelectorAll('.chart-header').forEach(header => {
+		header.addEventListener('click', function () {
+			const content = this.nextElementSibling;
 			if (content.classList.contains("show")) {
 				content.classList.toggle('show');
 				return;
 			}
-            content.classList.toggle('transition');
+			content.classList.toggle('transition');
 			setTimeout(() => {
 				content.classList.toggle('transition');
 				content.classList.toggle('show');
-			}, 500); {
-			}
-        });
-    });
+			}, 500);
+		});
+	});
 });

@@ -1,5 +1,5 @@
 """
-This file is part of saunafs-monitoring.
+This file is part of leil-monitoring.
 Copyright (C) 2025 Leil Storage OÜ
 
 This program is free software: you can redistribute it and/or modify
@@ -19,8 +19,8 @@ from fastapi.testclient import TestClient
 import os
 import pytest
 import csv
-from saunafs_api.main import app
-from saunafs_client.models import Metalogger, SystemInfo, ChunkHealth, Goal, MetadataServer, Mount
+from leil_api.main import app
+from leil_client.models import Metalogger, SystemInfo, ChunkHealth, Goal, MetadataServer, Mount
 
 client = TestClient(app)
 

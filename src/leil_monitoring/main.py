@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# This file is part of saunafs-monitoring.
+# This file is part of leil-monitoring.
 # Copyright (C) 2025 Leil Storage OÜ
 #
 # This program is free software: you can redistribute it and/or modify
@@ -24,8 +24,8 @@ import os
 from typing import List
 from datetime import datetime
 import pathlib
-from saunafs_client import SaunaFSClient, SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT
-from saunafs_client.models import (
+from leil_client import SaunaFSClient, SAUNAFS_VERSION_WITH_INOTIFIERS_SUPPORT
+from leil_client.models import (
     OperationStats,
     ChunkMappedHealth
 )
@@ -98,7 +98,7 @@ def get_goal_chunk_sums(goals: List[ChunkMappedHealth], attribute: str) -> List[
 # Probably don't need FastAPI for these, just a simple HTTP server should do
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def read_root():
-    return RedirectResponse(url="/sfs.cgi")
+    return RedirectResponse(url="/leil.cgi")
 
 
 @app.post("/remove_chunkserver.cgi", response_class=HTMLResponse, include_in_schema=False)
@@ -114,15 +114,15 @@ async def remove_chunkserver(request: Request, ip: str, port: int, masterhost:
         raise HTTPException(status_code=500, detail="An internal error occurred")
 
 
-@app.get("/sfs.cgi", response_class=HTMLResponse)
-async def get_sfs_info(request: Request, masterhost: str = SAUNAFS_MASTER_HOST,
-                       masterport: int = SAUNAFS_MASTER_PORT, mastername: str = "SaunaFS",
+@app.get("/leil.cgi", response_class=HTMLResponse)
+async def get_leil_info(request: Request, masterhost: str = SAUNAFS_MASTER_HOST,
+                       masterport: int = SAUNAFS_MASTER_PORT, mastername: str = "LeilFS",
                        sections: str = "IN"):
     try:
         client = get_client(masterhost, masterport)
 
         if client.master_version == (0, 0, 0):
-            raise HTTPException(status_code=503, detail=f"Can't connect to SaunaFS master at {masterhost}:{masterport}")
+            raise HTTPException(status_code=503, detail=f"Can't connect to LeilFS master at {masterhost}:{masterport}")
 
         activeSections = sections.split("|")
 
@@ -172,11 +172,11 @@ async def get_sfs_info(request: Request, masterhost: str = SAUNAFS_MASTER_HOST,
             "deletion_sums": deletion_sums,
             "active_sections": activeSections
         }
-        return templates.TemplateResponse(request, "sfs.html", context)
+        return templates.TemplateResponse(request, "leil.html", context)
     except Exception as e:
         traceback.print_exc()
         context = {"request": request, "mastername": mastername, "error_message": f"An internal error occurred: {e}", "sections": []}
-        return templates.TemplateResponse(request, "sfs.html", context)
+        return templates.TemplateResponse(request, "leil.html", context)
 
 
 @app.get("/chart.cgi")

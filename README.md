@@ -24,11 +24,11 @@ pip install -r requirements.txt
 
 ## Running the Application (local)
 
-After installing the dependencies, you can run either the `saunafs_api` or `saunafs_monitoring` application using `uvicorn`. For example, to start the monitoring tool (the process is similar for the API tool):
+After installing the dependencies, you can run either the `leil_api` or `leil_monitoring` application using `uvicorn`. For example, to start the monitoring tool (the process is similar for the API tool):
 
 ```bash
 # The --reload flag will automatically restart the server when you make code changes.
-uvicorn --host 0.0.0.0 --reload --app-dir src saunafs_monitoring.main:app
+uvicorn --host 0.0.0.0 --reload --app-dir src leil_monitoring.main:app
 ```
 
 The application will be available at `http://127.0.0.1:8000`.
@@ -61,12 +61,12 @@ This project supports package distribution via:
 
 ```shell
 docker build \
-    -t saunafs-monitoring:runtime-deb  \
+    -t leil-monitoring:runtime-deb  \
     --target runtime-deb \
     --file Dockerfile.build \
     .
 # Generic way, once you have the image
-docker create --name temp saunafs-monitoring:runtime-deb
+docker create --name temp leil-monitoring:runtime-deb
 docker cp temp:/packages ./dist/
 docker rm temp
 ```
@@ -77,7 +77,7 @@ For simpler use cases where you only need the built packages/files without a run
 
 ```shell
 docker build \
-    --tag saunafs-monitoring:packages \
+    --tag leil-monitoring:packages \
     --target packages \
     --output ./dist \
     --file Dockerfile.build \
@@ -95,10 +95,10 @@ The packages will be available in the `dist` folder.
 
 ```shell
 # from .deb
-sudo dpkg -i ./dist/saunafs-monitoring_*.deb
+sudo dpkg -i ./dist/leil-monitoring_*.deb
 
 # from .whl
-pip install ./dist/saunafs_monitoring-*.whl
+pip install ./dist/leil_monitoring-*.whl
 ```
 
 ### Run image with package deployed
@@ -109,39 +109,39 @@ If you prefer to use the **ubuntu** image with `deb` package, use `--target runt
 ```shell
 # For wheel-based image (Python base)
 docker build \
-    -t saunafs-monitoring:runtime  \
+    -t leil-monitoring:runtime  \
     --target runtime \
     --file Dockerfile.build \
     .
-docker run --name saunafs-monitoring saunafs-monitoring:runtime
+docker run --name leil-monitoring leil-monitoring:runtime
 ```
 
 ```shell
 # For deb-based image (Ubuntu base)
 docker build \
-    -t saunafs-monitoring:runtime-deb  \
+    -t leil-monitoring:runtime-deb  \
     --target runtime-deb \
     --file Dockerfile.build \
     .
-docker run --name saunafs-monitoring saunafs-monitoring:runtime
+docker run --name leil-monitoring leil-monitoring:runtime
 ```
 
 ### Image customization
 
-You might want to customize the image to run a different module (e.g. `saunafs_api` instead of `saunafs_monitoring`). You can do this by passing a different command at runtime:
+You might want to customize the image to run a different module (e.g. `leil_api` instead of `leil_monitoring`). You can do this by passing a different command at runtime:
 
 ```shell
 #For runtime target (Python base)
-docker run -it saunafs-monitoring:runtime \
-    /usr/local/bin/python3 -m saunafs_api.main
+docker run -it leil-monitoring:runtime \
+    /usr/local/bin/python3 -m leil_api.main
 
 # For runtime-deb target (Ubuntu base)
-docker run -it saunafs-monitoring:runtime-deb \
-    /usr/bin/python3 -m saunafs_api.main
+docker run -it leil-monitoring:runtime-deb \
+    /usr/bin/python3 -m leil_api.main
 ```
 
-The default command is `/usr/local/bin/python3 -m saunafs_monitoring.main` for the `runtime` target.
+The default command is `/usr/local/bin/python3 -m leil_monitoring.main` for the `runtime` target.
 
-The default command is `/usr/bin/python3 -m saunafs_monitoring.main` for the `runtime-deb` target.
+The default command is `/usr/bin/python3 -m leil_monitoring.main` for the `runtime-deb` target.
 
 Notice that the python path is different between the two targets.

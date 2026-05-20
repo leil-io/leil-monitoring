@@ -1,6 +1,6 @@
 services:
   master:
-    image: registry.saunafs.com/public/saunafs-master:${SAUNAFS_VERSION}-ubuntu-24.04
+    image: registry.leil.io/public/saunafs-master:${SAUNAFS_VERSION}-ubuntu-24.04
     container_name: saunafs-master
     ports:
       - "9421:9421"
@@ -15,7 +15,7 @@ services:
           - sfsmaster
 
   metalogger:
-    image: registry.saunafs.com/public/saunafs-metalogger:${SAUNAFS_VERSION}-ubuntu-24.04
+    image: registry.leil.io/public/saunafs-metalogger:${SAUNAFS_VERSION}-ubuntu-24.04
     container_name: saunafs-metalogger
     volumes:
       - ./volumes/saunafs-metalogger/etc/saunafs:/etc/saunafs
@@ -27,7 +27,7 @@ services:
       - saunafsnet
 
   cgi:
-    image: registry.saunafs.com/public/saunafs-cgiserver:${SAUNAFS_VERSION}-ubuntu-24.04
+    image: registry.leil.io/public/saunafs-cgiserver:${SAUNAFS_VERSION}-ubuntu-24.04
     container_name: saunafs-cgiserver
     ports:
       - "29425:9425"
@@ -37,7 +37,7 @@ services:
       - saunafsnet
 
   chunkserver01:
-    image: registry.saunafs.com/public/saunafs-chunkserver:${SAUNAFS_VERSION}-ubuntu-24.04
+    image: registry.leil.io/public/saunafs-chunkserver:${SAUNAFS_VERSION}-ubuntu-24.04
     container_name: saunafs-chunkserver01
     volumes:
       - ./volumes/saunafs-chunkserver01/etc/saunafs:/etc/saunafs
@@ -53,7 +53,7 @@ services:
       - saunafsnet
 
   client:
-    image: registry.saunafs.com/public/saunafs-client:${SAUNAFS_VERSION}-ubuntu-24.04
+    image: registry.leil.io/public/saunafs-client:${SAUNAFS_VERSION}-ubuntu-24.04
     container_name: saunafs-client
     devices:
       - /dev/fuse
@@ -61,7 +61,7 @@ services:
       - SYS_ADMIN
     security_opt:
       - apparmor:unconfined
-    command: ["/mnt/saunafs", "-H", "master", "-P", "9421", "-S", "/"]
+    command: ["/mnt/leil", "-H", "master", "-P", "9421", "-S", "/"]
     depends_on:
       - master
     volumes:

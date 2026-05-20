@@ -1,5 +1,5 @@
 """
-This file is part of saunafs-monitoring.
+This file is part of leil-monitoring.
 Copyright (C) 2025 Leil Storage OÜ
 
 This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 from fastapi.testclient import TestClient
 import os
 import pytest
-from saunafs_monitoring.main import app
+from leil_monitoring.main import app
 
 client = TestClient(app)
 
@@ -27,28 +27,28 @@ MASTER_PORT = os.getenv("SAUNAFS_MASTER_PORT", "9421")
 
 def test_read_root_redirects():
     """
-    Tests that the root path '/' correctly redirects to '/sfs.cgi'.
+    Tests that the root path '/' correctly redirects to '/leil.cgi'.
     """
     response = client.get("/", follow_redirects=True)
     # TestClient follows redirects by default, so we check the history
     assert len(response.history) == 1
     assert response.history[0].status_code == 307  # Temporary Redirect
-    assert response.url == "http://testserver/sfs.cgi"
+    assert response.url == "http://testserver/leil.cgi"
     assert response.status_code == 200
 
 
 @pytest.mark.integration
-def test_get_sfs_info_html():
+def test_get_leil_info_html():
     """
     Tests that the main HTML page for the legacy UI renders successfully.
     """
     response = client.get(
-        f"/sfs.cgi?masterhost={MASTER_HOST}&masterport={MASTER_PORT}&sections=IN|CS|HD|ML|MS|EX|MO|EX|CH|MC"
+        f"/leil.cgi?masterhost={MASTER_HOST}&masterport={MASTER_PORT}&sections=IN|CS|HD|ML|MS|EX|MO|EX|CH|MC"
     )
 
     assert response.status_code == 200
     assert response.headers['content-type'] == 'text/html; charset=utf-8'
-    assert "SaunaFS Info" in response.text
+    assert "LeilFS Info" in response.text
     assert "Info" in response.text
     assert "Chunk Servers" in response.text
     assert "Chunks state matrix" in response.text
@@ -64,12 +64,12 @@ def test_get_sfs_info_html():
 
 
 @pytest.mark.integration
-def test_get_sfs_info_connection_error():
+def test_get_leil_info_connection_error():
     """
     Tests how the HTML page responds when it can't connect to the master.
     """
     # Use a port that is unlikely to be open
-    response = client.get("/sfs.cgi?masterhost=nonexistant&masterport=9421")
+    response = client.get("/leil.cgi?masterhost=nonexistant&masterport=9421")
 
     assert response.status_code == 200  # The page itself should still render
-    assert "Can&#39;t connect to SaunaFS master" in response.text
+    assert "Can&#39;t connect to LeilFS master" in response.text

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# This file is part of saunafs-monitoring.
+# This file is part of leil-monitoring.
 # Copyright (C) 2025 Leil Storage OÜ
 #
 # This program is free software: you can redistribute it and/or modify
@@ -31,7 +31,7 @@ def normalize_tag(tag_name: str) -> str:
     if normalized.startswith("v"):
         normalized = normalized[1:]
     if not normalized or any(character.isspace() for character in normalized):
-        raise ValueError(f"Invalid SaunaFS release tag: {tag_name!r}")
+        raise ValueError(f"Invalid LeilFS release tag: {tag_name!r}")
     if TAG_PATTERN.fullmatch(normalized) is None:
         raise ValueError(f"Unsupported debian-package tag format: {tag_name!r}")
     return normalized
@@ -53,7 +53,7 @@ def fetch_latest_release_tag() -> str:
         DEBIAN_PACKAGE_TAGS_URL,
         headers={
             "Accept": "application/vnd.github+json",
-            "User-Agent": "saunafs-monitoring-ci",
+            "User-Agent": "leil-monitoring-ci",
         },
     )
     with closing(cast(HTTPResponse, urllib.request.urlopen(request, timeout=30))) as response:

@@ -1,5 +1,5 @@
 """
-This file is part of saunafs-monitoring.
+This file is part of leil-monitoring.
 Copyright (C) 2025 Leil Storage OÜ
 
 This program is free software: you can redistribute it and/or modify
@@ -17,8 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import unittest
 import struct
-from saunafs_client.models import Mount, OperationStats
-from saunafs_client.deserializer import DeserializationError
+from leil_client.models import Mount, OperationStats
+from leil_client.deserializer import DeserializationError
 from tests.test_utils import serialize_mount, serialize_mount_info
 
 
@@ -27,8 +27,8 @@ class TestMountDeserialization(unittest.TestCase):
         session_id = 12345
         ip_address = "192.168.1.1"
         version = "1.2.3"
-        root_path = "/mnt/saunafs"
-        mounted_path = "/home/user/saunafs_mount"
+        root_path = "/mnt/leil"
+        mounted_path = "/home/user/leil_mount"
         sesflags = 1 | 16  # ro, map_all
         root_uid = 1000
         root_gid = 1000
@@ -120,8 +120,8 @@ class TestMountDeserialization(unittest.TestCase):
         session_id = 12345
         ip_address = "192.168.1.1"
         version = "1.2.3"
-        root_path = "/mnt/saunafs"
-        mounted_path = "/home/user/saunafs_mount"
+        root_path = "/mnt/leil"
+        mounted_path = "/home/user/leil_mount"
         sesflags = 1 | 16  # ro, map_all
         root_uid = 1000
         root_gid = 1000

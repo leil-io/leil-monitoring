@@ -6,7 +6,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "saunafs-monitoring"
+name = "leil-monitoring"
 version = "1.0.0"
 authors = [
     { name="LeilFS team", email="support@leil.io" },
@@ -44,15 +44,15 @@ Homepage = "https://leil.io"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["saunafs_*"]
+include = ["leil_*"]
 
 [tool.setuptools.package-data]
-saunafs_monitoring = [
+leil_monitoring = [
     "static/*",
     "templates/*",
 ]
 
 [tool.jinja-lsp]
 hide_undefined = false
-templates = "./src/saunafs_monitoring/templates"
+templates = "./src/leil_monitoring/templates"
 backend = ["./src"]

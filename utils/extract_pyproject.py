@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# This file is part of saunafs-monitoring.
+# This file is part of leil-monitoring.
 # Copyright (C) 2025 Leil Storage OÜ
 #
 # This program is free software: you can redistribute it and/or modify

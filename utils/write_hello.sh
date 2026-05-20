@@ -12,5 +12,5 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
-echo "Hello World!" > /mnt/saunafs/hello.txt
-echo "Wrote 'Hello World!' to /mnt/saunafs/hello.txt"
+echo "Hello World!" > /mnt/leil/hello.txt
+echo "Wrote 'Hello World!' to /mnt/leil/hello.txt"

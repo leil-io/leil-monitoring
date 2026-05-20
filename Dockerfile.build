@@ -1,4 +1,4 @@
-## This file is part of saunafs-monitoring.
+## This file is part of leil-monitoring.
 ## Copyright (C) 2025 Leil Storage OÜ
 ##
 ## This program is free software: you can redistribute it and/or modify
@@ -115,7 +115,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     set -e; \
     dpkg -i /packages/*.deb || apt-get -y install -f; \
-CMD ["/usr/bin/python3", "-m", "saunafs_monitoring.main"]
+CMD ["/usr/bin/python3", "-m", "leil_monitoring.main"]
 
 FROM python:${PYTHON_VERSION}-slim AS runtime
 ARG PYTHON_VERSION
@@ -124,4 +124,4 @@ COPY --from=builder-wheel /packages /packages
 WORKDIR /app
 RUN set -e; \
     python3 -m pip install /packages/*.whl
-CMD ["/usr/local/bin/python3", "-m", "saunafs_monitoring.main"]
+CMD ["/usr/local/bin/python3", "-m", "leil_monitoring.main"]

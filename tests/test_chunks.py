@@ -1,5 +1,5 @@
 """
-This file is part of saunafs-monitoring.
+This file is part of leil-monitoring.
 Copyright (C) 2025 Leil Storage OÜ
 
 This program is free software: you can redistribute it and/or modify
@@ -18,8 +18,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 import unittest
 import struct
 import random
-from saunafs_client.models import ChunkHealth
-from saunafs_client.deserializer import DeserializationError
+from leil_client.models import ChunkHealth
+from leil_client.deserializer import DeserializationError
 
 
 def serialize_chunk_health(regular_only, safe, endangered, lost, replication, deletion) -> bytearray:

@@ -1,5 +1,5 @@
 """
-This file is part of saunafs-monitoring.
+This file is part of leil-monitoring.
 Copyright (C) 2025 Leil Storage OÜ
 
 This program is free software: you can redistribute it and/or modify
@@ -17,8 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import unittest
 import struct
-from saunafs_client.models import SystemInfo
-from saunafs_client.deserializer import DeserializationError
+from leil_client.models import SystemInfo
+from leil_client.deserializer import DeserializationError
 from tests.test_utils import serialize_info
 
 

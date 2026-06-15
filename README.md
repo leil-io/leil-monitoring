@@ -145,3 +145,8 @@ The default command is `/usr/local/bin/python3 -m leil_monitoring.main` for the 
 The default command is `/usr/bin/python3 -m leil_monitoring.main` for the `runtime-deb` target.
 
 Notice that the python path is different between the two targets.
+
+## Contributing
+
+See the [Contributing Guide](CONTRIBUTING.md) for detailed information on how
+to contribute to the Leil Monitoring application.

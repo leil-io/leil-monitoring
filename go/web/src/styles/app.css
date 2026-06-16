@@ -1,0 +1,45 @@
+/* SPA-specific layout on top of the reused leil-modern.css. */
+
+.master-selector {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.master-selector input {
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.master-selector input[type="number"] {
+  width: 6em;
+}
+
+/* Standalone buttons (master selector). Nav buttons inherit .menu > a. */
+.master-selector .button {
+  background-color: var(--accent-color);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9em;
+  border: 1px solid var(--border-color);
+}
+
+/* Charts */
+.chart-container {
+  padding: 1em;
+  background: white;
+  min-height: 18em;
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  max-height: 24em;
+}
+
+.chart-options {
+  margin-top: 0.5rem;
+}

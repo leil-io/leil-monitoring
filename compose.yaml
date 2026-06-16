@@ -38,3 +38,33 @@ services:
             - SAUNAFS_API_HOST=${SAUNAFS_API_HOST:-0.0.0.0}
             - SAUNAFS_API_PORT=${SAUNAFS_API_PORT:-8001}
             - SAUNAFS_API_LOGLEVEL=${SAUNAFS_API_LOGLEVEL:-INFO}
+    # Go port of leil-api. Runs alongside the Python service during the
+    # migration; mapped to a distinct host port (default 8002 -> 8001).
+    leil-api-go:
+        ports:
+            - ${SAUNAFS_API_GO_PORT:-8002}:8001
+        image: leil-api-go:latest
+        build:
+            context: ./go
+            dockerfile: Dockerfile
+        environment:
+            - SAUNAFS_MASTER_HOST=${SAUNAFS_MASTER_HOST:-sfsmaster}
+            - SAUNAFS_MASTER_PORT=${SAUNAFS_MASTER_PORT:-9421}
+            - SAUNAFS_API_HOST=0.0.0.0
+            - SAUNAFS_API_PORT=8001
+            - SAUNAFS_API_LOGLEVEL=${SAUNAFS_API_LOGLEVEL:-INFO}
+    # Go/Preact frontend. Serves the SPA and reverse-proxies /api/* to
+    # leil-api-go (same origin, no CORS). Default host port 8003 -> 8000.
+    leil-monitoring-go:
+        ports:
+            - ${SAUNAFS_MONITORING_GO_PORT:-8003}:8000
+        image: leil-monitoring-go:latest
+        build:
+            context: ./go
+            dockerfile: Dockerfile.web
+        environment:
+            - LEIL_API_URL=http://leil-api-go:8001
+            - SAUNAFS_MONITORING_HOST=0.0.0.0
+            - SAUNAFS_MONITORING_PORT=8000
+        depends_on:
+            - leil-api-go

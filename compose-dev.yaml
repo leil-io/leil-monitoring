@@ -49,3 +49,34 @@ services:
             - UVICORN_HOST=${SAUNAFS_API_HOST:-0.0.0.0}
             - UVICORN_PORT=${SAUNAFS_API_PORT:-8001}
             - SAUNAFS_API_LOGLEVEL=${SAUNAFS_API_LOGLEVEL:-DEBUG}
+
+    # Go port of leil-api (dev): runs straight from source via `go run`.
+    leil-api-go:
+        image: golang:1.22-alpine
+        ports:
+            - ${SAUNAFS_API_GO_PORT:-8002}:8001
+        working_dir: "/src"
+        volumes:
+            - ./go:/src
+        command: ["go", "run", "./cmd/leil-api"]
+        environment:
+            - SAUNAFS_MASTER_HOST=${SAUNAFS_MASTER_HOST:-sfsmaster}
+            - SAUNAFS_MASTER_PORT=${SAUNAFS_MASTER_PORT:-9421}
+            - SAUNAFS_API_HOST=0.0.0.0
+            - SAUNAFS_API_PORT=8001
+            - SAUNAFS_API_LOGLEVEL=${SAUNAFS_API_LOGLEVEL:-DEBUG}
+
+    # Go/Preact frontend (dev): Vite dev server with HMR, proxying /api to
+    # leil-api-go. Host port 8003 -> Vite 5173.
+    leil-monitoring-go:
+        image: node:20-alpine
+        ports:
+            - ${SAUNAFS_MONITORING_GO_PORT:-8003}:5173
+        working_dir: "/src/web"
+        volumes:
+            - ./go:/src
+        environment:
+            - LEIL_API_URL=http://leil-api-go:8001
+        command: ["sh", "-c", "npm install && npm run dev -- --host 0.0.0.0"]
+        depends_on:
+            - leil-api-go

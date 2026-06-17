@@ -116,9 +116,9 @@ pipeline {
           # Copy and run the hello writer shell script inside the client container
           wrote=0
           for _ in $(seq 1 30); do
-            if docker inspect -f '{{.State.Running}}' saunafs-client 2>/dev/null | grep -q true; then
-              docker cp utils/write_hello.sh saunafs-client:/tmp/write_hello.sh >/dev/null 2>&1 || true
-              if docker exec saunafs-client sh /tmp/write_hello.sh >/dev/null 2>&1; then
+            if docker inspect -f '{{.State.Running}}' leil-client 2>/dev/null | grep -q true; then
+              docker cp utils/write_hello.sh leil-client:/tmp/write_hello.sh >/dev/null 2>&1 || true
+              if docker exec leil-client sh /tmp/write_hello.sh >/dev/null 2>&1; then
                 wrote=1
                 break
               fi
@@ -128,7 +128,7 @@ pipeline {
 
           if [ "$wrote" -ne 1 ]; then
             $COMPOSE -f docker-compose.ci.yaml logs || true
-            echo "Failed to write to /mnt/leil from saunafs-client"
+            echo "Failed to write to /mnt/leil from leil-client"
             exit 1
           fi
 
@@ -170,23 +170,23 @@ pipeline {
       steps {
         script {
           sh """
-            docker tag leil-monitoring:latest registry.leil.io/library/leil-monitoring:${GIT_COMMIT}
-            docker tag leil-monitoring:latest registry.leil.io/library/leil-monitoring:latest
-            docker tag leil-api:latest registry.leil.io/library/leil-api:${GIT_COMMIT}
-            docker tag leil-api:latest registry.leil.io/library/leil-api:latest
+            docker tag leil-monitoring:latest leilfs/leil-monitoring:${GIT_COMMIT}
+            docker tag leil-monitoring:latest leilfs/leil-monitoring:latest
+            docker tag leil-api:latest leilfs/leil-api:${GIT_COMMIT}
+            docker tag leil-api:latest leilfs/leil-api:latest
             """
-          docker.withRegistry('https://registry.leil.io', 'harbor') {
-            docker.image("registry.leil.io/library/leil-monitoring:${GIT_COMMIT}").push()
-            docker.image("registry.leil.io/library/leil-monitoring:latest").push()
-            docker.image("registry.leil.io/library/leil-api:${GIT_COMMIT}").push()
-            docker.image("registry.leil.io/library/leil-api:latest").push()
+          docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+            docker.image("leilfs/leil-monitoring:${GIT_COMMIT}").push()
+            docker.image("leilfs/leil-monitoring:latest").push()
+            docker.image("leilfs/leil-api:${GIT_COMMIT}").push()
+            docker.image("leilfs/leil-api:latest").push()
           }
         }
       }
       post {
         always {
           sh '''
-            docker logout registry.leil.io
+            docker logout
             '''
         }
       }

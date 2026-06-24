@@ -118,3 +118,59 @@ func TestInfoEndpoint(t *testing.T) {
 		t.Errorf("total_space = %v, want 5000", got["total_space"])
 	}
 }
+
+// recordingFactory captures the host/port a built client targets, and replays
+// optional frames so the call can still complete.
+func recordingFactory(frames [][]byte, gotHost *string, gotPort *int) httpapi.ClientFactory {
+	return func(host string, port int) *leilfs.Client {
+		*gotHost, *gotPort = host, port
+		idx := 0
+		dial := func(string, int) (net.Conn, error) {
+			if idx >= len(frames) {
+				return nil, fmt.Errorf("no more frames")
+			}
+			f := frames[idx]
+			idx++
+			return &mockConn{read: bytes.NewReader(f)}, nil
+		}
+		return leilfs.NewClientWithDial(host, port, dial)
+	}
+}
+
+// TestDataIgnoresMasterQuery: in the single-cluster model the binary data path
+// uses the configured master and ignores the SPA's ?masterhost/?masterport.
+func TestDataIgnoresMasterQuery(t *testing.T) {
+	var gotHost string
+	var gotPort int
+	frames := [][]byte{
+		frameV1(511, systemInfoPayload()[:4]), // version probe
+		frameV1(511, systemInfoPayload()),     // GetInfo
+	}
+	h := httpapi.NewRouterWithClient(testConfig(), recordingFactory(frames, &gotHost, &gotPort))
+	req := httptest.NewRequest(http.MethodGet, "/api/info?masterhost=evil.example&masterport=1", nil)
+	h.ServeHTTP(httptest.NewRecorder(), req)
+	if gotHost != "127.0.0.1" || gotPort != 9421 {
+		t.Fatalf("data dialed %s:%d, want configured 127.0.0.1:9421 (query must be ignored)", gotHost, gotPort)
+	}
+}
+
+// TestChartHostRouting: the legacy "sfsmaster" placeholder routes master charts
+// to the configured master, while an explicit chunkserver host is honored.
+func TestChartHostRouting(t *testing.T) {
+	var gotHost string
+	var gotPort int
+	// No frames needed: we only assert the target the chart client is built with.
+	h := httpapi.NewRouterWithClient(testConfig(), recordingFactory(nil, &gotHost, &gotPort))
+
+	h.ServeHTTP(httptest.NewRecorder(),
+		httptest.NewRequest(http.MethodGet, "/api/cgicharts?id=90200&host=sfsmaster&port=9421", nil))
+	if gotHost != "127.0.0.1" || gotPort != 9421 {
+		t.Fatalf("master chart dialed %s:%d, want configured 127.0.0.1:9421", gotHost, gotPort)
+	}
+
+	h.ServeHTTP(httptest.NewRecorder(),
+		httptest.NewRequest(http.MethodGet, "/api/cgicharts?id=91000&host=10.0.0.5&port=9422", nil))
+	if gotHost != "10.0.0.5" || gotPort != 9422 {
+		t.Fatalf("server chart dialed %s:%d, want explicit 10.0.0.5:9422", gotHost, gotPort)
+	}
+}

@@ -38,8 +38,10 @@ services:
             - SAUNAFS_API_HOST=${SAUNAFS_API_HOST:-0.0.0.0}
             - SAUNAFS_API_PORT=${SAUNAFS_API_PORT:-8001}
             - SAUNAFS_API_LOGLEVEL=${SAUNAFS_API_LOGLEVEL:-INFO}
-    # Go port of leil-api. Runs alongside the Python service during the
-    # migration; mapped to a distinct host port (default 8002 -> 8001).
+    # Go port of leil-api. Mapped to a distinct host port (default 8002 -> 8001).
+    # Set LEILFS_API_URL to serve data from the canonical leilfs-api instead of
+    # the in-process binary client (the master host/port are then used only for
+    # charts, which leilfs-api does not expose). Left empty -> legacy binary mode.
     leil-api-go:
         ports:
             - ${SAUNAFS_API_GO_PORT:-8002}:8001
@@ -48,6 +50,7 @@ services:
             context: ./go
             dockerfile: Dockerfile
         environment:
+            - LEILFS_API_URL=${LEILFS_API_URL:-}
             - SAUNAFS_MASTER_HOST=${SAUNAFS_MASTER_HOST:-sfsmaster}
             - SAUNAFS_MASTER_PORT=${SAUNAFS_MASTER_PORT:-9421}
             - SAUNAFS_API_HOST=0.0.0.0

@@ -34,6 +34,17 @@ func NewClientWithDial(host string, port int, dial DialFunc) *Client {
 	return c
 }
 
+// NewChartClient builds a client for the chart endpoint WITHOUT the eager
+// master-version probe. GetChart does not need the version, and the probe sends
+// an INFO (510) message — a master/CLI command. A chart target may be a
+// chunkserver (the SPA requests per-chunkserver charts at its ip:9422), and a
+// chunkserver mishandles an unexpected INFO on its client port: it aborts the
+// connection's net worker (SIGABRT) and the chunkserver drops off the cluster.
+// Skipping the probe means charts only ever send the chart command (504).
+func NewChartClient(host string, port int) *Client {
+	return &Client{masterHost: host, masterPort: port, dial: defaultDial}
+}
+
 // MasterVersion returns the cached master version triple.
 func (c *Client) MasterVersion() [3]int { return c.masterVersion }
 

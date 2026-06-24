@@ -20,7 +20,13 @@ func main() {
 		Handler: httpapi.NewRouter(cfg),
 	}
 
-	log.Printf("leil-api listening on %s (master %s:%d)", addr, cfg.MasterHost, cfg.MasterPort)
+	if cfg.LeilfsAPIURL != "" {
+		log.Printf("leil-api listening on %s (data via leilfs-api %s; charts via master %s:%d)",
+			addr, cfg.LeilfsAPIURL, cfg.MasterHost, cfg.MasterPort)
+	} else {
+		log.Printf("leil-api listening on %s (data via binary protocol, master %s:%d)",
+			addr, cfg.MasterHost, cfg.MasterPort)
+	}
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("server error: %v", err)
 	}

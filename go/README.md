@@ -64,22 +64,45 @@ servers, err := c.GetServers()              // []models.Server
 
 Returned types come from `github.com/leil-io/saunafs-monitoring/go/leilfs/models`.
 
+## Data source: leilfs-api or the binary client
+
+The JSON layer is fed by a `DataSource`. There are two implementations, chosen
+at startup by whether `LEILFS_API_URL` is set:
+
+- **leilfs-api mode (recommended)** — set `LEILFS_API_URL` to a running
+  [leilfs-api](https://github.com/leil-io/leilfs-api) (the canonical LeilFS
+  Unified API). `internal/apiclient` fetches `/api/v1/*` and maps the responses
+  back to the legacy models, so the SPA and the `/api/*` contract are unchanged.
+  The master host/port are then used **only for charts** (`/api/cgicharts`),
+  which leilfs-api does not expose by design.
+- **binary mode (fallback)** — `LEILFS_API_URL` unset: the in-process
+  `leilfs.Client` speaks the cluster protocol directly, as before.
+
+Data flow in leilfs-api mode:
+`browser → leil-monitoring (SPA + proxy) → leil-api (this, adapter) → leilfs-api → cluster`.
+
 ## Run
 
 ```sh
-go run ./cmd/leil-api          # serves on :8001 by default
+# Against the canonical leilfs-api (assumed reachable at :8080):
+LEILFS_API_URL=http://localhost:8080 go run ./cmd/leil-api   # serves :8001
+
+# Legacy binary mode (talk to the master directly):
+SAUNAFS_MASTER_HOST=master-host go run ./cmd/leil-api        # serves :8001
+
 go build ./... && go vet ./... && go test ./...
 ```
 
-Configuration (same env vars and defaults as the Python API):
+Configuration (the Python API's env vars, plus `LEILFS_API_URL`):
 
-| Env | Default |
-|---|---|
-| `SAUNAFS_MASTER_HOST` | `sfsmaster` |
-| `SAUNAFS_MASTER_PORT` | `9421` |
-| `SAUNAFS_API_HOST` | `0.0.0.0` |
-| `SAUNAFS_API_PORT` | `8001` |
-| `SAUNAFS_API_LOGLEVEL` | `INFO` |
+| Env | Default | Meaning |
+|---|---|---|
+| `LEILFS_API_URL` | _(empty)_ | leilfs-api base URL; empty → legacy binary mode |
+| `SAUNAFS_MASTER_HOST` | `sfsmaster` | master host (binary mode + charts) |
+| `SAUNAFS_MASTER_PORT` | `9421` | master client port (binary mode + charts) |
+| `SAUNAFS_API_HOST` | `0.0.0.0` | bind address |
+| `SAUNAFS_API_PORT` | `8001` | listen port |
+| `SAUNAFS_API_LOGLEVEL` | `INFO` | log level |
 
 `GET /` redirects to `/docs` (Swagger UI backed by `/openapi.json`).
 

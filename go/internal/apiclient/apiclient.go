@@ -16,7 +16,11 @@
 //   - disk path is prefixed with "<chunkserver>:" as the legacy client did
 //   - mount/export flags arrays are joined with ", "
 //   - chunk-health per-goal entries are folded back into the int-keyed maps
-//   - hostname-bearing endpoints are requested with ?resolve=true so names show
+//   - hostname-bearing endpoints add ?resolve=true only when hostname resolution
+//     is enabled (LEILFS_RESOLVE_HOSTNAMES); it is off by default because
+//     reverse-DNS of cluster IPs that have no PTR record blocks for the OS
+//     resolver's full timeout per IP, which made every listing slow. Enable it
+//     only where the cluster subnet has working reverse DNS.
 package apiclient
 
 import (
@@ -34,15 +38,36 @@ import (
 type Client struct {
 	baseURL string
 	http    *http.Client
+	// resolve adds ?resolve=true to hostname-bearing listings so leilfs-api
+	// reverse-DNS-resolves node IPs into hostnames. Off by default: see the
+	// package doc — it is only worth the per-request resolution cost where the
+	// cluster subnet actually has reverse DNS.
+	resolve bool
 }
 
 // New returns a Client targeting the given leilfs-api base URL (e.g.
-// "http://leilfs-api:8080"). A trailing slash is tolerated.
-func New(baseURL string) *Client {
+// "http://leilfs-api:8080"). A trailing slash is tolerated. resolve enables
+// reverse-DNS hostname enrichment on the listings that support it.
+func New(baseURL string, resolve bool) *Client {
 	return &Client{
 		baseURL: strings.TrimRight(baseURL, "/"),
 		http:    &http.Client{Timeout: 30 * time.Second},
+		resolve: resolve,
 	}
+}
+
+// withResolve appends resolve=true to path when hostname resolution is enabled,
+// choosing the correct separator so an existing query (e.g. verbose=true) is
+// preserved rather than overwritten.
+func (c *Client) withResolve(path string) string {
+	if !c.resolve {
+		return path
+	}
+	sep := "?"
+	if strings.Contains(path, "?") {
+		sep = "&"
+	}
+	return path + sep + "resolve=true"
 }
 
 // get fetches path and decodes a 200 JSON body into dest. A non-200 response is
@@ -152,7 +177,7 @@ type chunkserverDTO struct {
 
 func (c *Client) GetServers() ([]models.Server, error) {
 	var ds []chunkserverDTO
-	if err := c.get("/api/v1/chunkservers?resolve=true", &ds); err != nil {
+	if err := c.get(c.withResolve("/api/v1/chunkservers"), &ds); err != nil {
 		return nil, err
 	}
 	out := make([]models.Server, 0, len(ds))
@@ -282,7 +307,7 @@ func diskStatusAndError(flags uint8, lastErr *diskErrorDTO) (status, lastError s
 
 func (c *Client) GetDisks() ([]models.Disk, error) {
 	var ds []diskDTO
-	if err := c.get("/api/v1/disks?verbose=true&resolve=true", &ds); err != nil {
+	if err := c.get(c.withResolve("/api/v1/disks?verbose=true"), &ds); err != nil {
 		return nil, err
 	}
 	out := make([]models.Disk, 0, len(ds))
@@ -314,7 +339,7 @@ type nodeDTO struct {
 
 func (c *Client) GetMetaloggers() ([]models.Metalogger, error) {
 	var ds []nodeDTO
-	if err := c.get("/api/v1/metaloggers?resolve=true", &ds); err != nil {
+	if err := c.get(c.withResolve("/api/v1/metaloggers"), &ds); err != nil {
 		return nil, err
 	}
 	out := make([]models.Metalogger, 0, len(ds))
@@ -326,7 +351,7 @@ func (c *Client) GetMetaloggers() ([]models.Metalogger, error) {
 
 func (c *Client) GetInotifiers() ([]models.INotifier, error) {
 	var ds []nodeDTO
-	if err := c.get("/api/v1/inotifiers?resolve=true", &ds); err != nil {
+	if err := c.get(c.withResolve("/api/v1/inotifiers"), &ds); err != nil {
 		return nil, err
 	}
 	out := make([]models.INotifier, 0, len(ds))
@@ -393,7 +418,7 @@ type mountDTO struct {
 
 func (c *Client) GetMounts() ([]models.Mount, error) {
 	var ds []mountDTO
-	if err := c.get("/api/v1/mounts?resolve=true", &ds); err != nil {
+	if err := c.get(c.withResolve("/api/v1/mounts"), &ds); err != nil {
 		return nil, err
 	}
 	out := make([]models.Mount, 0, len(ds))
@@ -440,7 +465,7 @@ type metadataServerDTO struct {
 
 func (c *Client) GetMetadataServers() ([]models.MetadataServer, error) {
 	var ds []metadataServerDTO
-	if err := c.get("/api/v1/metadata-servers?resolve=true", &ds); err != nil {
+	if err := c.get(c.withResolve("/api/v1/metadata-servers"), &ds); err != nil {
 		return nil, err
 	}
 	out := make([]models.MetadataServer, 0, len(ds))

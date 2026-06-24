@@ -84,7 +84,7 @@ type apiError struct {
 // client (the legacy behavior).
 func NewRouter(cfg Config) http.Handler {
 	if cfg.LeilfsAPIURL != "" {
-		client := apiclient.New(cfg.LeilfsAPIURL)
+		client := apiclient.New(cfg.LeilfsAPIURL, cfg.ResolveHostnames)
 		dataFor := func(*http.Request) (DataSource, *apiError) { return client, nil }
 		return newRouter(cfg, dataFor, leilfs.NewChartClient)
 	}

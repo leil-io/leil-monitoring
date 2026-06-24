@@ -22,7 +22,62 @@ func stub(t *testing.T, path, body string) *apiclient.Client {
 		_, _ = w.Write([]byte(body))
 	}))
 	t.Cleanup(srv.Close)
-	return apiclient.New(srv.URL)
+	return apiclient.New(srv.URL, true)
+}
+
+// captureQuery spins up a server that records the RawQuery of the first request
+// and always answers with an empty JSON array, so the resolve-gating tests can
+// assert which query parameters the client sends.
+func captureQuery(t *testing.T, resolve bool) (*apiclient.Client, *string) {
+	t.Helper()
+	got := new(string)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		*got = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	t.Cleanup(srv.Close)
+	return apiclient.New(srv.URL, resolve), got
+}
+
+func TestResolveDisabledOmitsResolveParam(t *testing.T) {
+	c, q := captureQuery(t, false)
+	if _, err := c.GetServers(); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(*q, "resolve=true") {
+		t.Errorf("query %q must not carry resolve=true when resolution is disabled", *q)
+	}
+}
+
+func TestResolveEnabledAddsResolveParam(t *testing.T) {
+	c, q := captureQuery(t, true)
+	if _, err := c.GetServers(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(*q, "resolve=true") {
+		t.Errorf("query %q must carry resolve=true when resolution is enabled", *q)
+	}
+}
+
+// disks already passes verbose=true; gating resolve must keep verbose and append
+// resolve with the correct separator rather than clobbering the query.
+func TestDisksKeepsVerboseAndGatesResolve(t *testing.T) {
+	off, qOff := captureQuery(t, false)
+	if _, err := off.GetDisks(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(*qOff, "verbose=true") || strings.Contains(*qOff, "resolve=true") {
+		t.Errorf("disks query %q: want verbose=true, no resolve=true", *qOff)
+	}
+
+	on, qOn := captureQuery(t, true)
+	if _, err := on.GetDisks(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(*qOn, "verbose=true") || !strings.Contains(*qOn, "resolve=true") {
+		t.Errorf("disks query %q: want both verbose=true and resolve=true", *qOn)
+	}
 }
 
 func TestGetInfoMapping(t *testing.T) {

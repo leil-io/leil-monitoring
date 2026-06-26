@@ -11,10 +11,10 @@ interface ConfigData {
 
 const exportCols: Column<Export>[] = [
   { header: "#", align: "right", cell: (e) => e.id, sort: (e) => e.id },
-  { header: "IP From", align: "center", cell: (e) => e.ip_from, sort: (e) => e.ip_from },
-  { header: "IP To", align: "center", cell: (e) => e.ip_to, sort: (e) => e.ip_to },
+  { header: "IP From", align: "center", cell: (e) => e.ipFrom, sort: (e) => e.ipFrom },
+  { header: "IP To", align: "center", cell: (e) => e.ipTo, sort: (e) => e.ipTo },
   { header: "Path", cell: (e) => e.path, sort: (e) => e.path },
-  { header: "Flags", cell: (e) => e.flags, sort: (e) => e.flags },
+  { header: "Flags", cell: (e) => e.flags.join(", "), sort: (e) => e.flags.join(", ") },
 ];
 
 const goalCols: Column<Goal>[] = [

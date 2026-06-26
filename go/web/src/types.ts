@@ -140,10 +140,10 @@ export interface Mount {
 
 export interface Export {
   id: number;
-  ip_from: string;
-  ip_to: string;
+  ipFrom: string;
+  ipTo: string;
   path: string;
-  flags: string;
+  flags: string[];
 }
 
 export interface MetadataServer {

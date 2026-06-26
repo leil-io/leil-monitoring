@@ -3,20 +3,20 @@
 
 export interface SystemInfo {
   version: string;
-  ram_used: number;
-  total_space: number;
-  avail_space: number;
-  trash_space: number;
-  trash_files: number;
-  reserved_space: number;
-  reserved_files: number;
-  total_objects: number;
+  memoryUsedBytes: number;
+  totalSpaceBytes: number;
+  availableSpaceBytes: number;
+  trashSpaceBytes: number;
+  trashFiles: number;
+  reservedSpaceBytes: number;
+  reservedFiles: number;
+  totalObjects: number;
   directories: number;
   files: number;
   symlinks: number;
   chunks: number;
-  all_copies: number;
-  regular_copies: number;
+  allCopies: number;
+  regularCopies: number;
 }
 
 export interface Server {
@@ -146,30 +146,30 @@ export interface MetadataServer {
 }
 
 export interface FsCheckInfo {
-  loop_start: number;
-  loop_end: number;
+  loopStart: number;
+  loopEnd: number;
   files: number;
-  under_goal_files: number;
-  missing_files: number;
+  underGoalFiles: number;
+  missingFiles: number;
   chunks: number;
-  under_goal_chunks: number;
-  missing_chunks: number;
+  underGoalChunks: number;
+  missingChunks: number;
   message: string;
 }
 
 export interface ChunkOperationsInfo {
-  loop_start: number;
-  loop_end: number;
-  delete_invalid: number;
-  not_delete_invalid: number;
-  delete_unused: number;
-  not_delete_unused: number;
-  delete_disk_clean: number;
-  not_delete_disk_clean: number;
-  delete_over_goal: number;
-  not_delete_over_goal: number;
-  replicate_under_goal: number;
-  not_replicate_under_goal: number;
+  loopStart: number;
+  loopEnd: number;
+  deleteInvalid: number;
+  notDeleteInvalid: number;
+  deleteUnused: number;
+  notDeleteUnused: number;
+  deleteDiskClean: number;
+  notDeleteDiskClean: number;
+  deleteOverGoal: number;
+  notDeleteOverGoal: number;
+  replicateUnderGoal: number;
+  notReplicateUnderGoal: number;
   rebalance: number;
 }
 

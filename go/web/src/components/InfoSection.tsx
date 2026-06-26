@@ -52,26 +52,26 @@ export function InfoSection({ master, reloadKey }: { master: Master; reloadKey: 
           <tbody>
             <tr>
               <td style={{ textAlign: "center" }}>{d.info.version}</td>
-              <td style={{ textAlign: "right" }}>{humanizeBytes(d.info.ram_used)}</td>
-              <td style={{ textAlign: "right" }}>{humanizeBytes(d.info.total_space)}</td>
-              <td style={{ textAlign: "right" }}>{humanizeBytes(d.info.avail_space)}</td>
-              <td style={{ textAlign: "right" }}>{humanizeBytes(d.info.trash_space)}</td>
-              <td style={{ textAlign: "right" }}>{d.info.trash_files}</td>
-              <td style={{ textAlign: "right" }}>{humanizeBytes(d.info.reserved_space)}</td>
-              <td style={{ textAlign: "right" }}>{d.info.reserved_files}</td>
-              <td style={{ textAlign: "right" }}>{d.info.total_objects}</td>
+              <td style={{ textAlign: "right" }}>{humanizeBytes(d.info.memoryUsedBytes)}</td>
+              <td style={{ textAlign: "right" }}>{humanizeBytes(d.info.totalSpaceBytes)}</td>
+              <td style={{ textAlign: "right" }}>{humanizeBytes(d.info.availableSpaceBytes)}</td>
+              <td style={{ textAlign: "right" }}>{humanizeBytes(d.info.trashSpaceBytes)}</td>
+              <td style={{ textAlign: "right" }}>{d.info.trashFiles}</td>
+              <td style={{ textAlign: "right" }}>{humanizeBytes(d.info.reservedSpaceBytes)}</td>
+              <td style={{ textAlign: "right" }}>{d.info.reservedFiles}</td>
+              <td style={{ textAlign: "right" }}>{d.info.totalObjects}</td>
               <td style={{ textAlign: "right" }}>{d.info.directories}</td>
               <td style={{ textAlign: "right" }}>{d.info.files}</td>
               <td style={{ textAlign: "right" }}>{d.info.symlinks}</td>
               <td style={{ textAlign: "right" }}>{d.info.chunks}</td>
-              <td style={{ textAlign: "right" }}>{d.info.all_copies}</td>
-              <td style={{ textAlign: "right" }}>{d.info.regular_copies}</td>
+              <td style={{ textAlign: "right" }}>{d.info.allCopies}</td>
+              <td style={{ textAlign: "right" }}>{d.info.regularCopies}</td>
             </tr>
           </tbody>
         </table>
       )}
 
-      {d.ops && d.ops.loop_start > 0 && (
+      {d.ops && d.ops.loopStart > 0 && (
         <table class="FR" cellSpacing="0">
           <thead>
             <tr><th colSpan={8}>Chunk Operations Info</th></tr>
@@ -83,13 +83,13 @@ export function InfoSection({ master, reloadKey }: { master: Master; reloadKey: 
           </thead>
           <tbody>
             <tr>
-              <td style={{ textAlign: "center" }}>{formatTimestamp(d.ops.loop_start)}</td>
-              <td style={{ textAlign: "center" }}>{formatTimestamp(d.ops.loop_end)}</td>
-              <td style={{ textAlign: "right" }}>{d.ops.delete_invalid}/{d.ops.delete_invalid + d.ops.not_delete_invalid}</td>
-              <td style={{ textAlign: "right" }}>{d.ops.delete_unused}/{d.ops.delete_unused + d.ops.not_delete_unused}</td>
-              <td style={{ textAlign: "right" }}>{d.ops.delete_disk_clean}/{d.ops.delete_disk_clean + d.ops.not_delete_disk_clean}</td>
-              <td style={{ textAlign: "right" }}>{d.ops.delete_over_goal}/{d.ops.delete_over_goal + d.ops.not_delete_over_goal}</td>
-              <td style={{ textAlign: "right" }}>{d.ops.replicate_under_goal}/{d.ops.replicate_under_goal + d.ops.not_replicate_under_goal}</td>
+              <td style={{ textAlign: "center" }}>{formatTimestamp(d.ops.loopStart)}</td>
+              <td style={{ textAlign: "center" }}>{formatTimestamp(d.ops.loopEnd)}</td>
+              <td style={{ textAlign: "right" }}>{d.ops.deleteInvalid}/{d.ops.deleteInvalid + d.ops.notDeleteInvalid}</td>
+              <td style={{ textAlign: "right" }}>{d.ops.deleteUnused}/{d.ops.deleteUnused + d.ops.notDeleteUnused}</td>
+              <td style={{ textAlign: "right" }}>{d.ops.deleteDiskClean}/{d.ops.deleteDiskClean + d.ops.notDeleteDiskClean}</td>
+              <td style={{ textAlign: "right" }}>{d.ops.deleteOverGoal}/{d.ops.deleteOverGoal + d.ops.notDeleteOverGoal}</td>
+              <td style={{ textAlign: "right" }}>{d.ops.replicateUnderGoal}/{d.ops.replicateUnderGoal + d.ops.notReplicateUnderGoal}</td>
               <td style={{ textAlign: "right" }}>{d.ops.rebalance}</td>
             </tr>
           </tbody>
@@ -123,7 +123,7 @@ export function InfoSection({ master, reloadKey }: { master: Master; reloadKey: 
         </table>
       )}
 
-      {d.fsCheck && d.fsCheck.loop_start > 0 && (
+      {d.fsCheck && d.fsCheck.loopStart > 0 && (
         <table class="FR" cellSpacing="0">
           <tbody>
             <tr><th colSpan={8}>Filesystem Check Info</th></tr>
@@ -132,14 +132,14 @@ export function InfoSection({ master, reloadKey }: { master: Master; reloadKey: 
               <th>Missing Files</th><th>Chunks</th><th>Under-Goal Chunks</th><th>Missing Chunks</th>
             </tr>
             <tr>
-              <td style={{ textAlign: "center" }}>{formatTimestamp(d.fsCheck.loop_start)}</td>
-              <td style={{ textAlign: "center" }}>{formatTimestamp(d.fsCheck.loop_end)}</td>
+              <td style={{ textAlign: "center" }}>{formatTimestamp(d.fsCheck.loopStart)}</td>
+              <td style={{ textAlign: "center" }}>{formatTimestamp(d.fsCheck.loopEnd)}</td>
               <td style={{ textAlign: "right" }}>{d.fsCheck.files}</td>
-              <td style={{ textAlign: "right" }}>{d.fsCheck.under_goal_files}</td>
-              <td style={{ textAlign: "right" }}>{d.fsCheck.missing_files}</td>
+              <td style={{ textAlign: "right" }}>{d.fsCheck.underGoalFiles}</td>
+              <td style={{ textAlign: "right" }}>{d.fsCheck.missingFiles}</td>
               <td style={{ textAlign: "right" }}>{d.fsCheck.chunks}</td>
-              <td style={{ textAlign: "right" }}>{d.fsCheck.under_goal_chunks}</td>
-              <td style={{ textAlign: "right" }}>{d.fsCheck.missing_chunks}</td>
+              <td style={{ textAlign: "right" }}>{d.fsCheck.underGoalChunks}</td>
+              <td style={{ textAlign: "right" }}>{d.fsCheck.missingChunks}</td>
             </tr>
             {d.fsCheck.message && (
               <>

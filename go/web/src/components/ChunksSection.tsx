@@ -9,8 +9,8 @@ const REP_HEADERS = Array.from({ length: 11 }, (_, i) =>
 
 export function ChunksSection({ master, reloadKey }: { master: Master; reloadKey: number }) {
   const { data, error, loading } = useFetch<MappedGoalHealth[]>(async () => {
-    const [health, goals] = await Promise.all([api.chunkHealth(master), api.goals(master)]);
-    return mapGoalHealth(health, goals);
+    const health = await api.chunkHealth(master);
+    return mapGoalHealth(health);
   }, [master.host, master.port, reloadKey]);
 
   if (loading) return <p>Loading…</p>;

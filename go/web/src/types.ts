@@ -195,11 +195,24 @@ export interface Goal {
   definition: string;
 }
 
+export interface ChunkHealthGoal {
+  goalId: number;
+  name: string;
+  total: number;
+  safe: number;
+  endangered: number;
+  lost: number;
+  replication: number[];
+  deletion: number[];
+}
+
+export interface ChunkHealthTotals {
+  replication: number[];
+  deletion: number[];
+}
+
 export interface ChunkHealth {
-  regular_only: boolean;
-  safe: Record<string, number>;
-  endangered: Record<string, number>;
-  lost: Record<string, number>;
-  replication: Record<string, number[]>;
-  deletion: Record<string, number[]>;
+  regularOnly: boolean;
+  goals: ChunkHealthGoal[];
+  totals: ChunkHealthTotals;
 }

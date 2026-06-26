@@ -21,19 +21,19 @@ export interface SystemInfo {
 
 export interface Server {
   id: number;
-  hostname: string;
-  ip_address: string;
+  hostname?: string;
+  ip: string;
   port: number;
   version: string;
-  is_disconnected: boolean;
+  connected: boolean;
   label: string;
-  used_space: number;
-  total_space: number;
+  usedSpaceBytes: number;
+  totalSpaceBytes: number;
   chunks: number;
-  used_space_tobedeleted: number;
-  total_space_tobedeleted: number;
-  chunks_tobedeleted: number;
-  error_count: number;
+  usedSpaceToDeleteBytes: number;
+  totalSpaceToDeleteBytes: number;
+  chunksToDelete: number;
+  errorCount: number;
 }
 
 export interface DiskStats {
@@ -71,8 +71,8 @@ export interface Disk {
 
 export interface Metalogger {
   id: number;
-  hostname: string;
-  ip_address: string;
+  hostname?: string;
+  ip: string;
   version: string;
 }
 
@@ -136,13 +136,13 @@ export interface Export {
 
 export interface MetadataServer {
   id: number;
-  hostname: string;
-  ip_address: string;
+  hostname?: string;
+  ip: string;
   port: number;
   version: string;
   personality: string;
   state: string;
-  metadata_version: number;
+  metadataVersion: number;
 }
 
 export interface FsCheckInfo {

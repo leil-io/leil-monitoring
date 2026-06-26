@@ -15,19 +15,19 @@ interface ServersData {
 
 const metaCols: Column<MetadataServer>[] = [
   { header: "#", align: "right", cell: (s) => s.id, sort: (s) => s.id },
-  { header: "Host", cell: (s) => s.hostname, sort: (s) => s.hostname },
-  { header: "IP", align: "center", cell: (s) => s.ip_address, sort: (s) => s.ip_address },
+  { header: "Host", cell: (s) => s.hostname, sort: (s) => s.hostname ?? "" },
+  { header: "IP", align: "center", cell: (s) => s.ip, sort: (s) => s.ip },
   { header: "Client Port", align: "center", cell: (s) => s.port, sort: (s) => s.port },
   { header: "Version", align: "center", cell: (s) => s.version, sort: (s) => s.version },
   { header: "Personality", align: "center", cell: (s) => s.personality, sort: (s) => s.personality },
   { header: "State", align: "center", cell: (s) => s.state, sort: (s) => s.state },
-  { header: "Metadata Version", align: "right", cell: (s) => s.metadata_version, sort: (s) => s.metadata_version },
+  { header: "Metadata Version", align: "right", cell: (s) => s.metadataVersion, sort: (s) => s.metadataVersion },
 ];
 
 const loggerCols = (): Column<Metalogger>[] => [
   { header: "#", align: "right", cell: (l) => l.id, sort: (l) => l.id },
-  { header: "Host", cell: (l) => l.hostname, sort: (l) => l.hostname },
-  { header: "IP", align: "center", cell: (l) => l.ip_address, sort: (l) => l.ip_address },
+  { header: "Host", cell: (l) => l.hostname, sort: (l) => l.hostname ?? "" },
+  { header: "IP", align: "center", cell: (l) => l.ip, sort: (l) => l.ip },
   { header: "Version", align: "center", cell: (l) => l.version, sort: (l) => l.version },
 ];
 
@@ -67,11 +67,11 @@ export function ServersSection({ master, reloadKey }: { master: Master; reloadKe
           <tbody>
             {d.servers.map((s, idx) => (
               <tr class={`C${(idx % 2) + 1}`}>
-                {s.is_disconnected ? (
+                {!s.connected ? (
                   <>
                     <td style={{ textAlign: "right" }}><span class="DISCONNECTED">{s.id}</span></td>
                     <td><span class="DISCONNECTED">{s.hostname}</span></td>
-                    <td style={{ textAlign: "center" }}><span class="DISCONNECTED">{s.ip_address}</span></td>
+                    <td style={{ textAlign: "center" }}><span class="DISCONNECTED">{s.ip}</span></td>
                     <td style={{ textAlign: "center" }}><span class="DISCONNECTED">{s.port}</span></td>
                     <td colSpan={9}><span class="DISCONNECTED">Disconnected</span></td>
                   </>
@@ -79,18 +79,18 @@ export function ServersSection({ master, reloadKey }: { master: Master; reloadKe
                   <>
                     <td style={{ textAlign: "right" }}>{s.id}</td>
                     <td>{s.hostname}</td>
-                    <td style={{ textAlign: "center" }}>{s.ip_address}</td>
+                    <td style={{ textAlign: "center" }}>{s.ip}</td>
                     <td style={{ textAlign: "center" }}>{s.port}</td>
                     <td style={{ textAlign: "center" }}>{s.version}</td>
                     <td class="LEFT">{s.label}</td>
                     <td style={{ textAlign: "right" }}>{s.chunks}</td>
-                    <td style={{ textAlign: "right" }}>{humanizeBytes(s.used_space)}</td>
-                    <td style={{ textAlign: "right" }}>{humanizeBytes(s.total_space)}</td>
-                    <td><ProgressBar pct={percent(s.used_space, s.total_space)} px /></td>
-                    <td style={{ textAlign: "right" }}>{s.chunks_tobedeleted}</td>
-                    <td style={{ textAlign: "right" }}>{humanizeBytes(s.used_space_tobedeleted)}</td>
-                    <td style={{ textAlign: "right" }}>{humanizeBytes(s.total_space_tobedeleted)}</td>
-                    <td><ProgressBar pct={percent(s.used_space_tobedeleted, s.total_space_tobedeleted)} px /></td>
+                    <td style={{ textAlign: "right" }}>{humanizeBytes(s.usedSpaceBytes)}</td>
+                    <td style={{ textAlign: "right" }}>{humanizeBytes(s.totalSpaceBytes)}</td>
+                    <td><ProgressBar pct={percent(s.usedSpaceBytes, s.totalSpaceBytes)} px /></td>
+                    <td style={{ textAlign: "right" }}>{s.chunksToDelete}</td>
+                    <td style={{ textAlign: "right" }}>{humanizeBytes(s.usedSpaceToDeleteBytes)}</td>
+                    <td style={{ textAlign: "right" }}>{humanizeBytes(s.totalSpaceToDeleteBytes)}</td>
+                    <td><ProgressBar pct={percent(s.usedSpaceToDeleteBytes, s.totalSpaceToDeleteBytes)} px /></td>
                   </>
                 )}
               </tr>

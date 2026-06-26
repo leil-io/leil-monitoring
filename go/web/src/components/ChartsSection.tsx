@@ -101,14 +101,14 @@ function ServerCharts({ master, reloadKey }: { master: Master; reloadKey: number
   );
   if (loading) return <p>Loading…</p>;
   if (error) return <p class="MISSING">{error}</p>;
-  const servers = (data ?? []).filter((s) => !s.is_disconnected);
+  const servers = (data ?? []).filter((s) => s.connected);
   return (
     <>
       {servers.map((s) => (
         <ChartContainer
-          key={`${s.ip_address}:${s.port}`}
-          title={`Chunkserver ${s.hostname} (${s.ip_address}:${s.port}) charts`}
-          host={s.ip_address}
+          key={`${s.ip}:${s.port}`}
+          title={`Chunkserver ${s.hostname} (${s.ip}:${s.port}) charts`}
+          host={s.ip}
           port={s.port}
           charts={chunkServerCharts}
           cls="chunkServerCharts"

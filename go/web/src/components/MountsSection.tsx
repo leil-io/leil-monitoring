@@ -2,12 +2,12 @@ import { useState } from "preact/hooks";
 import type { Master } from "../api";
 import { api } from "../api";
 import { useFetch } from "../hooks";
-import { OP_NAMES, type Mount, type OperationStats } from "../types";
+import { OP_NAMES, type Mount } from "../types";
 
 function OpsTable({ title, mounts, which }: {
   title: string;
   mounts: Mount[];
-  which: "current_op_stats" | "last_hour_op_stats";
+  which: "currentOpStats" | "lastHourOpStats";
 }) {
   return (
     <table class="FR sortable" cellSpacing="0">
@@ -20,14 +20,14 @@ function OpsTable({ title, mounts, which }: {
       </thead>
       <tbody>
         {mounts.map((m, idx) => {
-          const stats = m[which] as OperationStats | null;
+          const stats = m[which];
           return (
             <tr class={`C${(idx % 2) + 1}`}>
               <td style={{ textAlign: "right" }}>{m.id}</td>
               <td>{m.hostname}</td>
-              <td style={{ textAlign: "center" }}>{m.ip_address}</td>
-              <td>{m.mounted_path}</td>
-              {OP_NAMES.map((op) => <td style={{ textAlign: "right" }}>{stats ? stats[op] : 0}</td>)}
+              <td style={{ textAlign: "center" }}>{m.ip}</td>
+              <td>{m.mountedPath}</td>
+              {OP_NAMES.map((op) => <td style={{ textAlign: "right" }}>{stats[op]}</td>)}
             </tr>
           );
         })}
@@ -70,19 +70,19 @@ export function MountsSection({ master, reloadKey }: { master: Master; reloadKey
             <>
               <tr class={`C${(idx % 2) + 1}`} style={{ cursor: "pointer" }} onClick={() => toggle(m.id)}>
                 <td style={{ textAlign: "right" }}>{m.id}</td>
-                <td style={{ textAlign: "right" }}>{m.session_id}</td>
+                <td style={{ textAlign: "right" }}>{m.sessionId}</td>
                 <td>{m.hostname}</td>
-                <td style={{ textAlign: "center" }}>{m.ip_address}</td>
+                <td style={{ textAlign: "center" }}>{m.ip}</td>
                 <td style={{ textAlign: "center" }}>{m.version}</td>
-                <td>{m.mounted_path}</td>
-                <td>{m.root_uid}</td>
-                <td>{m.root_gid}</td>
-                <td>{m.map_all_uid}</td>
-                <td>{m.map_all_gid}</td>
-                <td>{m.min_goal}</td>
-                <td>{m.max_goal}</td>
-                <td>{m.min_trash_time}</td>
-                <td>{m.max_trash_time}</td>
+                <td>{m.mountedPath}</td>
+                <td>{m.rootUid}</td>
+                <td>{m.rootGid}</td>
+                <td>{m.mapAllUid}</td>
+                <td>{m.mapAllGid}</td>
+                <td>{m.minGoal}</td>
+                <td>{m.maxGoal}</td>
+                <td>{m.minTrashTime}</td>
+                <td>{m.maxTrashTime}</td>
                 <td>Click to view</td>
               </tr>
               {expanded.has(m.id) && (
@@ -90,7 +90,7 @@ export function MountsSection({ master, reloadKey }: { master: Master; reloadKey
                   <td colSpan={15}>
                     <div style={{ textAlign: "left", padding: "10px" }}>
                       <hr />
-                      <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>{m.mount_info}</pre>
+                      <pre style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>{m.mountInfo}</pre>
                     </div>
                   </td>
                 </tr>
@@ -100,8 +100,8 @@ export function MountsSection({ master, reloadKey }: { master: Master; reloadKey
         </tbody>
       </table>
 
-      <OpsTable title="Operations (current)" mounts={mounts} which="current_op_stats" />
-      <OpsTable title="Operations (last hour)" mounts={mounts} which="last_hour_op_stats" />
+      <OpsTable title="Operations (current)" mounts={mounts} which="currentOpStats" />
+      <OpsTable title="Operations (last hour)" mounts={mounts} which="lastHourOpStats" />
     </>
   );
 }

@@ -118,24 +118,24 @@ export const OP_NAMES: (keyof OperationStats)[] = [
 
 export interface Mount {
   id: number;
-  session_id: number;
-  hostname: string;
-  ip_address: string;
-  mounted_path: string;
+  sessionId: number;
+  ip: string;
+  hostname?: string;
   version: string;
-  root_path: string;
-  mount_info: string;
-  flags: string;
-  root_uid: number;
-  root_gid: number;
-  map_all_uid: number;
-  map_all_gid: number;
-  min_goal: number | null;
-  max_goal: number | null;
-  min_trash_time: number | null;
-  max_trash_time: number | null;
-  current_op_stats: OperationStats | null;
-  last_hour_op_stats: OperationStats | null;
+  rootPath: string;
+  mountedPath: string;
+  mountInfo: string;
+  flags: string[];
+  rootUid: number;
+  rootGid: number;
+  mapAllUid: number;
+  mapAllGid: number;
+  minGoal: number;
+  maxGoal: number;
+  minTrashTime: number;
+  maxTrashTime: number;
+  currentOpStats: OperationStats;
+  lastHourOpStats: OperationStats;
 }
 
 export interface Export {

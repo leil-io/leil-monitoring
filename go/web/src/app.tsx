@@ -34,15 +34,14 @@ function renderSection(id: SectionId, master: Master, reloadKey: number) {
     case "disks": return <DisksSection master={master} reloadKey={reloadKey} />;
     case "config": return <ConfigSection master={master} reloadKey={reloadKey} />;
     case "mounts": return <MountsSection master={master} reloadKey={reloadKey} />;
-    case "master-charts": return <ChartsSection master={master} which="master" reloadKey={reloadKey} />;
-    case "server-charts": return <ChartsSection master={master} which="servers" reloadKey={reloadKey} />;
+    case "master-charts": return <ChartsSection which="master" reloadKey={reloadKey} />;
+    case "server-charts": return <ChartsSection which="servers" reloadKey={reloadKey} />;
   }
 }
 
 export function App() {
   const [section, setSection] = useState<SectionId>(currentHash());
-  const [master, setMaster] = useState<Master>({ host: "sfsmaster", port: 9421 });
-  const [form, setForm] = useState({ host: "sfsmaster", port: "9421" });
+  const master: Master = { host: "sfsmaster", port: 9421 };
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
@@ -50,12 +49,6 @@ export function App() {
     addEventListener("hashchange", onHash);
     return () => removeEventListener("hashchange", onHash);
   }, []);
-
-  const applyMaster = () => {
-    const port = parseInt(form.port, 10);
-    setMaster({ host: form.host || "sfsmaster", port: Number.isNaN(port) ? 9421 : port });
-    setReloadKey((k) => k + 1);
-  };
 
   return (
     <>
@@ -73,20 +66,6 @@ export function App() {
           ))}
         </nav>
         <div class="master-selector">
-          <input
-            type="text"
-            value={form.host}
-            size={20}
-            aria-label="master host"
-            onInput={(e) => setForm({ ...form, host: (e.target as HTMLInputElement).value })}
-          />
-          <input
-            type="number"
-            value={form.port}
-            aria-label="master port"
-            onInput={(e) => setForm({ ...form, port: (e.target as HTMLInputElement).value })}
-          />
-          <button class="button" onClick={applyMaster}>Go</button>
           <button class="button" onClick={() => setReloadKey((k) => k + 1)}>Refresh</button>
         </div>
       </header>

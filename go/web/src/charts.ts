@@ -153,12 +153,12 @@ function accumulateRows(rows: number[][]): number[][] {
   });
 }
 
-async function getCSV(chart: ChartInfo, host: string, port: string | number, range: number): Promise<string> {
-  const url = new URL("/api/cgicharts", location.origin);
+async function getCSV(chart: ChartInfo, node: string, range: number): Promise<string> {
+  const url = new URL("/api/v1/charts", location.origin);
   url.searchParams.set("id", String(chart.id + range));
-  url.searchParams.set("host", host);
-  url.searchParams.set("port", String(port));
+  if (node) url.searchParams.set("node", node);   // empty node = the configured master
   const res = await fetch(url);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.text();
 }
 
@@ -166,11 +166,10 @@ async function getCSV(chart: ChartInfo, host: string, port: string | number, ran
 // ready data (x-axis Date labels + named series).
 export async function fetchChartData(
   chart: ChartInfo,
-  host: string,
-  port: string | number,
+  node: string,
   range: number = timeRange.SHORT.id,
 ): Promise<ChartData> {
-  const csv = await getCSV(chart, host, port, range);
+  const csv = await getCSV(chart, node, range);
   const rawRows = parseData(csv);
   const rows = chart.sumSeries ? accumulateRows(rawRows) : rawRows;
   const intervalSecs = getIntervalFromData(rows);

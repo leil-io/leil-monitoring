@@ -15,7 +15,6 @@ function statusClass(status: string): string {
 const ms = (usec: number) => `${(usec / 1000).toFixed(1)} ms`;
 
 function StatsTable({ disks, range }: { disks: Disk[]; range: "minute" | "hour" | "day" }) {
-  const key = `${range}_stats` as const;
   return (
     <table class="FR sortable" cellSpacing="0">
       <thead>
@@ -28,21 +27,21 @@ function StatsTable({ disks, range }: { disks: Disk[]; range: "minute" | "hour" 
       </thead>
       <tbody>
         {disks.map((disk, idx) => {
-          const st: DiskStats = disk[key];
+          const st: DiskStats = disk.stats[range];
           return (
             <tr class={`C${(idx % 2) + 1}`}>
-              <td>{disk.path}</td>
-              <td style={{ textAlign: "right" }} title={`${Math.trunc(st.read_bytes_persecond)} B/s`}>{humanizeBytes(st.read_bytes_persecond)}/s</td>
-              <td style={{ textAlign: "right" }} title={`${Math.trunc(st.written_bytes_persecond)} B/s`}>{humanizeBytes(st.written_bytes_persecond)}/s</td>
-              <td style={{ textAlign: "right" }} title={`${st.read_usec} μs total`}>{ms(st.read_usec_avg)}</td>
-              <td style={{ textAlign: "right" }} title={`${st.read_usec_max} μs max`}>{ms(st.read_usec_max)}</td>
-              <td style={{ textAlign: "right" }} title={`${st.written_usec} μs total`}>{ms(st.written_usec_avg)}</td>
-              <td style={{ textAlign: "right" }} title={`${st.written_usec_max} μs max`}>{ms(st.written_usec_max)}</td>
-              <td style={{ textAlign: "right" }} title={`${st.fsync_usec} μs total`}>{ms(st.fsync_usec_avg)}</td>
-              <td style={{ textAlign: "right" }} title={`${st.fsync_usec_max} μs max`}>{ms(st.fsync_usec_max)}</td>
-              <td style={{ textAlign: "right" }} title={`Average ${Math.trunc(st.read_block_size_avg)} bytes/op`}>{st.read_ops}</td>
-              <td style={{ textAlign: "right" }} title={`Average ${Math.trunc(st.written_block_size_avg)} bytes/op`}>{st.write_ops}</td>
-              <td style={{ textAlign: "right" }}>{st.fsync_ops}</td>
+              <td>{`${disk.chunkserver}:${disk.path}`}</td>
+              <td style={{ textAlign: "right" }} title={`${Math.trunc(st.readBytesPerSecond ?? 0)} B/s`}>{humanizeBytes(st.readBytesPerSecond ?? 0)}/s</td>
+              <td style={{ textAlign: "right" }} title={`${Math.trunc(st.writeBytesPerSecond ?? 0)} B/s`}>{humanizeBytes(st.writeBytesPerSecond ?? 0)}/s</td>
+              <td style={{ textAlign: "right" }} title={`${st.readUsec} μs total`}>{ms(st.readUsecAvg ?? 0)}</td>
+              <td style={{ textAlign: "right" }} title={`${st.readUsecMax} μs max`}>{ms(st.readUsecMax)}</td>
+              <td style={{ textAlign: "right" }} title={`${st.writeUsec} μs total`}>{ms(st.writeUsecAvg ?? 0)}</td>
+              <td style={{ textAlign: "right" }} title={`${st.writeUsecMax} μs max`}>{ms(st.writeUsecMax)}</td>
+              <td style={{ textAlign: "right" }} title={`${st.fsyncUsec} μs total`}>{ms(st.fsyncUsecAvg ?? 0)}</td>
+              <td style={{ textAlign: "right" }} title={`${st.fsyncUsecMax} μs max`}>{ms(st.fsyncUsecMax)}</td>
+              <td style={{ textAlign: "right" }} title={`Average ${Math.trunc(st.readBlockSizeAvg ?? 0)} bytes/op`}>{st.readOps}</td>
+              <td style={{ textAlign: "right" }} title={`Average ${Math.trunc(st.writeBlockSizeAvg ?? 0)} bytes/op`}>{st.writeOps}</td>
+              <td style={{ textAlign: "right" }}>{st.fsyncOps}</td>
             </tr>
           );
         })}
@@ -72,18 +71,24 @@ export function DisksSection({ master, reloadKey }: { master: Master; reloadKey:
           </tr>
         </thead>
         <tbody>
-          {disks.map((disk, idx) => (
-            <tr class={`C${(idx % 2) + 1}`}>
-              <td style={{ textAlign: "right" }}>{idx + 1}</td>
-              <td>{disk.path}</td>
-              <td style={{ textAlign: "right" }} class={statusClass(disk.status)}>{disk.status}</td>
-              <td style={{ textAlign: "right" }} class={disk.last_error.toLowerCase().includes("no errors") ? "NORMAL" : "MISSING"}>{disk.last_error}</td>
-              <td style={{ textAlign: "right" }}>{disk.chunks}</td>
-              <td style={{ textAlign: "right" }}>{humanizeBytes(disk.used_space)}</td>
-              <td style={{ textAlign: "right" }}>{humanizeBytes(disk.total_space)}</td>
-              <td><ProgressBar pct={percent(disk.used_space, disk.total_space)} /></td>
-            </tr>
-          ))}
+          {disks.map((disk, idx) => {
+            const errText = disk.lastError === null
+              ? "No errors"
+              : `chunk ${disk.lastError.chunkId} @ ${new Date(disk.lastError.timestamp * 1000).toLocaleString()}`;
+            const errClass = disk.lastError === null ? "" : "MISSING";
+            return (
+              <tr class={`C${(idx % 2) + 1}`}>
+                <td style={{ textAlign: "right" }}>{idx + 1}</td>
+                <td>{`${disk.chunkserver}:${disk.path}`}</td>
+                <td style={{ textAlign: "right" }} class={statusClass(disk.status)}>{disk.status}</td>
+                <td style={{ textAlign: "right" }} class={errClass || "NORMAL"}>{errText}</td>
+                <td style={{ textAlign: "right" }}>{disk.chunks}</td>
+                <td style={{ textAlign: "right" }}>{humanizeBytes(disk.usedSpaceBytes)}</td>
+                <td style={{ textAlign: "right" }}>{humanizeBytes(disk.totalSpaceBytes)}</td>
+                <td><ProgressBar pct={percent(disk.usedSpaceBytes, disk.totalSpaceBytes)} /></td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 

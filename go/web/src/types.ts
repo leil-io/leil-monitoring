@@ -36,37 +36,49 @@ export interface Server {
   errorCount: number;
 }
 
+export interface DiskError {
+  chunkId: number;
+  timestamp: number;
+}
+
 export interface DiskStats {
-  read_bytes: number;
-  read_bytes_persecond: number;
-  read_ops: number;
-  read_usec: number;
-  read_usec_avg: number;
-  read_usec_max: number;
-  read_block_size_avg: number;
-  written_bytes: number;
-  written_bytes_persecond: number;
-  write_ops: number;
-  written_usec: number;
-  written_usec_avg: number;
-  written_usec_max: number;
-  written_block_size_avg: number;
-  fsync_ops: number;
-  fsync_usec: number;
-  fsync_usec_avg: number;
-  fsync_usec_max: number;
+  readBytes: number;
+  readOps: number;
+  readUsec: number;
+  readUsecMax: number;
+  writeBytes: number;
+  writeOps: number;
+  writeUsec: number;
+  writeUsecMax: number;
+  fsyncOps: number;
+  fsyncUsec: number;
+  fsyncUsecMax: number;
+  // verbose=true only (may be null):
+  readBytesPerSecond: number | null;
+  writeBytesPerSecond: number | null;
+  readUsecAvg: number | null;
+  writeUsecAvg: number | null;
+  fsyncUsecAvg: number | null;
+  readBlockSizeAvg: number | null;
+  writeBlockSizeAvg: number | null;
+}
+
+export interface DiskStatsTriple {
+  minute: DiskStats;
+  hour: DiskStats;
+  day: DiskStats;
 }
 
 export interface Disk {
+  chunkserver: string;
   path: string;
-  status: string;
-  last_error: string;
-  total_space: number;
-  used_space: number;
+  status: string;  // enum: "ok" | "marked_for_removal" | "damaged" | ...
+  flags: number;
+  lastError: DiskError | null;
+  totalSpaceBytes: number;
+  usedSpaceBytes: number;
   chunks: number;
-  minute_stats: DiskStats;
-  hour_stats: DiskStats;
-  day_stats: DiskStats;
+  stats: DiskStatsTriple;
 }
 
 export interface Metalogger {

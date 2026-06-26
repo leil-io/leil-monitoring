@@ -110,17 +110,24 @@ TypeScript types + components
 `charts.ts`
 - Fetch `/api/v1/charts?id=<id>&node=<selected>`; `node` empty → master.
 
-### Node dropdown (`app.tsx`)
+### Charts: two enumerated pages (`ChartsSection.tsx`, `app.tsx`)
 
 - Remove the `host`/`port` `<input>`s and the `Go` button (and `applyMaster`).
-- Add a `<select>`:
-  - Option `Master` (default) → charts request sends no `node` (leilfs-api
-    defaults to master).
-  - One option per chunkserver from `/api/v1/chunkservers` (label by hostname/IP,
-    value = id or IP).
-- Selection feeds `charts.ts`; data sections no longer need a master selector
-  (single-cluster — leilfs-api is bound to one cluster).
-- Keep the `Refresh` button.
+  Keep the `Refresh` button. No dropdown.
+- **Keep the two chart pages** — a **Masters** page and a **Chunkservers** page —
+  each *enumerating* its nodes (one chart block per node), matching the existing
+  per-server charts behavior and scaling to future multi-master clusters.
+  - **Chunkservers page:** enumerate `/api/v1/chunkservers` (connected), one block
+    per server, `node=<ip>`.
+  - **Masters page:** enumerate masters from `/api/v1/metadata-servers`
+    (`personality === "master"`), one block per master. **Phase-1 targeting
+    limit:** leilfs-api's `/api/v1/charts` resolves `node` only to `""` (configured
+    master) or a known chunkserver id/ip, so every master block uses `node=""`
+    today. True per-master targeting needs a future leilfs-api enhancement
+    (resolve master/shadow ips); the page is structured to enumerate so it is
+    ready when that lands.
+- Data sections no longer need a master selector (single-cluster — leilfs-api is
+  bound to one cluster); they keep a constant `master` prop to avoid churn.
 
 ### Deploy
 

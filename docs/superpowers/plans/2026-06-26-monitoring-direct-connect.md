@@ -18,10 +18,12 @@
 - **Canonical casing:** leilfs-api is camelCase; legacy was snake_case. Every field access in every touched component changes accordingly.
 - **No behavior change to the cluster contract:** leilfs-api ignores unknown query params (so a stale `masterhost`/`masterport` is harmless), and `/api/v1/charts` forwards the same uint32 chart id to the same binary CHART command the legacy client used — so the chart catalog ids in `charts.ts` and the CSV parsing are unchanged.
 
-## Design decisions baked into this plan (confirm at review)
+## Design decisions baked into this plan
 
-1. **Node dropdown + charts UX (DECISION — please confirm):** The header's host/port inputs + `Go` button are replaced by a single node `<select>`: option **"Master"** (value `""`) plus one option per chunkserver (value = canonical `ip`, label = `hostname (ip)` or `ip`), populated from `GET /api/v1/chunkservers`. The two separate chart nav entries (`master-charts`, `server-charts`) are **merged into one "Charts" section** whose content reflects the selected node: `masterCharts` when "Master" is selected (`node=""`), `chunkServerCharts` for a selected chunkserver (`node=<ip>`). This replaces the old "dump every server's charts" view with the dropdown-selected single node — the "better UX" chosen during brainstorming. *If you'd rather keep the two-section layout, that's a small tweak to Task 9.*
-2. **Data sections are cluster-bound:** leilfs-api is configured for one cluster and ignores per-request master selection, so the data sections (`Info`, `Chunks`, `Servers`, `Disks`, `Config`, `Mounts`) no longer depend on a selectable master. To minimize churn, their `master` prop is kept but fed a constant default `{ host: "sfsmaster", port: 9421 }` that never changes (so they never needlessly refetch when the chart node changes). The chart node lives in a separate `chartNode` state.
+1. **Two chart pages, enumerated per page (CONFIRMED):** Keep the existing two chart nav entries — a **Masters** page and a **Chunkservers** page. Each page *enumerates* its nodes (one chart block per node), matching today's "Server Charts" behavior and scaling naturally to multiple masters in the future. The free-text host/port inputs + `Go` button are removed entirely; **no dropdown** and no `chartNode` state. Charts target a node via leilfs-api's `node` query param.
+   - **Chunkservers page:** fetch `GET /api/v1/chunkservers`, render one chart block per connected chunkserver, `node=<canonical ip>`.
+   - **Masters page:** fetch `GET /api/v1/metadata-servers`, render a chart block per master (today: the single configured master), labelled with its hostname/ip. **Targeting limitation (Phase 1):** leilfs-api's `/api/v1/charts` resolves `node` only to `""` (the configured master) or a known chunkserver id/ip — it cannot yet target an arbitrary master/shadow by ip. So today every master block uses `node=""` (the configured master). True multi-master chart targeting needs a future leilfs-api enhancement (resolve master/shadow ips in `chartTarget`); the page is structured to enumerate so it is ready when that lands. This is a noted follow-up, not implemented here.
+2. **Data sections are cluster-bound:** leilfs-api is configured for one cluster and ignores per-request master selection, so the data sections (`Info`, `Chunks`, `Servers`, `Disks`, `Config`, `Mounts`) no longer depend on a selectable master. To minimize churn, their `master` prop is kept but fed a constant default `{ host: "sfsmaster", port: 9421 }` that never changes.
 3. **`leilfs/` deletion:** investigation confirmed that after deleting `cmd/leil-api`, `internal/httpapi`, and `internal/apiclient`, nothing imports `leilfs/` — so it is deleted too. Task 1 re-verifies zero dangling imports before deleting.
 
 ---
@@ -475,10 +477,10 @@ git commit -F /tmp/p2-task8.txt
 - Modify: `go/web/src/app.tsx`
 
 **Interfaces:**
-- Consumes: `api.chunkservers` (canonical `Server` with `ip`, from Task 4); leilfs-api `GET /api/v1/charts?id=&node=` (Phase 1).
-- Produces: the final user-facing shell.
+- Consumes: `api.chunkservers` (canonical `Server` with `ip`/`connected`, from Task 4); `api.metadataServers` (canonical `MetadataServer` with `ip`/`personality`, from Task 4); leilfs-api `GET /api/v1/charts?id=&node=` (Phase 1).
+- Produces: the final user-facing shell. Keeps the **two** chart pages (Masters, Chunkservers), each enumerating its nodes. No dropdown.
 
-Implements **Design decision 1** (confirm at review). Read `charts.ts`, `ChartsSection.tsx`, `app.tsx` before starting.
+Implements **Design decision 1**. Read `charts.ts`, `ChartsSection.tsx`, `app.tsx` before starting.
 
 - [ ] **Step 1: charts.ts — fetch from leilfs-api by node**
 
@@ -487,49 +489,89 @@ Replace `getCSV` and thread a `node` selector instead of `host`/`port`:
 async function getCSV(chart: ChartInfo, node: string, range: number): Promise<string> {
   const url = new URL("/api/v1/charts", location.origin);
   url.searchParams.set("id", String(chart.id + range));
-  if (node) url.searchParams.set("node", node);   // empty node = master
+  if (node) url.searchParams.set("node", node);   // empty node = the configured master
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.text();
 }
 ```
-Change `fetchChartData(chart, host, port, range)` to `fetchChartData(chart, node, range)` and pass `node` through to `getCSV`. The chart catalog ids and all CSV parsing/transform logic are unchanged (leilfs-api forwards the same uint32 id to the same CHART command and returns the same CSV).
+Change `fetchChartData(chart, host, port, range)` to `fetchChartData(chart, node, range)` and pass `node` to `getCSV`. The chart catalog ids and all CSV parsing/transform logic are unchanged (leilfs-api forwards the same uint32 id to the same CHART command and returns the same CSV).
 
-- [ ] **Step 2: ChartsSection.tsx — node-based cards**
+- [ ] **Step 2: ChartsSection.tsx — node-based cards, two enumerated pages**
 
-Change `ChartCard` and `ChartContainer` to take a single `node: string` instead of `host`/`port` (update the `useEffect` dependency from `[chart.id, host, port, range]` to `[chart.id, node, range]`). Replace `ChartsSection` with a node-selected view:
+Change `ChartCard` and `ChartContainer` to take a single `node: string` instead of `host`/`port` (update the `ChartCard` `useEffect` dependency from `[chart.id, host, port, range]` to `[chart.id, node, range]`; pass `node` into `fetchChartData`).
+
+Keep `ChartsSection`'s `{ which: "master" | "servers" }` prop and split into two enumerations:
+
 ```tsx
-export function ChartsSection({ node }: { node: string }) {
-  const charts = node === "" ? masterCharts : chunkServerCharts;
-  const title = node === "" ? "Master charts" : `Chunkserver ${node} charts`;
-  return <ChartContainer title={title} node={node} charts={charts} cls={node === "" ? "masterCharts" : "chunkServerCharts"} />;
+export function ChartsSection({ which, reloadKey }: { which: "master" | "servers"; reloadKey: number }) {
+  return which === "master"
+    ? <MasterCharts reloadKey={reloadKey} />
+    : <ChunkserverCharts reloadKey={reloadKey} />;
+}
+
+function MasterCharts({ reloadKey }: { reloadKey: number }) {
+  // Enumerate masters from metadata-servers. Phase-1 leilfs-api can only target
+  // the configured master (node=""), so every master block uses node="" today;
+  // the enumeration is structured for future per-master targeting.
+  const { data, error, loading } = useFetch<MetadataServer[]>(() => api.metadataServers(MASTER), [reloadKey]);
+  if (loading) return <p>Loading…</p>;
+  if (error) return <p class="MISSING">{error}</p>;
+  const masters = (data ?? []).filter((s) => s.personality === "master");
+  const list = masters.length ? masters : [{ ip: "", hostname: "", personality: "master" } as MetadataServer];
+  return (
+    <>
+      {list.map((m) => (
+        <ChartContainer
+          key={m.ip || "master"}
+          title={`Master ${m.hostname ? `${m.hostname} (${m.ip})` : m.ip || "(configured)"} charts`}
+          node=""                              /* Phase-1: configured master only */
+          charts={masterCharts}
+          cls="masterCharts"
+        />
+      ))}
+    </>
+  );
+}
+
+function ChunkserverCharts({ reloadKey }: { reloadKey: number }) {
+  const { data, error, loading } = useFetch<Server[]>(() => api.chunkservers(MASTER), [reloadKey]);
+  if (loading) return <p>Loading…</p>;
+  if (error) return <p class="MISSING">{error}</p>;
+  const servers = (data ?? []).filter((s) => s.connected);
+  return (
+    <>
+      {servers.map((s) => (
+        <ChartContainer
+          key={s.ip}
+          title={`Chunkserver ${s.hostname ? `${s.hostname} ` : ""}(${s.ip}) charts`}
+          node={s.ip}
+          charts={chunkServerCharts}
+          cls="chunkServerCharts"
+        />
+      ))}
+    </>
+  );
 }
 ```
-Remove the old `ServerCharts` enumerate-all component and the `master`/`which` props. (`Server[]` import is no longer needed here; the dropdown in app.tsx owns the server list.)
+`MASTER` is the shared constant `{ host: "sfsmaster", port: 9421 }` (the `api.*` arg is ignored by leilfs-api but the signatures still take it); import it or define a module-local const. Update imports: add `MetadataServer` from `../types`; keep `Server`.
 
-- [ ] **Step 3: app.tsx — replace selector with node dropdown, merge chart sections**
+- [ ] **Step 3: app.tsx — remove the free-text selector, keep both chart pages**
 
 - Remove `form` state, `applyMaster`, and the two `<input>`s + `Go` button.
-- Keep a constant `master` (`{ host: "sfsmaster", port: 9421 }`) passed to data sections so their signatures are unchanged.
-- Add `const [chartNode, setChartNode] = useState("");` (`""` = master).
-- Fetch the chunkserver list for the dropdown options:
-```tsx
-const { data: servers } = useFetch<Server[]>(() => api.chunkservers(master), [reloadKey]);
-```
-- Replace the `.master-selector` block with a dropdown (shown only useful on the charts view, but a global header control is fine):
+- Keep a constant `master` (`{ host: "sfsmaster", port: 9421 }`) passed to data sections so their signatures are unchanged. Keep `reloadKey` and the `Refresh` button.
+- Replace the `.master-selector` block with just the Refresh control:
 ```tsx
 <div class="master-selector">
-  <select aria-label="chart node" value={chartNode}
-    onChange={(e) => setChartNode((e.target as HTMLSelectElement).value)}>
-    <option value="">Master</option>
-    {(servers ?? []).filter((s) => s.connected).map((s) => (
-      <option value={s.ip}>{s.hostname ? `${s.hostname} (${s.ip})` : s.ip}</option>
-    ))}
-  </select>
   <button class="button" onClick={() => setReloadKey((k) => k + 1)}>Refresh</button>
 </div>
 ```
-- Merge the two chart nav entries into one. In `SECTIONS`, replace the `master-charts` and `server-charts` entries with a single `{ id: "charts", label: "Charts" }`. In `renderSection`, replace both chart cases with `case "charts": return <ChartsSection node={chartNode} />;`. Data section cases keep `master={master}`.
+- **Keep both chart nav entries** (`master-charts`, `server-charts`) in `SECTIONS` and `renderSection`. Update the two chart cases to drop the now-unused `master` prop:
+```tsx
+case "master-charts": return <ChartsSection which="master" reloadKey={reloadKey} />;
+case "server-charts": return <ChartsSection which="servers" reloadKey={reloadKey} />;
+```
+Data section cases keep `master={master}`.
 
 - [ ] **Step 4: Build**
 
@@ -541,12 +583,13 @@ Expected: success.
 ```bash
 cd /home/jorge/Work/leilfs-monitoring
 cat > /tmp/p2-task9.txt <<'EOF'
-feat(web): charts via leilfs-api with a node dropdown
+feat(web): charts via leilfs-api, enumerated per page
 
-Fetch charts from leilfs-api's /api/v1/charts?id=&node= (empty node = master),
-and replace the free-text host/port + Go control with a node <select> (Master +
-connected chunkservers). Merge the master/server chart pages into one Charts
-view driven by the selected node.
+Fetch charts from leilfs-api's /api/v1/charts?id=&node= (empty node = the
+configured master) and remove the free-text host/port + Go control. Keep two
+chart pages: Masters enumerates master(s) from metadata-servers (Phase-1 targets
+the configured master via node=""), Chunkservers enumerates connected
+chunkservers (node=<ip>).
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 EOF
@@ -610,7 +653,7 @@ git commit -F /tmp/p2-task10.txt
 Bring up leilfs-api + leil-monitoring against the integration cluster (or a real master), then:
 - Load the SPA; confirm each section renders: Info, Chunks, Servers, Disks, Config, Mounts.
 - Disks: paths show `chunkserver:path`, "No errors"/error display correct, per-range stats populate.
-- Charts: select "Master" → master charts load; select a chunkserver → its charts load (node=ip).
+- Charts → Master Charts page: the master's charts load (node=""). Charts → Server Charts page: one block per connected chunkserver loads (node=ip).
 - Confirm no requests hit the removed `leil-api` (all go to `/api/v1/*` → leilfs-api).
 - Confirm the SPA build embedded in `leil-monitoring` serves at `/`.
 
@@ -624,12 +667,12 @@ Bring up leilfs-api + leil-monitoring against the integration cluster (or a real
 - SPA api.ts → /api/v1/* → Task 2. ✓
 - SPA types/components canonical → Tasks 3–8 (every endpoint in the field map covered). ✓
 - charts.ts → /api/v1/charts → Task 9. ✓
-- Node dropdown replacing host/port+Go → Task 9. ✓
+- Remove host/port+Go; keep two enumerated chart pages → Task 9. ✓
 - compose + vite → Task 10. ✓
 - Cutover single-shot: the branch as a whole is the cutover; each task builds green; runtime correctness verified end-to-end after Task 10. ✓
 
 **Placeholder scan:** Rename details are delegated to the committed field-map doc with exact line citations (not "TBD"); structural changes (Tasks 1, 5, 8, 9, 10) carry full code. No "add error handling"-style vagueness.
 
-**Type consistency:** Interface NAMES are preserved across `api.ts` (Task 2) and the section tasks (3–8); `Server` keeps its name though it maps leilfs-api's `Chunkserver`. `ChartsSection` prop changes (`master`/`which` → `node`) are confined to Task 9, which also updates the only caller (`app.tsx`). `fetchChartData` signature change (`host,port`→`node`) is contained within Task 9 (charts.ts + ChartsSection are its only users).
+**Type consistency:** Interface NAMES are preserved across `api.ts` (Task 2) and the section tasks (3–8); `Server` keeps its name though it maps leilfs-api's `Chunkserver`. `ChartsSection` keeps its `which: "master" | "servers"` prop; only the internal card wiring changes (`host`/`port` → `node`), and Task 9 updates the only caller (`app.tsx`). `fetchChartData` signature change (`host,port`→`node`) is contained within Task 9 (charts.ts + ChartsSection are its only users).
 
-**Risks called out:** Design decision 1 (chart UX merge) is flagged for user confirmation. The `leilfs/` deletion is gated on a re-verified import check (Task 1 Step 1). leilfs-api must be deployed (Phase 1) before this stack runs.
+**Risks called out:** Multi-master chart targeting is a noted future leilfs-api enhancement (today the Masters page targets the configured master via `node=""`). The `leilfs/` deletion is gated on a re-verified import check (Task 1 Step 1). leilfs-api must be deployed (Phase 1) before this stack runs.

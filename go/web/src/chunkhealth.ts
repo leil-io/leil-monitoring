@@ -30,14 +30,10 @@ export function mapGoalHealth(health: ChunkHealth, _goals?: Goal[]): MappedGoalH
 
 // goalChunkSums mirrors get_goal_chunk_sums: column-wise sums (11 columns)
 // across goals that have replication/deletion data.
-// When health is provided, uses the pre-computed totals object.
 export function goalChunkSums(
   mapped: MappedGoalHealth[],
   attribute: "replication" | "deletion",
-  health?: ChunkHealth,
 ): number[] {
-  if (health) return Array.from(health.totals[attribute]);
-  // fallback: compute manually (old behavior, used when health is not available)
   const sums: number[] = [];
   for (let i = 0; i < 11; i++) {
     let total = 0;

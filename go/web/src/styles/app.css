@@ -6,16 +6,6 @@
   align-items: center;
 }
 
-.master-selector input {
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
-}
-
-.master-selector input[type="number"] {
-  width: 6em;
-}
-
 /* Standalone buttons (master selector). Nav buttons inherit .menu > a. */
 .master-selector .button {
   background-color: var(--accent-color);

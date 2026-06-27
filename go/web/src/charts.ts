@@ -1,6 +1,6 @@
 // Port of src/leil_monitoring/static/charts.js. The chart catalogs and the
 // CSV -> series transformation are preserved; only the data fetch points at the
-// Go API endpoint (/api/cgicharts) and the Chart.js rendering is left to the
+// Go API endpoint (/api/v1/charts) and the Chart.js rendering is left to the
 // caller (see ChartsSection.tsx). Vendored UMD libs are replaced by npm deps.
 
 import Papa from "papaparse";

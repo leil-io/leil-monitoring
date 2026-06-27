@@ -50,24 +50,24 @@ services:
             - UVICORN_PORT=${SAUNAFS_API_PORT:-8001}
             - SAUNAFS_API_LOGLEVEL=${SAUNAFS_API_LOGLEVEL:-DEBUG}
 
-    # Go port of leil-api (dev): runs straight from source via `go run`.
-    leil-api-go:
-        image: golang:1.22-alpine
+    # leilfs-api: the canonical read-only LeilFS HTTP API (leilfs-api repo).
+    # OPERATOR NOTE: leilfs-api lives in a separate repository (leilfs-api) and
+    # has no published image yet. Replace the placeholder image below with either:
+    #   image: <registry>/leilfs-api:<tag>
+    # or a build context pointing at a local checkout, e.g.:
+    #   build:
+    #     context: ../leilfs-api
+    #     dockerfile: Dockerfile
+    # Until then, pull or build the image manually and tag it leilfs-api:latest.
+    leilfs-api:
         ports:
-            - ${SAUNAFS_API_GO_PORT:-8002}:8001
-        working_dir: "/src"
-        volumes:
-            - ./go:/src
-        command: ["go", "run", "./cmd/leil-api"]
+            - ${LEILFS_API_PORT:-8080}:8080
+        image: leilfs-api:latest  # placeholder — see OPERATOR NOTE above
         environment:
-            - SAUNAFS_MASTER_HOST=${SAUNAFS_MASTER_HOST:-sfsmaster}
-            - SAUNAFS_MASTER_PORT=${SAUNAFS_MASTER_PORT:-9421}
-            - SAUNAFS_API_HOST=0.0.0.0
-            - SAUNAFS_API_PORT=8001
-            - SAUNAFS_API_LOGLEVEL=${SAUNAFS_API_LOGLEVEL:-DEBUG}
+            - LEILFS_MASTER_ENDPOINTS=${SAUNAFS_MASTER_HOST:-sfsmaster}:${SAUNAFS_MASTER_PORT:-9421}
 
     # Go/Preact frontend (dev): Vite dev server with HMR, proxying /api to
-    # leil-api-go. Host port 8003 -> Vite 5173.
+    # leilfs-api. Host port 8003 -> Vite 5173.
     leil-monitoring-go:
         image: node:20-alpine
         ports:
@@ -76,7 +76,7 @@ services:
         volumes:
             - ./go:/src
         environment:
-            - LEIL_API_URL=http://leil-api-go:8001
+            - LEIL_API_URL=http://leilfs-api:8080
         command: ["sh", "-c", "npm install && npm run dev -- --host 0.0.0.0"]
         depends_on:
-            - leil-api-go
+            - leilfs-api

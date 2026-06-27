@@ -38,26 +38,23 @@ services:
             - SAUNAFS_API_HOST=${SAUNAFS_API_HOST:-0.0.0.0}
             - SAUNAFS_API_PORT=${SAUNAFS_API_PORT:-8001}
             - SAUNAFS_API_LOGLEVEL=${SAUNAFS_API_LOGLEVEL:-INFO}
-    # Go port of leil-api. Mapped to a distinct host port (default 8002 -> 8001).
-    # Set LEILFS_API_URL to serve data from the canonical leilfs-api instead of
-    # the in-process binary client (the master host/port are then used only for
-    # charts, which leilfs-api does not expose). Left empty -> legacy binary mode.
-    leil-api-go:
+    # leilfs-api: the canonical read-only LeilFS HTTP API (leilfs-api repo).
+    # OPERATOR NOTE: leilfs-api lives in a separate repository (leilfs-api) and
+    # has no published image yet. Replace the placeholder image below with either:
+    #   image: <registry>/leilfs-api:<tag>
+    # or a build context pointing at a local checkout, e.g.:
+    #   build:
+    #     context: ../leilfs-api
+    #     dockerfile: Dockerfile
+    # Until then, pull or build the image manually and tag it leilfs-api:latest.
+    leilfs-api:
         ports:
-            - ${SAUNAFS_API_GO_PORT:-8002}:8001
-        image: leil-api-go:latest
-        build:
-            context: ./go
-            dockerfile: Dockerfile
+            - ${LEILFS_API_PORT:-8080}:8080
+        image: leilfs-api:latest  # placeholder — see OPERATOR NOTE above
         environment:
-            - LEILFS_API_URL=${LEILFS_API_URL:-}
-            - SAUNAFS_MASTER_HOST=${SAUNAFS_MASTER_HOST:-sfsmaster}
-            - SAUNAFS_MASTER_PORT=${SAUNAFS_MASTER_PORT:-9421}
-            - SAUNAFS_API_HOST=0.0.0.0
-            - SAUNAFS_API_PORT=8001
-            - SAUNAFS_API_LOGLEVEL=${SAUNAFS_API_LOGLEVEL:-INFO}
+            - LEILFS_MASTER_ENDPOINTS=${SAUNAFS_MASTER_HOST:-sfsmaster}:${SAUNAFS_MASTER_PORT:-9421}
     # Go/Preact frontend. Serves the SPA and reverse-proxies /api/* to
-    # leil-api-go (same origin, no CORS). Default host port 8003 -> 8000.
+    # leilfs-api (same origin, no CORS). Default host port 8003 -> 8000.
     leil-monitoring-go:
         ports:
             - ${SAUNAFS_MONITORING_GO_PORT:-8003}:8000
@@ -66,8 +63,8 @@ services:
             context: ./go
             dockerfile: Dockerfile.web
         environment:
-            - LEIL_API_URL=http://leil-api-go:8001
+            - LEIL_API_URL=http://leilfs-api:8080
             - SAUNAFS_MONITORING_HOST=0.0.0.0
             - SAUNAFS_MONITORING_PORT=8000
         depends_on:
-            - leil-api-go
+            - leilfs-api

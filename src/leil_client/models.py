@@ -799,6 +799,31 @@ class ChunkHealth(BaseModel):
 class ChunkMatrix(BaseModel):
     matrix: List[List[int]]
 
+class Metric(BaseModel):
+    name: str
+    type: int
+    value: int
+
+    @staticmethod
+    def get_list(buffer: bytearray) -> list[Metric]:
+        logging.debug(f"Metric.get_list: {buffer}")
+        metrics: list[Metric] = []
+        amount: int = unpack_primitive("I", buffer)[0]
+        while len(metrics) < amount:
+            metrics.append(Metric.from_buffer(buffer))
+            logging.debug(f"Metric.get_list: metrics: f${metrics}")
+        return metrics
+
+    @classmethod
+    def from_buffer(cls, buffer: bytearray):
+        logging.debug(f"from_buffer: {buffer}")
+        return cls(
+                name=unpack_string(buffer),
+                type=unpack_primitive("B", buffer)[0],
+                value=unpack_primitive("Q", buffer)[0],
+                )
+
+
 
 class ChunkMappedHealth(BaseModel):
     name: str

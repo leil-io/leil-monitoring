@@ -22,7 +22,7 @@ import select
 import logging
 from typing import List, Tuple
 from operator import attrgetter
-from .models import (Mount,
+from .models import (Metric, Mount,
                      Export,
                      MetadataServer,
                      FsCheckInfo,
@@ -115,6 +115,10 @@ SAU_CLTOMA_HOSTNAME = 1551
 SAU_MATOCL_HOSTNAME = 1552
 METADATA_HOSTNAME = (SAU_CLTOMA_HOSTNAME, SAU_MATOCL_HOSTNAME)
 
+SAU_CLTOAN_GET_METRICS = 1611
+SAU_ANTOCL_GET_METRICS = 1612
+GET_METRICS = (SAU_CLTOAN_GET_METRICS, SAU_ANTOCL_GET_METRICS)
+
 CLTOMA_CSSERV_REMOVESERV = (PROTO_BASE + 524)
 MATOCL_CSSERV_REMOVESERV = (PROTO_BASE + 525)
 CSSERV_REMOVESERV = (CLTOMA_CSSERV_REMOVESERV, MATOCL_CSSERV_REMOVESERV)
@@ -182,6 +186,8 @@ class SaunaFSClient:
                 raise RuntimeError(f"Received wrong response command: {respCmd}, expected {expected}")
 
             respPayload = self._my_recv(s, respLength)
+            if respLength != len(respPayload):
+                raise RuntimeError(f"Response buffer size does not match header size: response length: {respLength}, buffer length: {len(respPayload)}")
             if isV2:
                 if len(respPayload) < 4:
                     raise ValueError("V2 response payload is too short for version field")
@@ -308,6 +314,11 @@ class SaunaFSClient:
         buffer = self.send_and_receive(CSSERV_REMOVESERV, payload)
         if len(buffer) != 0:
             raise RuntimeError("Buffer not empty for CSSERV_REMOVESERV!")
+
+    def get_metrics(self, host: str, port: int) -> list[Metric]:
+        buffer= self.send_and_receive(msg=GET_METRICS, host=host, port=port)
+        logging.debug(f"get_metrics: buffer: f{buffer}")
+        return Metric.get_list(buffer)
 
     def get_metadata_servers(self) -> list[MetadataServer]:
         servers: list[MetadataServer] = []

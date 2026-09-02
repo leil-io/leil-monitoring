@@ -21,12 +21,15 @@ import logging
 import os
 from typing import List
 from datetime import datetime
+from .prometheus import setup_prometheus
 from leil_client import SaunaFSClient
 from leil_client.models import (
     Metalogger, SystemInfo, Server, Disk, Mount, MetadataServer, FsCheckInfo,
     ChunkOperationsInfo, ChunkMatrix, Goal, ChunkHealth,
     ChunkMappedHealth, INotifier
 )
+
+from prometheus_client import make_asgi_app
 
 SAUNAFS_MASTER_HOST = os.getenv("SAUNAFS_MASTER_HOST", "sfsmaster")
 SAUNAFS_MASTER_PORT = int(os.getenv("SAUNAFS_MASTER_PORT", 9421))
@@ -187,6 +190,9 @@ async def get_chart(id: int, host: str = SAUNAFS_MASTER_HOST, port: int = SAUNAF
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Could not get charts: {e}")
 
+metrics_app = make_asgi_app()
+setup_prometheus()
+app.mount("/metrics/", metrics_app)
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def read_root():

@@ -6,8 +6,8 @@ services:
       - "9421:9421"
     hostname: master
     volumes:
-      - ./volumes/leil-master/etc/saunafs:/etc/saunafs
-      - ./volumes/leil-master/var/lib/saunafs:/var/lib/saunafs
+      - ./volumes/leil-master/etc/leil:/etc/leil
+      - ./volumes/leil-master/var/lib/leil:/var/lib/leil
       - ./volumes/leil-master/var/log:/var/log
     networks:
       saunafsnet:
@@ -18,8 +18,8 @@ services:
     image: leilfs/leil-metalogger:${SAUNAFS_VERSION}-ubuntu-22.04
     container_name: leil-metalogger
     volumes:
-      - ./volumes/leil-metalogger/etc/saunafs:/etc/saunafs
-      - ./volumes/leil-metalogger/var/lib/saunafs:/var/lib/saunafs
+      - ./volumes/leil-metalogger/etc/leil:/etc/leil
+      - ./volumes/leil-metalogger/var/lib/leil:/var/lib/leil
       - ./volumes/leil-metalogger/var/log:/var/log
     depends_on:
       - master
@@ -40,9 +40,9 @@ services:
     image: leilfs/leil-chunkserver:${SAUNAFS_VERSION}-ubuntu-22.04
     container_name: leil-chunkserver01
     volumes:
-      - ./volumes/leil-chunkserver01/etc/saunafs:/etc/saunafs
+      - ./volumes/leil-chunkserver01/etc/leil:/etc/leil
       - ./volumes/leil-chunkserver01/var/log:/var/log
-      - ./volumes/leil-chunkserver01/var/lib/saunafs:/var/lib/saunafs
+      - ./volumes/leil-chunkserver01/var/lib/leil:/var/lib/leil
       - ./volumes/leil-chunkserver01/mnt/hdd001:/mnt/hdd001
       - ./volumes/leil-chunkserver01/mnt/hdd002:/mnt/hdd002
     ports:
